@@ -12,11 +12,9 @@ High-level plan. The detailed technical history lives outside the repo (project 
 
 ## Next
 
-1. **Download-first Node runtime** — shrink the APK by fetching the runtime on first run instead
-   of bundling it.
-2. **Settings & first-time config** — an onboarding/first-run flow and a clearer configuration
+1. **Settings & first-time config** — an onboarding/first-run flow and a clearer configuration
    experience.
-3. **llama.cpp** — assess local embeddings (`llama-server` + gguf) as a follow-up.
+2. **llama.cpp** — assess local embeddings (`llama-server` + gguf) as a follow-up.
 
 ## Later
 
@@ -25,6 +23,5 @@ High-level plan. The detailed technical history lives outside the repo (project 
 
 ## Gates before push
 
-- Download-first path validated on device.
 - First-run/settings experience in place.
 - Acceptance pass green.
