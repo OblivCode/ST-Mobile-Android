@@ -4,7 +4,7 @@ SillyTavern on Android, in a single APK. No laptop, no server, no Termux, no set
 
 SillyTavern normally runs on a computer under Node. ST Mobile embeds that runtime on the phone and starts it with a small native launcher, then unpacks its own copy of SillyTavern and serves it to a web view. Everything stays local, on the device.
 
-The full build story, decision by decision, is in [dev-story.md](dev-story.md).
+
 
 ## Built on
 
@@ -17,3 +17,6 @@ The full build story, decision by decision, is in [dev-story.md](dev-story.md).
 AGPL-3.0, because SillyTavern is bundled here and SillyTavern is AGPL-3.0. That is why this source is public. See [LICENSE](LICENSE).
 
 Not affiliated with or endorsed by SillyTavern.
+
+# Dev Story
+I tried something new with writing up a development story as I go: [dev-story.md](dev-story.md).
