@@ -34,7 +34,7 @@ the Android file picker.
 | `src/main/cpp/` | The small native launcher for the embedded runtime |
 | `src/main/assets/` | The SillyTavern bundle (generated at build time) |
 | `ci/` | Build scripts |
-| `docs/` | Technical docs — plan, concept, feasibility |
+| `docs/` | Technical plan (`PLAN.md`) |
 
 ## Status
 

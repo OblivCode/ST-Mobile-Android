@@ -409,8 +409,8 @@ in-app ST version switching; armeabi-v7a; optional DocumentsProvider for externa
 ## 14. References
 
 - On-device prototype results: this plan's phase notes (see §10).
-- Original architecture concept: [`CONCEPT.md`](CONCEPT.md).
-- Ecosystem verification: [`FEASIBILITY.md`](FEASIBILITY.md).
+- Background material (original architecture concept and the ecosystem feasibility review) is kept
+  outside this repository, in the project's `notes/` folder.
 - Prior art (AGPL-3.0, study-only — do not copy): `Sanitised/ST-android` — `NodeService.kt`,
   `NodePayload.kt`, `AppPaths.kt`, `build_st_bundle.sh`, manifest (exec-from-`nativeLibDir`,
   `specialUse` FGS, payload versioning).
