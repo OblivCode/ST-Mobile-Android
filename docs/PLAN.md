@@ -1,8 +1,8 @@
-# ST Mobile — Implementation Plan (Approach B, Final)
+# ST Mobile — Implementation Plan
 
 Status: **approved for implementation** · Date: 2026-09-26
 Supersedes the exploratory architecture notes for the embedded-runtime path. Grounded in an
-on-device spike (verified on Xiaomi 15 / Android 16 / arm64) and an ecosystem feasibility review.
+on-device prototype (verified on Xiaomi 15 / Android 16 / arm64) and an ecosystem feasibility review.
 
 ---
 
@@ -136,7 +136,7 @@ ST command-line contract verified against docs (`--configPath`, `--dataRoot`,
 
 ## 4. Node runtime: the native launcher
 
-**Why not the spike's `dlopen` + `System.loadLibrary`?** It works, but the runtime is not a real
+**Why not the prototype's `dlopen` + `System.loadLibrary`?** It works, but the runtime is not a real
 process: `process.execPath`, `child_process`, and `npm` are degraded. **Why not compile Node from
 source?** ST-android proves it but it is a ~2–3 h build plus patch maintenance. The launcher gives
 us a *real process* on a *prebuilt modern runtime* with almost no build cost.
@@ -305,7 +305,7 @@ artifact's `payload_manifest.json` for reproducibility.
 
 ## 10. Phased roadmap (with exit criteria)
 
-**Phase 0 — Spike (done).** `libnode.so` loads, Node boots, WebView serves. ✅
+**Phase 0 — Prototype (done).** `libnode.so` loads, Node boots, WebView serves. ✅
 
 **Phase 1 — Runtime launcher (de-risk).** ✅ **DONE (2026-09-26).** `libstnode.so` (22 KB PIE)
 exec'd from `nativeLibraryDir` gives a real Node process: `process.version=v24.20.0`,
@@ -408,8 +408,9 @@ in-app ST version switching; armeabi-v7a; optional DocumentsProvider for externa
 
 ## 14. References
 
-- On-device spike results: `README.md` (this folder).
-- Ecosystem verification: feasibility deep-dive (kept in project notes).
+- On-device prototype results: this plan's phase notes (see §10).
+- Original architecture concept: [`CONCEPT.md`](CONCEPT.md).
+- Ecosystem verification: [`FEASIBILITY.md`](FEASIBILITY.md).
 - Prior art (AGPL-3.0, study-only — do not copy): `Sanitised/ST-android` — `NodeService.kt`,
   `NodePayload.kt`, `AppPaths.kt`, `build_st_bundle.sh`, manifest (exec-from-`nativeLibDir`,
   `specialUse` FGS, payload versioning).
