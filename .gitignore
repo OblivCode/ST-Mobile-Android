@@ -16,5 +16,8 @@ src/main/jniLibs/*/libstnode.so
 src/main/cpp/node-include/
 third_party/
 
+# Local docs drafts (not tracked)
+/docs/
+
 # Misc
 .DS_Store
