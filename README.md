@@ -14,12 +14,12 @@ bash ci/build_all.sh     # fetch the pinned runtime, build the SillyTavern bundl
 ./gradlew assembleDebug
 ```
 
-Output: `app/build/outputs/apk/debug/app-debug.apk`.
+Output: `build/outputs/apk/debug/st-mobile-debug.apk`.
 
 ## Install & run
 
 ```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r build/outputs/apk/debug/st-mobile-debug.apk
 adb shell am start -n app.stmobile/app.stmobile.MainActivity
 ```
 
@@ -30,9 +30,9 @@ the Android file picker.
 
 | Path | What |
 | :--- | :--- |
-| `app/src/main/java/app/stmobile/` | App code — UI, background service, runtime management |
-| `app/src/main/cpp/` | The small native launcher for the embedded runtime |
-| `app/src/main/assets/` | The SillyTavern bundle (generated at build time) |
+| `src/main/java/app/stmobile/` | App code — UI, background service, runtime management |
+| `src/main/cpp/` | The small native launcher for the embedded runtime |
+| `src/main/assets/` | The SillyTavern bundle (generated at build time) |
 | `ci/` | Build scripts |
 | `PLAN.md` | Technical plan (to be replaced by a fuller breakdown) |
 

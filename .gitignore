@@ -1,20 +1,19 @@
 # Gradle / Android
 .gradle/
 build/
-app/build/
-app/.cxx/
+.cxx/
 local.properties
 *.iml
 .idea/
 
 # Generated payload + runtime (produced by ci/ scripts; never commit)
-app/src/main/assets/st_bundle.tar
-app/src/main/assets/st_bundle.tar.gz
-app/src/main/assets/payload_manifest.json
-app/src/main/jniLibs/*/libnode.so
-app/src/main/jniLibs/*/libc++_shared.so
-app/src/main/jniLibs/*/libstnode.so
-app/src/main/cpp/node-include/
+src/main/assets/st_bundle.tar
+src/main/assets/st_bundle.tar.gz
+src/main/assets/payload_manifest.json
+src/main/jniLibs/*/libnode.so
+src/main/jniLibs/*/libc++_shared.so
+src/main/jniLibs/*/libstnode.so
+src/main/cpp/node-include/
 third_party/
 
 # Misc

@@ -141,7 +141,7 @@ process: `process.execPath`, `child_process`, and `npm` are degraded. **Why not 
 source?** ST-android proves it but it is a ~2–3 h build plus patch maintenance. The launcher gives
 us a *real process* on a *prebuilt modern runtime* with almost no build cost.
 
-**Design** (`app/src/main/cpp/launcher.cpp`):
+**Design** (`src/main/cpp/launcher.cpp`):
 
 ```cpp
 #include <node/node.h>
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
 1. Checkout SillyTavern at a pinned tag (target `v1.19.0`; record commit).
 2. `npm ci --omit=dev --ignore-scripts` into a staging copy (exclude `.git`, `tests`, `data`, `backups`, `docker`, `colab`).
 3. **Audit**: fail if any installed package declares native addons (`binding.gyp` / prebuilds) — v1.19.0 has none, but lock it.
-4. `tar` the tree → `app/src/main/assets/st_bundle.tar` (uncompressed tar; AAPT handles the container).
+4. `tar` the tree → `src/main/assets/st_bundle.tar` (uncompressed tar; AAPT handles the container).
 5. Write `assets/payload_manifest.json` with `st_version`, `st_commit`, `node_version`, bundle sha256.
 
 **config.yaml** (seeded on first run, then user-owned):

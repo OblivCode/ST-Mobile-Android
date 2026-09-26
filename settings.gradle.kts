@@ -13,4 +13,3 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "st-mobile"
-include(":app")
