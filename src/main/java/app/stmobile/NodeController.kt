@@ -35,7 +35,6 @@ class NodeController(private val context: Context) {
         rotateIfNeeded(stderr)
 
         val settings = AppSettings(context)
-        val nodeLib = resolveNodeLib(paths, layout)
         val pb = ProcessBuilder(
             layout.launcher.absolutePath,
             layout.stEntry.absolutePath,
@@ -47,7 +46,6 @@ class NodeController(private val context: Context) {
         pb.directory(layout.stDir)
         pb.environment().apply {
             put("LD_LIBRARY_PATH", layout.nativeLibDir)
-            put("ST_NODE_LIB", nodeLib.absolutePath)
             put("HOME", paths.filesDir.absolutePath)
             put("TMPDIR", layout.nodeTmpDir.absolutePath)
             put("TMP", layout.nodeTmpDir.absolutePath)
@@ -79,30 +77,6 @@ class NodeController(private val context: Context) {
         } finally {
             if (process === current) process = null
         }
-    }
-
-    /**
-     * Resolves the Node runtime the launcher should dlopen.
-     *
-     * Download-first target: use the copy in app storage. Until the downloader
-     * exists, this simulates a first-run download by copying the bundled
-     * runtime out of nativeLibraryDir, which validates that dlopen()-ing the
-     * library from app storage works on-device.
-     */
-    private fun resolveNodeLib(paths: AppPaths, layout: PayloadManager.Layout): File {
-        val inStorage = File(paths.filesDir, "libnode.so")
-        if (inStorage.exists()) return inStorage
-
-        val bundled = File(layout.nativeLibDir, "libnode.so")
-        if (bundled.exists()) {
-            try {
-                bundled.copyTo(inStorage, overwrite = false)
-            } catch (_: Exception) {
-                return bundled
-            }
-            if (inStorage.exists()) return inStorage
-        }
-        return bundled
     }
 
     companion object {
