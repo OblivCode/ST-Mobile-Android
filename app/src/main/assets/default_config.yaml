@@ -1,0 +1,33 @@
+# ST Mobile — default server configuration (seeded on first run).
+# This is the user's config; the app never overwrites it after first launch.
+# App-level toggles are applied as SILLYTAVERN_* environment overrides instead.
+
+listen: false
+port: 8000
+protocol:
+  ipv4: true
+  ipv6: false
+
+whitelistMode: true
+whitelist:
+  - "127.0.0.1"
+  - "::1"
+
+browserLaunch:
+  enabled: false
+
+git:
+  backend: builtin        # isomorphic-git; no native git binary required
+
+extensions:
+  enabled: true
+  autoUpdate: false       # keep first boot offline-friendly
+
+enableServerPlugins: false
+# Keep false. ST uses the content check to seed first-run scaffolding,
+# including data/default-user/settings.json. Setting true makes the first
+# launch fail with 'Error getting settings' (verified on device 2026-09-26).
+skipContentCheck: false
+
+logging:
+  minLogLevel: 2          # WARN — keeps device logs small
