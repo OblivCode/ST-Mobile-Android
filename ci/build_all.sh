@@ -5,6 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+if [ -z "${JAVA_HOME:-}" ] && [ -d "/usr/lib/jvm/java-17-openjdk-amd64" ]; then
+  export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+fi
+
 bash ci/fetch_node_runtime.sh
 bash ci/build_st_bundle.sh
 
