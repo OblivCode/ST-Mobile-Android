@@ -18,6 +18,8 @@ import app.stmobile.models.NodeStatus
 import app.stmobile.models.NodeStatusListener
 import app.stmobile.models.StConfig
 import app.stmobile.sillytavern.PayloadManager
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
 
@@ -103,9 +105,7 @@ class NodeService : Service() {
         if (controller.isRunning()) return
         val paths = AppPaths(applicationContext)
         try {
-            val layout = PayloadManager(applicationContext).ensureExtracted { message ->
-                sendStatus(NodeState.STARTING, message)
-            }
+            val layout = PayloadManager(applicationContext).getExistingLayout()
             if (stopRequested) {
                 finish()
                 return
@@ -124,30 +124,83 @@ class NodeService : Service() {
             sendStatus(NodeState.STARTING, "Launching server on port ${stConfig.port}…")
             val launchResult = controller.start(layout, stConfig, nodeConfig, appConfig)
             this.port = launchResult.effectivePort
+
+            // Internal HTTP readiness probe: wait for the server to accept connections
+            sendStatus(NodeState.STARTING, "Waiting for server to accept connections…")
+            var serverReady = false
+            val probeUrl = URL("http://127.0.0.1:${launchResult.effectivePort}")
+            val maxProbes = 120 // 120 * 250ms = 30 seconds
+            for (i in 0 until maxProbes) {
+                if (stopRequested) break
+                if (!controller.isRunning()) {
+                    break
+                }
+                try {
+                    val conn = probeUrl.openConnection() as HttpURLConnection
+                    conn.connectTimeout = 500
+                    conn.readTimeout = 500
+                    val code = conn.responseCode
+                    conn.disconnect()
+                    if (code in 200..499) {
+                        serverReady = true
+                        break
+                    }
+                } catch (_: Exception) {
+                    // Endpoint not listening yet
+                }
+                try {
+                    Thread.sleep(250)
+                } catch (_: InterruptedException) {
+                    break
+                }
+            }
+
+            if (stopRequested) {
+                controller.stop()
+                finish()
+                return
+            }
+
+            if (!serverReady) {
+                if (!controller.isRunning()) {
+                    sendStatus(NodeState.ERROR, "Server process terminated unexpectedly")
+                } else {
+                    sendStatus(NodeState.ERROR, "Server failed to respond within 30 seconds")
+                    controller.stop()
+                }
+                finish()
+                return
+            }
+
             sendStatus(NodeState.RUNNING, "Running", controller.pid())
 
-            val exit = try {
-                launchResult.process.waitFor()
-            } catch (_: Exception) {
-                null
-            }
-            val wasStopping = stopRequested || status.state == NodeState.STOPPING
-            if (wasStopping) {
-                sendStatus(NodeState.STOPPED, "Stopped")
-            } else if (exit == 0) {
-                sendStatus(NodeState.STOPPED, "Server exited")
-            } else {
-                sendStatus(NodeState.ERROR, "Server exited with code ${exit ?: "?"}")
-            }
+            // Supervise process exit on a dedicated thread so the worker executor
+            // remains free to handle incoming stop() and restart() commands.
+            val supervisor = Thread({
+                val exit = try {
+                    launchResult.process.waitFor()
+                } catch (_: Exception) {
+                    null
+                }
+                val wasStopping = stopRequested || status.state == NodeState.STOPPING
+                if (wasStopping) {
+                    sendStatus(NodeState.STOPPED, "Stopped")
+                } else if (exit == 0) {
+                    sendStatus(NodeState.STOPPED, "Server exited")
+                } else {
+                    sendStatus(NodeState.ERROR, "Server exited with code ${exit ?: "?"}")
+                }
+                finish()
+            }, "node-supervisor")
+            supervisor.isDaemon = true
+            supervisor.start()
+
         } catch (e: PortInUseException) {
             sendStatus(NodeState.ERROR, e.message ?: "Port in use")
+            finish()
         } catch (t: Throwable) {
             sendStatus(NodeState.ERROR, t.message ?: "Start failed")
-        } finally {
-            if (status.state != NodeState.RUNNING) {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-            }
+            finish()
         }
     }
 

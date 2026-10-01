@@ -1,6 +1,6 @@
 package app.stmobile
 
-import android.app.Activity
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,9 +8,7 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.webkit.ConsoleMessage
@@ -20,78 +18,44 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.FileProvider
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
 import app.stmobile.models.NodeStatusListener
-import app.stmobile.models.StConfig
 import app.stmobile.node.NodeController
 import app.stmobile.node.NodeService
 import app.stmobile.sillytavern.BackupManager
 import app.stmobile.sillytavern.PayloadManager
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.FileProvider
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.atomic.AtomicBoolean
+import app.stmobile.ui.DashboardScreen
+import app.stmobile.ui.SettingsScreen
+import app.stmobile.ui.SetupScreen
+import app.stmobile.ui.StWebView
 
-private enum class Screen { HOME, SETTINGS, LOGS, ABOUT }
-
-private data class AppActions(
-    val restartServer: () -> Unit,
-    val stopServer: () -> Unit,
-    val startServer: () -> Unit,
-    val exportBackup: () -> Unit,
-    val importBackup: () -> Unit,
-    val resetPayload: () -> Unit,
-    val shareLogs: () -> Unit,
-    val promptBattery: () -> Unit,
-    val saveSettings: (Int, Boolean, String, String) -> Unit,
-)
+enum class ActiveScreen { SETUP, DASHBOARD, SETTINGS, WEBVIEW }
 
 class MainActivity : ComponentActivity(), NodeStatusListener {
 
@@ -103,24 +67,37 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
     private var pendingUrl: String? = null
     private var didInitialReload = false
 
-    private val serverReady = mutableStateOf(false)
-    private val status = mutableStateOf(NodeStatus(NodeState.STOPPED, "Starting…", NodeController.DEFAULT_PORT))
+    private val status = mutableStateOf(NodeStatus(NodeState.STOPPED, "Idle", NodeController.DEFAULT_PORT))
+    private lateinit var activeScreen: MutableState<ActiveScreen>
 
     private val fileChooser = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val cb = pendingFileCallback
         pendingFileCallback = null
         cb?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
     }
+
     private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        if (uri != null) background { BackupManager(this).export(uri) {}.onFailure { toast("Export failed: ${it.message}") }.onSuccess { toast("Backup exported") } }
+        if (uri != null) {
+            background {
+                BackupManager(this).export(uri) {}
+                    .onFailure { toast("Export failed: ${it.message}") }
+                    .onSuccess { toast("Backup exported") }
+            }
+        }
     }
+
     private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) background {
-            service?.stop()
-            sleep(1500)
-            BackupManager(this).import(uri) {}
-                .onFailure { toast("Import failed: ${it.message}") }
-                .onSuccess { toast("Backup imported"); restartServer() }
+        if (uri != null) {
+            background {
+                service?.stop()
+                sleep(1500)
+                BackupManager(this).import(uri) {}
+                    .onFailure { toast("Import failed: ${it.message}") }
+                    .onSuccess {
+                        toast("Backup imported")
+                        NodeService.start(this@MainActivity)
+                    }
+            }
         }
     }
 
@@ -141,6 +118,86 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val appConfig = AppConfig(this)
+        val payloadManager = PayloadManager(this)
+        val needsExtraction = payloadManager.isExtractionNeeded()
+
+        activeScreen = mutableStateOf(if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD)
+
+        initWebView()
+        requestNotificationPermission()
+
+        bindService(Intent(this, NodeService::class.java), connection, Context.BIND_AUTO_CREATE)
+
+        if (!needsExtraction && appConfig.autoStartOnAppOpen) {
+            NodeService.start(this)
+        }
+
+        setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                val currentScreen = activeScreen.value
+
+                BackHandler(enabled = currentScreen == ActiveScreen.SETTINGS) {
+                    activeScreen.value = ActiveScreen.DASHBOARD
+                }
+
+                Scaffold(
+                    bottomBar = {
+                        if (currentScreen == ActiveScreen.DASHBOARD || currentScreen == ActiveScreen.SETTINGS) {
+                            BottomNavDock(
+                                currentScreen = currentScreen,
+                                onSelectScreen = { screen -> activeScreen.value = screen },
+                            )
+                        }
+                    },
+                ) { padding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    ) {
+                        when (currentScreen) {
+                            ActiveScreen.SETUP -> {
+                                SetupScreen(
+                                    onSetupComplete = {
+                                        activeScreen.value = ActiveScreen.DASHBOARD
+                                        if (appConfig.autoStartOnAppOpen) {
+                                            NodeService.start(this@MainActivity)
+                                        }
+                                    },
+                                )
+                            }
+                            ActiveScreen.DASHBOARD -> {
+                                DashboardScreen(
+                                    status = status.value,
+                                    onStartServer = { NodeService.start(this@MainActivity) },
+                                    onStopServer = { service?.stop() },
+                                    onOpenSillyTavern = { activeScreen.value = ActiveScreen.WEBVIEW },
+                                    onExportBackup = { exportLauncher.launch("st-backup.zip") },
+                                    onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
+                                    onExportLogs = { shareLogs() },
+                                )
+                            }
+                            ActiveScreen.SETTINGS -> {
+                                SettingsScreen(
+                                    onPromptBattery = { promptBattery() },
+                                    onResetPayload = { resetPayload() },
+                                )
+                            }
+                            ActiveScreen.WEBVIEW -> {
+                                StWebView(
+                                    webView = webView,
+                                    onNavigateToDashboard = { activeScreen.value = ActiveScreen.DASHBOARD },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun initWebView() {
         webView = WebView(this).apply {
             layoutParams = android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -153,10 +210,6 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    // Android WebView can cache viewport units (vh/dvh) as 0 if
-                    // the page is first loaded into a not-yet-laid-out view.
-                    // One reload after the WebView has a real size fixes it,
-                    // with no modification to SillyTavern's page.
                     if (!didInitialReload) {
                         didInitialReload = true
                         view?.postDelayed({ view.loadUrl(url ?: "about:blank") }, 250)
@@ -186,8 +239,6 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
                     }
                 }
             }
-            // Only load once the WebView has a real size; loading before Compose
-            // attaches it makes ST lay out against a zero-size viewport.
             addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ ->
                 val url = pendingUrl ?: return@addOnLayoutChangeListener
                 if (r - l > 0 && b - t > 0) {
@@ -196,120 +247,23 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
                 }
             }
         }
-
-        requestNotificationPermission()
-        bindService(Intent(this, NodeService::class.java), connection, Context.BIND_AUTO_CREATE)
-        NodeService.start(this)
-        background { waitForServer() }
-
-        setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                var screen by remember { mutableStateOf(Screen.HOME) }
-                var batteryDialog by remember { mutableStateOf(false) }
-                val appConfig = remember { AppConfig(this@MainActivity) }
-                val paths = remember { AppPaths(this@MainActivity) }
-                val actions = remember {
-                    AppActions(
-                        restartServer = { restartServer() },
-                        stopServer = { service?.stop() },
-                        startServer = { NodeService.start(this@MainActivity) },
-                        exportBackup = { exportLauncher.launch("st-backup.zip") },
-                        importBackup = { importLauncher.launch(arrayOf("*/*")) },
-                        resetPayload = { resetPayload() },
-                        shareLogs = { shareLogs() },
-                        promptBattery = { promptBattery() },
-                        saveSettings = { port, auth, user, pass ->
-                            appConfig.apply {
-                                basicAuthEnabled = auth
-                                basicAuthUsername = user
-                                basicAuthPassword = pass
-                            }
-                            runCatching {
-                                val stConfig = StConfig.fromFileOrDefault(paths.configFile) {
-                                    assets.open("default_config.yaml")
-                                }
-                                stConfig.port = port
-                                stConfig.save(paths.configFile)
-                            }
-                            toast("Saved — restarting server")
-                            restartServer()
-                        },
-                    )
-                }
-
-                LaunchedEffect(serverReady.value) {
-                    if (serverReady.value && !appConfig.batteryPrompted) batteryDialog = true
-                }
-
-                BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
-                BackHandler(enabled = screen == Screen.HOME && webView.canGoBack()) { webView.goBack() }
-
-                when (screen) {
-                    Screen.HOME -> HomeScreen(webView, status.value, serverReady.value) { screen = Screen.SETTINGS }
-                    Screen.SETTINGS -> SettingsScreen(status.value, actions) { screen = Screen.HOME }
-                    Screen.LOGS -> LogsScreen(actions) { screen = Screen.HOME }
-                    Screen.ABOUT -> AboutScreen { screen = Screen.HOME }
-                }
-
-                if (batteryDialog) {
-                    AlertDialog(
-                        onDismissRequest = { batteryDialog = false; appConfig.batteryPrompted = true },
-                        title = { Text("Keep the server running") },
-                        text = { Text("Allow ST Mobile to ignore battery optimizations so SillyTavern stays responsive in the background.") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                batteryDialog = false
-                                appConfig.batteryPrompted = true
-                                actions.promptBattery()
-                            }) { Text("Allow") }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { batteryDialog = false; appConfig.batteryPrompted = true }) {
-                                Text("Not now")
-                            }
-                        },
-                    )
-                }
-            }
-        }
     }
 
     override fun onStatus(newStatus: NodeStatus) {
-        status.value = newStatus
-    }
-
-    private fun restartServer() {
-        startService(Intent(this, NodeService::class.java).setAction(NodeService.ACTION_RESTART))
-    }
-
-    private fun waitForServer() {
-        repeat(240) {
-            if (serverReady.value) return
-            if (status.value.state == NodeState.RUNNING) {
-                val port = status.value.port
-                try {
-                    val conn = URL("http://127.0.0.1:$port").openConnection() as HttpURLConnection
-                    conn.connectTimeout = 500
-                    conn.readTimeout = 500
-                    val code = conn.responseCode
-                    conn.disconnect()
-                    if (code in 200..399) {
-                        serverReady.value = true
-                        val url = "http://127.0.0.1:$port"
-                        runOnUiThread {
-                            if (webView.width > 0 && webView.height > 0) {
-                                webView.loadUrl(url)
-                            } else {
-                                pendingUrl = url
-                            }
-                        }
-                        return
-                    }
-                } catch (_: Exception) {
-                    // not up yet
+        runOnUiThread {
+            status.value = newStatus
+            if (newStatus.state == NodeState.RUNNING) {
+                val url = "http://127.0.0.1:${newStatus.port}"
+                if (webView.width > 0 && webView.height > 0) {
+                    webView.loadUrl(url)
+                } else {
+                    pendingUrl = url
+                }
+                val appConfig = AppConfig(this)
+                if (appConfig.autoLaunchWebViewOnStart && activeScreen.value == ActiveScreen.DASHBOARD) {
+                    activeScreen.value = ActiveScreen.WEBVIEW
                 }
             }
-            sleep(500)
         }
     }
 
@@ -320,9 +274,10 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
             val paths = AppPaths(this)
             paths.stDir.deleteRecursively()
             getSharedPreferences("payload", Context.MODE_PRIVATE).edit().remove("installed_payload_version").apply()
-            toast("SillyTavern payload reset")
-            serverReady.value = false
-            restartServer()
+            runOnUiThread {
+                activeScreen.value = ActiveScreen.SETUP
+                toast("SillyTavern payload reset")
+            }
         }
     }
 
@@ -338,6 +293,7 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
             val send = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = ClipData.newRawUri("logs", uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             startActivity(Intent.createChooser(send, "Share logs"))
@@ -389,172 +345,40 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Compose UI
-// ---------------------------------------------------------------------------
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Chrome(title: String, onBack: (() -> Unit)? = null, content: @Composable () -> Unit) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    if (onBack != null) TextButton(onClick = onBack) { Text("Back") }
-                },
-            )
-        },
-    ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) { content() }
+private fun BottomNavDock(
+    currentScreen: ActiveScreen,
+    onSelectScreen: (ActiveScreen) -> Unit,
+) {
+    NavigationBar(
+        containerColor = Color(0xFF1A2228),
+        contentColor = Color(0xFF7EC8A9),
+    ) {
+        NavigationBarItem(
+            selected = currentScreen == ActiveScreen.DASHBOARD,
+            onClick = { onSelectScreen(ActiveScreen.DASHBOARD) },
+            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+            label = { Text("Dashboard") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color(0xFF7EC8A9),
+                selectedTextColor = Color(0xFF7EC8A9),
+                unselectedIconColor = Color(0xFF8A94A3),
+                unselectedTextColor = Color(0xFF8A94A3),
+                indicatorColor = Color(0xFF23303A),
+            ),
+        )
+        NavigationBarItem(
+            selected = currentScreen == ActiveScreen.SETTINGS,
+            onClick = { onSelectScreen(ActiveScreen.SETTINGS) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            label = { Text("Settings") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color(0xFF7EC8A9),
+                selectedTextColor = Color(0xFF7EC8A9),
+                unselectedIconColor = Color(0xFF8A94A3),
+                unselectedTextColor = Color(0xFF8A94A3),
+                indicatorColor = Color(0xFF23303A),
+            ),
+        )
     }
-}
-
-@Composable
-private fun HomeScreen(webView: WebView, status: NodeStatus, ready: Boolean, onMenu: () -> Unit) {
-    Box(Modifier.fillMaxSize()) {
-        // Attach the WebView immediately (under the splash) so it is laid out at
-        // full size before we load the URL — otherwise ST caches viewport units
-        // (100dvh) as 0 and the layout collapses.
-        AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
-
-        if (!ready) {
-            Column(
-                Modifier.fillMaxSize().background(Color(0xFF101418)).padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("ST Mobile", style = MaterialTheme.typography.headlineSmall, color = Color(0xFF7EC8A9))
-                Spacer(Modifier.height(12.dp))
-                Text("${status.state}: ${status.message}", color = Color(0xFFD8DEE6))
-            }
-        }
-
-        // Always available so Settings/Logs/About are reachable over the ST UI.
-        FloatingActionButton(
-            onClick = onMenu,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            containerColor = Color(0xCC23303A),
-            contentColor = Color(0xFF7EC8A9),
-        ) {
-            Text("Menu")
-        }
-    }
-}
-
-@Composable
-private fun SettingsScreen(status: NodeStatus, actions: AppActions, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val appConfig = remember { AppConfig(context) }
-    val paths = remember { AppPaths(context) }
-    val stConfig = remember {
-        runCatching {
-            StConfig.fromFileOrDefault(paths.configFile) {
-                context.assets.open("default_config.yaml")
-            }
-        }.getOrNull()
-    }
-    var port by remember { mutableStateOf((stConfig?.port ?: NodeController.DEFAULT_PORT).toString()) }
-    var authEnabled by remember { mutableStateOf(appConfig.basicAuthEnabled) }
-    var authUser by remember { mutableStateOf(appConfig.basicAuthUsername) }
-    var authPass by remember { mutableStateOf(appConfig.basicAuthPassword) }
-    val manifest = remember { runCatching { PayloadManager(context).readManifest() }.getOrNull() }
-
-    Chrome("Settings", onBack) {
-        Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            Section("Server")
-            Text("Status: ${status.state} — ${status.message}", color = Color(0xFF8A94A3))
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = port,
-                onValueChange = { port = it.filter(Char::isDigit).take(5) },
-                label = { Text("Port") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { actions.saveSettings(port.toIntOrNull() ?: 8000, authEnabled, authUser, authPass) }) {
-                    Text("Save & Restart")
-                }
-                TextButton(onClick = actions.stopServer) { Text("Stop") }
-                TextButton(onClick = actions.startServer) { Text("Start") }
-            }
-
-            Section("Access")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(checked = authEnabled, onCheckedChange = { authEnabled = it })
-                Spacer(Modifier.height(0.dp))
-                Text("  Require basic auth (loopback is device-wide)")
-            }
-            if (authEnabled) {
-                OutlinedTextField(authUser, { authUser = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(authPass, { authPass = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-            }
-
-            Section("Data")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = actions.exportBackup) { Text("Export backup") }
-                TextButton(onClick = actions.importBackup) { Text("Import backup") }
-            }
-            TextButton(onClick = actions.resetPayload) { Text("Reset SillyTavern payload (keeps user data)") }
-
-            Section("Diagnostics")
-            Text("Node: ${manifest?.nodeVersion ?: "?"}   ST: ${manifest?.stVersion ?: "?"}", color = Color(0xFF8A94A3))
-            Spacer(Modifier.height(8.dp))
-            TextButton(onClick = actions.shareLogs) { Text("Share logs") }
-
-            Section("System")
-            TextButton(onClick = actions.promptBattery) { Text("Battery optimization…") }
-
-            Section("About")
-            Text("Not affiliated with SillyTavern. SillyTavern is AGPL-3.0; Node.js is MIT.", color = Color(0xFF8A94A3))
-        }
-    }
-}
-
-@Composable
-private fun LogsScreen(actions: AppActions, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val text = remember {
-        val dir = AppPaths(context).logsDir
-        val files = dir.listFiles()?.filter { it.isFile }?.sortedBy { it.name } ?: emptyList()
-        if (files.isEmpty()) "No logs yet."
-        else files.joinToString("\n\n") { f ->
-            "===== ${f.name} =====\n" + runCatching { f.readText().takeLast(20_000) }.getOrDefault("(unreadable)")
-        }
-    }
-    Chrome("Logs", onBack) {
-        Column(Modifier.padding(16.dp)) {
-            TextButton(onClick = actions.shareLogs) { Text("Share logs") }
-            Spacer(Modifier.height(8.dp))
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(text, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun AboutScreen(onBack: () -> Unit) {
-    Chrome("About", onBack) {
-        Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            Text("ST Mobile", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(12.dp))
-            Text("A standalone Android shell that runs SillyTavern locally on your device.")
-            Spacer(Modifier.height(12.dp))
-            Text("Not affiliated with or endorsed by SillyTavern.")
-            Spacer(Modifier.height(12.dp))
-            Text("SillyTavern is licensed AGPL-3.0. Node.js is MIT. See the project LICENSE and THIRD-PARTY notices.", color = Color(0xFF8A94A3))
-            Spacer(Modifier.height(12.dp))
-            Text("Source: replace with your repository URL before release.", color = Color(0xFF8A94A3))
-        }
-    }
-}
-
-@Composable
-private fun Section(title: String) {
-    Spacer(Modifier.height(20.dp))
-    Text(title, style = MaterialTheme.typography.titleMedium, color = Color(0xFF7EC8A9))
-    Spacer(Modifier.height(4.dp))
-    HorizontalDivider()
-    Spacer(Modifier.height(8.dp))
 }

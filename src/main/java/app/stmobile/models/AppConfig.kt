@@ -20,6 +20,10 @@ class AppConfig(context: Context) {
         get() = prefs.getBoolean(KEY_AUTO_START, DEFAULT_AUTO_START)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_START, value).apply()
 
+    var autoLaunchWebViewOnStart: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_LAUNCH_WEBVIEW, DEFAULT_AUTO_LAUNCH_WEBVIEW)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_LAUNCH_WEBVIEW, value).apply()
+
     var backgroundTimeoutMinutes: Int
         get() = prefs.getInt(KEY_BG_TIMEOUT, DEFAULT_BG_TIMEOUT)
         set(value) = prefs.edit().putInt(KEY_BG_TIMEOUT, value).apply()
@@ -78,12 +82,14 @@ class AppConfig(context: Context) {
         private const val LEGACY_PREFS_NAME = "app_settings"
 
         const val DEFAULT_AUTO_START = false
-        const val DEFAULT_BG_TIMEOUT = 15
+        const val DEFAULT_AUTO_LAUNCH_WEBVIEW = false
+        const val DEFAULT_BG_TIMEOUT = 5
         const val DEFAULT_AUTO_PORT_FALLBACK = true
         const val DEFAULT_AUTH_USER = "user"
         const val DEFAULT_AUTH_PASS = "password"
 
         private const val KEY_AUTO_START = "auto_start_on_app_open"
+        private const val KEY_AUTO_LAUNCH_WEBVIEW = "auto_launch_webview_on_start"
         private const val KEY_BG_TIMEOUT = "background_timeout_minutes"
         private const val KEY_AUTO_PORT_FALLBACK = "auto_port_fallback"
         private const val KEY_BATTERY_PROMPTED = "battery_prompted"

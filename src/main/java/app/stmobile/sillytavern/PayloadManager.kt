@@ -39,6 +39,16 @@ class PayloadManager(private val context: Context) {
         val payloadUpdated: Boolean
     )
 
+    data class ExtractProgress(
+        val stage: String,
+        val filesProcessed: Int = 0,
+        val totalEstimate: Int = 11000,
+        val currentFile: String? = null,
+        val isCompleted: Boolean = false,
+        val isError: Boolean = false,
+        val errorMessage: String? = null
+    )
+
     private val prefs = context.getSharedPreferences("payload", Context.MODE_PRIVATE)
     private val paths = AppPaths(context)
 
@@ -55,26 +65,28 @@ class PayloadManager(private val context: Context) {
         )
     }
 
-    /** Ensures the ST tree is present and up to date; returns the runtime layout. */
-    fun ensureExtracted(onProgress: (String) -> Unit): Layout {
+    /** Returns true if first-run extraction or payload update is required. */
+    fun isExtractionNeeded(): Boolean {
         val manifest = readManifest()
         val installed = prefs.getString(KEY_INSTALLED, null)
-        var updated = false
+        return installed != manifest.payloadVersion || !paths.stEntry.exists()
+    }
 
-        if (installed != manifest.payloadVersion || !paths.stEntry.exists()) {
-            onProgress("Unpacking SillyTavern (first run)…")
-            extractBundle(manifest.bundle, manifest.bundleSha256, onProgress)
-            prefs.edit().putString(KEY_INSTALLED, manifest.payloadVersion).apply()
-            updated = true
-        }
-
+    /**
+     * Fast-path: returns the runtime layout if already extracted.
+     * Ensures all required scratch and storage directories exist.
+     */
+    fun getExistingLayout(): Layout {
         paths.configDir.mkdirs()
         paths.dataDir.mkdirs()
         paths.logsDir.mkdirs()
         paths.nodeTmpDir.mkdirs()
 
+        if (isExtractionNeeded()) {
+            throw IllegalStateException("SillyTavern payload not extracted. Run setup first.")
+        }
+
         if (!paths.configFile.exists()) {
-            onProgress("Seeding default config…")
             context.assets.open("default_config.yaml").use { input ->
                 paths.configFile.outputStream().use { out -> input.copyTo(out) }
             }
@@ -92,17 +104,78 @@ class PayloadManager(private val context: Context) {
             logsDir = paths.logsDir,
             nodeTmpDir = paths.nodeTmpDir,
             nativeLibDir = paths.nativeLibDir,
-            payloadUpdated = updated
+            payloadUpdated = false
         )
     }
 
-    private fun extractBundle(assetName: String, expectedSha256: String?, onProgress: (String) -> Unit) {
+    /**
+     * Extracts and validates the bundled payload with throttled progress reporting.
+     */
+    fun extract(onProgress: (ExtractProgress) -> Unit): Layout {
+        val manifest = readManifest()
+        onProgress(ExtractProgress(stage = "Preparing extraction…", totalEstimate = 11000))
+
+        extractBundle(manifest.bundle, manifest.bundleSha256) { files, file ->
+            onProgress(
+                ExtractProgress(
+                    stage = "Unpacking SillyTavern…",
+                    filesProcessed = files,
+                    totalEstimate = 11000,
+                    currentFile = file
+                )
+            )
+        }
+
+        paths.configDir.mkdirs()
+        paths.dataDir.mkdirs()
+        paths.logsDir.mkdirs()
+        paths.nodeTmpDir.mkdirs()
+
+        if (!paths.configFile.exists()) {
+            onProgress(ExtractProgress(stage = "Seeding default config…", filesProcessed = 11000))
+            context.assets.open("default_config.yaml").use { input ->
+                paths.configFile.outputStream().use { out -> input.copyTo(out) }
+            }
+        }
+
+        ensureSymlink(paths.stConfigLink, paths.configFile)
+        ensureSymlink(paths.stDataLink, paths.dataDir)
+
+        prefs.edit().putString(KEY_INSTALLED, manifest.payloadVersion).apply()
+        onProgress(ExtractProgress(stage = "Setup complete", filesProcessed = 11000, isCompleted = true))
+
+        return Layout(
+            launcher = paths.launcher,
+            stDir = paths.stDir,
+            stEntry = paths.stEntry,
+            configFile = paths.configFile,
+            dataDir = paths.dataDir,
+            logsDir = paths.logsDir,
+            nodeTmpDir = paths.nodeTmpDir,
+            nativeLibDir = paths.nativeLibDir,
+            payloadUpdated = true
+        )
+    }
+
+    /** Legacy helper ensuring ST tree is present; wraps extract / getExistingLayout. */
+    fun ensureExtracted(onProgress: (String) -> Unit): Layout {
+        return if (isExtractionNeeded()) {
+            extract { p -> onProgress("${p.stage} ${if (p.filesProcessed > 0) "(${p.filesProcessed} files)" else ""}".trim()) }
+        } else {
+            getExistingLayout()
+        }
+    }
+
+    private fun extractBundle(
+        assetName: String,
+        expectedSha256: String?,
+        onFileProgress: (Int, String) -> Unit
+    ) {
         val tmpNew = File(paths.tmpDir, "st_new")
         if (tmpNew.exists()) tmpNew.deleteRecursively()
         tmpNew.mkdirs()
 
-        // Digest the raw asset bytes so the bundle can be verified against the
-        // SHA-256 recorded in payload_manifest.json.
+        // Digest raw asset bytes to verify SHA-256 recorded in manifest
         val digest = MessageDigest.getInstance("SHA-256")
         context.assets.open(assetName).use { raw ->
             val digestIn = DigestInputStream(raw, digest)
@@ -111,6 +184,7 @@ class PayloadManager(private val context: Context) {
             source.use { input ->
                 TarArchiveInputStream(input).use { tar ->
                     var files = 0
+                    var lastReportTime = System.currentTimeMillis()
                     while (true) {
                         val entry: TarArchiveEntry = tar.nextEntry ?: break
                         val name = entry.name.removePrefix("st/")
@@ -122,9 +196,16 @@ class PayloadManager(private val context: Context) {
                             target.parentFile?.mkdirs()
                             FileOutputStream(target).use { out -> tar.copyTo(out) }
                             if ((entry.mode and 0b001_000_000) != 0) target.setExecutable(true, true)
-                            if (++files % 2000 == 0) onProgress("Unpacking… $files files")
+                            files++
+                            val now = System.currentTimeMillis()
+                            // Throttle progress to at most once per 100 files or every 100ms
+                            if (files % 100 == 0 || now - lastReportTime >= 100) {
+                                lastReportTime = now
+                                onFileProgress(files, name)
+                            }
                         }
                     }
+                    onFileProgress(files, "Unpack complete")
                 }
             }
         }
