@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the bundled SillyTavern payload from a pinned upstream tag.
-# Produces app/src/main/assets/st_bundle.tar + payload_manifest.json.
+# Produces src/main/assets/st_bundle.tar + payload_manifest.json.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,7 +39,7 @@ tar -C "$SRC" -cf - \
   --exclude=./.github --exclude=./.vscode --exclude=./docker --exclude=./colab . \
   | tar -C "$STAGE/st" -xf -
 
-ASSETS="$ROOT/app/src/main/assets"
+ASSETS="$ROOT/src/main/assets"
 mkdir -p "$ASSETS"
 rm -f "$ASSETS/st_bundle.tar" "$ASSETS/st_bundle.tar.gz"
 tar -C "$STAGE" -cf "$ASSETS/st_bundle.tar" st

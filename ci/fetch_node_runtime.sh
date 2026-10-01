@@ -28,7 +28,7 @@ rm -rf "$EXTRACT"
 mkdir -p "$EXTRACT"
 unzip -oq "$ZIP" -d "$EXTRACT"
 
-JNI="$ROOT/app/src/main/jniLibs/arm64-v8a"
+JNI="$ROOT/src/main/jniLibs/arm64-v8a"
 mkdir -p "$JNI"
 cp "$EXTRACT/bin/arm64-v8a/libnode.so" "$JNI/libnode.so"
 cp "$EXTRACT/bin/arm64-v8a/libc++_shared.so" "$JNI/libc++_shared.so"
@@ -37,7 +37,7 @@ echo "${LIB_ARM64_SHA}  ${JNI}/libnode.so" | sha256sum -c -
 echo "${LIBCXX_ARM64_SHA}  ${JNI}/libc++_shared.so" | sha256sum -c -
 
 # Headers for the JNI bridge + provenance for audits.
-INC="$ROOT/app/src/main/cpp/node-include"
+INC="$ROOT/src/main/cpp/node-include"
 rm -rf "$INC"
 mkdir -p "$INC"
 cp -r "$EXTRACT/include/node" "$INC/node"

@@ -9,9 +9,14 @@ bash ci/fetch_node_runtime.sh
 bash ci/build_st_bundle.sh
 
 python3 ci/check_elf_align.py \
-  app/src/main/jniLibs/arm64-v8a/libnode.so \
-  app/src/main/jniLibs/arm64-v8a/libc++_shared.so 2>/dev/null || true
+  src/main/jniLibs/arm64-v8a/libnode.so \
+  src/main/jniLibs/arm64-v8a/libc++_shared.so 2>/dev/null || true
 
 ./gradlew assembleDebug
 
-echo "APK: app/build/outputs/apk/debug/app-debug.apk"
+python3 ci/check_elf_align.py \
+  src/main/jniLibs/arm64-v8a/libnode.so \
+  src/main/jniLibs/arm64-v8a/libc++_shared.so \
+  src/main/jniLibs/arm64-v8a/libstnode.so 2>/dev/null || true
+
+echo "APK: build/outputs/apk/debug/st-mobile-debug.apk"
