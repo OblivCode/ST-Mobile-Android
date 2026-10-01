@@ -18,6 +18,7 @@ third_party/
 
 # Local docs drafts (not tracked)
 /docs/
+/dev-story.md
 
 # Misc
 .DS_Store
