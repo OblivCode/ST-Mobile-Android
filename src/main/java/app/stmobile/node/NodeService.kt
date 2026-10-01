@@ -22,6 +22,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Hosts the SillyTavern Node process as a `specialUse` foreground service so
@@ -57,6 +60,8 @@ class NodeService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         worker.shutdownNow()
+        if (controller.isRunning()) controller.stop()
+        _status.value = NodeStatus(NodeState.STOPPED, "Stopped", NodeController.DEFAULT_PORT)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -65,6 +70,10 @@ class NodeService : Service() {
                 if (intent.hasExtra(EXTRA_PORT)) {
                     val p = intent.getIntExtra(EXTRA_PORT, -1)
                     explicitPort = if (p in 1..65535) p else null
+                }
+                if (controller.isRunning()) {
+                    sendStatus(NodeState.RUNNING, "Running", controller.pid())
+                    return START_NOT_STICKY
                 }
                 if (ensureForeground("Starting…")) {
                     stopRequested = false
@@ -75,7 +84,7 @@ class NodeService : Service() {
             ACTION_STOP -> worker.execute { stopServer(restart = false) }
             ACTION_RESTART -> worker.execute { stopServer(restart = true) }
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     // ---- public surface for the UI ----
@@ -228,10 +237,12 @@ class NodeService : Service() {
     }
 
     private fun sendStatus(state: NodeState, message: String, pid: Long? = null) {
-        status = NodeStatus(state, message, port, pid)
-        for (listener in listeners) listener.onStatus(status)
+        val newStatus = NodeStatus(state, message, port, pid)
+        status = newStatus
+        _status.value = newStatus
+        for (listener in listeners) listener.onStatus(newStatus)
         val manager = getSystemService(NotificationManager::class.java)
-        if (state == NodeState.STOPPED && !status.isActive) {
+        if (state == NodeState.STOPPED && !newStatus.isActive) {
             manager.cancel(NOTIFICATION_ID)
         } else {
             manager.notify(NOTIFICATION_ID, buildNotification("$state: $message"))
@@ -285,12 +296,27 @@ class NodeService : Service() {
         private const val CHANNEL_ID = "st_mobile_node"
         private const val NOTIFICATION_ID = 1001
 
+        private val _status = MutableStateFlow(NodeStatus(NodeState.STOPPED, "Idle", NodeController.DEFAULT_PORT))
+        val status: StateFlow<NodeStatus> = _status.asStateFlow()
+
         fun start(context: Context, port: Int? = null) {
+            if (_status.value.state == NodeState.RUNNING && (port == null || port == _status.value.port)) return
             val intent = Intent(context, NodeService::class.java).setAction(ACTION_START)
             if (port != null && port in 1..65535) {
                 intent.putExtra(EXTRA_PORT, port)
             }
             context.startForegroundService(intent)
+        }
+
+        fun stop(context: Context) {
+            if (_status.value.state == NodeState.STOPPED) return
+            val intent = Intent(context, NodeService::class.java).setAction(ACTION_STOP)
+            context.startService(intent)
+        }
+
+        fun restart(context: Context) {
+            val intent = Intent(context, NodeService::class.java).setAction(ACTION_RESTART)
+            context.startService(intent)
         }
     }
 }

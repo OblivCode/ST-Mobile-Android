@@ -254,6 +254,16 @@ class PayloadManager(private val context: Context) {
         }
     }
 
+    /**
+     * Resets the extracted SillyTavern payload tree and clears the recorded
+     * version stamp, forcing setup extraction on next launch/run.
+     * Preserves user data and configuration outside of stDir.
+     */
+    fun resetPayload(): Boolean {
+        prefs.edit().remove(KEY_INSTALLED).commit()
+        return paths.stDir.deleteRecursively()
+    }
+
     companion object {
         private const val KEY_INSTALLED = "installed_payload_version"
     }
