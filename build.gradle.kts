@@ -100,6 +100,9 @@ android {
 }
 
 dependencies {
+    // YAML two-way sync for SillyTavern config.yaml (Phase B)
+    implementation("org.yaml:snakeyaml:2.2")
+
     // Streaming tar extraction for the bundled SillyTavern payload.
     implementation("org.apache.commons:commons-compress:1.26.2")
 
@@ -111,4 +114,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.core:core-ktx:1.13.1")
+
+    // JVM unit tests
+    testImplementation("junit:junit:4.13.2")
 }

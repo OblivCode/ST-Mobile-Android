@@ -1,4 +1,4 @@
-package app.stmobile
+package app.stmobile.models
 
 /** Runtime lifecycle state, shared between the service and the UI. */
 enum class NodeState { STOPPED, STARTING, RUNNING, STOPPING, ERROR }

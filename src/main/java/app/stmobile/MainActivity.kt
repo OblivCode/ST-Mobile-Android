@@ -20,6 +20,15 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import app.stmobile.models.AppConfig
+import app.stmobile.models.NodeState
+import app.stmobile.models.NodeStatus
+import app.stmobile.models.NodeStatusListener
+import app.stmobile.models.StConfig
+import app.stmobile.node.NodeController
+import app.stmobile.node.NodeService
+import app.stmobile.sillytavern.BackupManager
+import app.stmobile.sillytavern.PayloadManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -190,30 +199,37 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
 
         requestNotificationPermission()
         bindService(Intent(this, NodeService::class.java), connection, Context.BIND_AUTO_CREATE)
-        NodeService.start(this, AppSettings(this).port)
+        NodeService.start(this)
         background { waitForServer() }
 
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 var screen by remember { mutableStateOf(Screen.HOME) }
                 var batteryDialog by remember { mutableStateOf(false) }
-                val appSettings = remember { AppSettings(this@MainActivity) }
+                val appConfig = remember { AppConfig(this@MainActivity) }
+                val paths = remember { AppPaths(this@MainActivity) }
                 val actions = remember {
                     AppActions(
                         restartServer = { restartServer() },
                         stopServer = { service?.stop() },
-                        startServer = { NodeService.start(this@MainActivity, AppSettings(this@MainActivity).port) },
+                        startServer = { NodeService.start(this@MainActivity) },
                         exportBackup = { exportLauncher.launch("st-backup.zip") },
                         importBackup = { importLauncher.launch(arrayOf("*/*")) },
                         resetPayload = { resetPayload() },
                         shareLogs = { shareLogs() },
                         promptBattery = { promptBattery() },
                         saveSettings = { port, auth, user, pass ->
-                            AppSettings(this@MainActivity).apply {
-                                this.port = port
+                            appConfig.apply {
                                 basicAuthEnabled = auth
                                 basicAuthUsername = user
                                 basicAuthPassword = pass
+                            }
+                            runCatching {
+                                val stConfig = StConfig.fromFileOrDefault(paths.configFile) {
+                                    assets.open("default_config.yaml")
+                                }
+                                stConfig.port = port
+                                stConfig.save(paths.configFile)
                             }
                             toast("Saved — restarting server")
                             restartServer()
@@ -222,7 +238,7 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
                 }
 
                 LaunchedEffect(serverReady.value) {
-                    if (serverReady.value && !appSettings.batteryPrompted) batteryDialog = true
+                    if (serverReady.value && !appConfig.batteryPrompted) batteryDialog = true
                 }
 
                 BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
@@ -237,18 +253,18 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
 
                 if (batteryDialog) {
                     AlertDialog(
-                        onDismissRequest = { batteryDialog = false; appSettings.batteryPrompted = true },
+                        onDismissRequest = { batteryDialog = false; appConfig.batteryPrompted = true },
                         title = { Text("Keep the server running") },
                         text = { Text("Allow ST Mobile to ignore battery optimizations so SillyTavern stays responsive in the background.") },
                         confirmButton = {
                             TextButton(onClick = {
                                 batteryDialog = false
-                                appSettings.batteryPrompted = true
+                                appConfig.batteryPrompted = true
                                 actions.promptBattery()
                             }) { Text("Allow") }
                         },
                         dismissButton = {
-                            TextButton(onClick = { batteryDialog = false; appSettings.batteryPrompted = true }) {
+                            TextButton(onClick = { batteryDialog = false; appConfig.batteryPrompted = true }) {
                                 Text("Not now")
                             }
                         },
@@ -269,27 +285,29 @@ class MainActivity : ComponentActivity(), NodeStatusListener {
     private fun waitForServer() {
         repeat(240) {
             if (serverReady.value) return
-            val port = AppSettings(this).port
-            try {
-                val conn = URL("http://127.0.0.1:$port").openConnection() as HttpURLConnection
-                conn.connectTimeout = 500
-                conn.readTimeout = 500
-                val code = conn.responseCode
-                conn.disconnect()
-                if (code in 200..399) {
-                    serverReady.value = true
-                    val url = "http://127.0.0.1:$port"
-                    runOnUiThread {
-                        if (webView.width > 0 && webView.height > 0) {
-                            webView.loadUrl(url)
-                        } else {
-                            pendingUrl = url
+            if (status.value.state == NodeState.RUNNING) {
+                val port = status.value.port
+                try {
+                    val conn = URL("http://127.0.0.1:$port").openConnection() as HttpURLConnection
+                    conn.connectTimeout = 500
+                    conn.readTimeout = 500
+                    val code = conn.responseCode
+                    conn.disconnect()
+                    if (code in 200..399) {
+                        serverReady.value = true
+                        val url = "http://127.0.0.1:$port"
+                        runOnUiThread {
+                            if (webView.width > 0 && webView.height > 0) {
+                                webView.loadUrl(url)
+                            } else {
+                                pendingUrl = url
+                            }
                         }
+                        return
                     }
-                    return
+                } catch (_: Exception) {
+                    // not up yet
                 }
-            } catch (_: Exception) {
-                // not up yet
             }
             sleep(500)
         }
@@ -426,11 +444,19 @@ private fun HomeScreen(webView: WebView, status: NodeStatus, ready: Boolean, onM
 @Composable
 private fun SettingsScreen(status: NodeStatus, actions: AppActions, onBack: () -> Unit) {
     val context = LocalContext.current
-    val settings = remember { AppSettings(context) }
-    var port by remember { mutableStateOf(settings.port.toString()) }
-    var authEnabled by remember { mutableStateOf(settings.basicAuthEnabled) }
-    var authUser by remember { mutableStateOf(settings.basicAuthUsername) }
-    var authPass by remember { mutableStateOf(settings.basicAuthPassword) }
+    val appConfig = remember { AppConfig(context) }
+    val paths = remember { AppPaths(context) }
+    val stConfig = remember {
+        runCatching {
+            StConfig.fromFileOrDefault(paths.configFile) {
+                context.assets.open("default_config.yaml")
+            }
+        }.getOrNull()
+    }
+    var port by remember { mutableStateOf((stConfig?.port ?: NodeController.DEFAULT_PORT).toString()) }
+    var authEnabled by remember { mutableStateOf(appConfig.basicAuthEnabled) }
+    var authUser by remember { mutableStateOf(appConfig.basicAuthUsername) }
+    var authPass by remember { mutableStateOf(appConfig.basicAuthPassword) }
     val manifest = remember { runCatching { PayloadManager(context).readManifest() }.getOrNull() }
 
     Chrome("Settings", onBack) {

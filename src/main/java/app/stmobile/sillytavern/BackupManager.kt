@@ -1,16 +1,16 @@
-package app.stmobile
+package app.stmobile.sillytavern
 
 import android.content.Context
 import android.net.Uri
+import app.stmobile.AppPaths
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import java.io.File
 
 /**
- * Export/import of user state (PLAN.md §6.1 "Data"). Archives hold `data/` and
- * `config.yaml`; the replaceable `st/` tree is never included. Stop the server
- * before importing.
+ * Export/import of user state. Archives hold `data/` and `config.yaml`;
+ * the replaceable `st/` tree is never included. Stop the server before importing.
  */
 class BackupManager(private val context: Context) {
 

@@ -1,4 +1,4 @@
-package app.stmobile
+package app.stmobile.node
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,13 +9,21 @@ import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import app.stmobile.AppPaths
+import app.stmobile.MainActivity
+import app.stmobile.models.AppConfig
+import app.stmobile.models.NodeConfig
+import app.stmobile.models.NodeState
+import app.stmobile.models.NodeStatus
+import app.stmobile.models.NodeStatusListener
+import app.stmobile.models.StConfig
+import app.stmobile.sillytavern.PayloadManager
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 /**
  * Hosts the SillyTavern Node process as a `specialUse` foreground service so
- * the local server survives the app being backgrounded (PLAN.md §6).
+ * the local server survives the app being backgrounded.
  */
 class NodeService : Service() {
 
@@ -32,6 +40,8 @@ class NodeService : Service() {
     private var status = NodeStatus(NodeState.STOPPED, "Idle", NodeController.DEFAULT_PORT)
     @Volatile
     private var stopRequested = false
+    @Volatile
+    private var explicitPort: Int? = null
     @Volatile
     private var port = NodeController.DEFAULT_PORT
 
@@ -50,7 +60,10 @@ class NodeService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                port = intent.getIntExtra(EXTRA_PORT, port).takeIf { it in 1..65535 } ?: NodeController.DEFAULT_PORT
+                if (intent.hasExtra(EXTRA_PORT)) {
+                    val p = intent.getIntExtra(EXTRA_PORT, -1)
+                    explicitPort = if (p in 1..65535) p else null
+                }
                 if (ensureForeground("Starting…")) {
                     stopRequested = false
                     sendStatus(NodeState.STARTING, "Starting SillyTavern…")
@@ -88,6 +101,7 @@ class NodeService : Service() {
 
     private fun runServer() {
         if (controller.isRunning()) return
+        val paths = AppPaths(applicationContext)
         try {
             val layout = PayloadManager(applicationContext).ensureExtracted { message ->
                 sendStatus(NodeState.STARTING, message)
@@ -96,12 +110,24 @@ class NodeService : Service() {
                 finish()
                 return
             }
-            sendStatus(NodeState.STARTING, "Launching server on port $port…")
-            val process = controller.start(layout, port)
+
+            val appConfig = AppConfig(applicationContext)
+            val nodeConfig = NodeConfig.load(applicationContext)
+            val stConfig = StConfig.fromFileOrDefault(paths.configFile) {
+                applicationContext.assets.open("default_config.yaml")
+            }
+
+            explicitPort?.let {
+                stConfig.port = it
+            }
+
+            sendStatus(NodeState.STARTING, "Launching server on port ${stConfig.port}…")
+            val launchResult = controller.start(layout, stConfig, nodeConfig, appConfig)
+            this.port = launchResult.effectivePort
             sendStatus(NodeState.RUNNING, "Running", controller.pid())
 
             val exit = try {
-                process.waitFor()
+                launchResult.process.waitFor()
             } catch (_: Exception) {
                 null
             }
@@ -113,6 +139,8 @@ class NodeService : Service() {
             } else {
                 sendStatus(NodeState.ERROR, "Server exited with code ${exit ?: "?"}")
             }
+        } catch (e: PortInUseException) {
+            sendStatus(NodeState.ERROR, e.message ?: "Port in use")
         } catch (t: Throwable) {
             sendStatus(NodeState.ERROR, t.message ?: "Start failed")
         } finally {
@@ -133,7 +161,6 @@ class NodeService : Service() {
         if (restart) {
             stopRequested = false
             sendStatus(NodeState.STARTING, "Restarting…")
-            // ensure foreground stays up
             startForeground(NOTIFICATION_ID, buildNotification("Restarting…"))
             runServer()
         } else {
@@ -205,10 +232,11 @@ class NodeService : Service() {
         private const val CHANNEL_ID = "st_mobile_node"
         private const val NOTIFICATION_ID = 1001
 
-        fun start(context: Context, port: Int = NodeController.DEFAULT_PORT) {
-            val intent = Intent(context, NodeService::class.java)
-                .setAction(ACTION_START)
-                .putExtra(EXTRA_PORT, port)
+        fun start(context: Context, port: Int? = null) {
+            val intent = Intent(context, NodeService::class.java).setAction(ACTION_START)
+            if (port != null && port in 1..65535) {
+                intent.putExtra(EXTRA_PORT, port)
+            }
             context.startForegroundService(intent)
         }
     }

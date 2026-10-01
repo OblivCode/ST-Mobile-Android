@@ -1,6 +1,7 @@
-package app.stmobile
+package app.stmobile.sillytavern
 
 import android.content.Context
+import app.stmobile.AppPaths
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.json.JSONObject
@@ -14,7 +15,7 @@ import java.util.zip.GZIPInputStream
 
 /**
  * Owns the bundled SillyTavern payload: first-run extraction, payload
- * versioning, config seeding, and the config/data symlinks (PLAN.md §5).
+ * versioning, config seeding, and the config/data symlinks.
  */
 class PayloadManager(private val context: Context) {
 
