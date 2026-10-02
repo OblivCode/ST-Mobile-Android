@@ -164,7 +164,7 @@ private fun AppSettingsTab(
                 bgTimeout = filtered
                 filtered.toIntOrNull()?.let { appConfig.backgroundTimeoutMinutes = it }
             },
-            label = { Text("Background idle timeout (minutes)") },
+            label = { Text("Background idle timeout (minutes, 0 to disable)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
         )

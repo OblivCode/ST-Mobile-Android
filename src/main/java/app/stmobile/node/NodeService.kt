@@ -7,10 +7,13 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import app.stmobile.AppPaths
 import app.stmobile.MainActivity
+import app.stmobile.StApplication
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
 import app.stmobile.models.NodeState
@@ -40,7 +43,10 @@ class NodeService : Service() {
     private val listeners = CopyOnWriteArraySet<NodeStatusListener>()
     private val worker = Executors.newSingleThreadExecutor { r -> Thread(r, "node-service") }
     private val controller by lazy { NodeController(applicationContext) }
+    private val timeoutManager by lazy { BackgroundTimeoutManager { handleBackgroundTimeout() } }
 
+    // @Volatile guarantees immediate cross-thread visibility between the main thread
+    // (UI/lifecycle commands) and the background worker/supervisor threads.
     @Volatile
     private var status = NodeStatus(NodeState.STOPPED, "Idle", NodeController.DEFAULT_PORT)
     @Volatile
@@ -54,22 +60,32 @@ class NodeService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createChannel()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        if (instance === this) instance = null
+        timeoutManager.shutdown()
         worker.shutdownNow()
         if (controller.isRunning()) controller.stop()
-        _status.value = NodeStatus(NodeState.STOPPED, "Stopped", NodeController.DEFAULT_PORT)
+        // Preserve fatal error messages (e.g. port conflict, crash exit) so onDestroy()
+        // does not overwrite them with a generic "Stopped", allowing the user to inspect the error on the Dashboard.
+        if (_status.value.state != NodeState.ERROR) {
+            _status.value = NodeStatus(NodeState.STOPPED, _status.value.message.ifBlank { "Stopped" }, port)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
-                if (intent.hasExtra(EXTRA_PORT)) {
+                // Clear explicitPort when not provided to avoid leaking custom ports across normal starts
+                explicitPort = if (intent.hasExtra(EXTRA_PORT)) {
                     val p = intent.getIntExtra(EXTRA_PORT, -1)
-                    explicitPort = if (p in 1..65535) p else null
+                    if (p in 1..65535) p else null
+                } else {
+                    null
                 }
                 if (controller.isRunning()) {
                     sendStatus(NodeState.RUNNING, "Running", controller.pid())
@@ -81,9 +97,15 @@ class NodeService : Service() {
                     worker.execute { runServer() }
                 }
             }
-            ACTION_STOP -> worker.execute { stopServer(restart = false) }
+            ACTION_STOP -> {
+                AppConfig(applicationContext).wasRunningBeforeKill = false
+                worker.execute { stopServer(restart = false) }
+            }
             ACTION_RESTART -> worker.execute { stopServer(restart = true) }
         }
+        // START_NOT_STICKY: Prevents Android from silently reviving Node.js in the background
+        // while the phone is locked. On-Demand Resume in MainActivity will restart the server
+        // when the user actually opens the app.
         return START_NOT_STICKY
     }
 
@@ -130,12 +152,20 @@ class NodeService : Service() {
                 stConfig.port = it
             }
 
-            sendStatus(NodeState.STARTING, "Launching server on port ${stConfig.port}…")
+            val targetPort = explicitPort ?: stConfig.port
+            this.port = targetPort
+            sendStatus(NodeState.STARTING, "Launching server on port $targetPort…")
             val launchResult = controller.start(layout, stConfig, nodeConfig, appConfig)
             this.port = launchResult.effectivePort
 
-            // Internal HTTP readiness probe: wait for the server to accept connections
-            sendStatus(NodeState.STARTING, "Waiting for server to accept connections…")
+            val isFallback = launchResult.effectivePort != targetPort
+            val probeMsg = if (isFallback) {
+                "Port $targetPort occupied (fell back to ${launchResult.effectivePort}). Waiting for server…"
+            } else {
+                "Waiting for server to accept connections…"
+            }
+            sendStatus(NodeState.STARTING, probeMsg)
+
             var serverReady = false
             val probeUrl = URL("http://127.0.0.1:${launchResult.effectivePort}")
             val maxProbes = 120 // 120 * 250ms = 30 seconds
@@ -181,7 +211,14 @@ class NodeService : Service() {
                 return
             }
 
-            sendStatus(NodeState.RUNNING, "Running", controller.pid())
+            AppConfig(applicationContext).wasRunningBeforeKill = true
+            val runningMsg = if (isFallback) "Running (port ${launchResult.effectivePort})" else "Running"
+            sendStatus(NodeState.RUNNING, runningMsg, controller.pid())
+
+            val isForeground = StApplication.instance?.isAppInForeground ?: false
+            if (!isForeground) {
+                scheduleBackgroundTimeout()
+            }
 
             // Supervise process exit on a dedicated thread so the worker executor
             // remains free to handle incoming stop() and restart() commands.
@@ -213,7 +250,8 @@ class NodeService : Service() {
         }
     }
 
-    private fun stopServer(restart: Boolean) {
+    private fun stopServer(restart: Boolean, reason: String = "Stopped") {
+        timeoutManager.cancel()
         val running = controller.isRunning()
         if (running) {
             sendStatus(NodeState.STOPPING, "Stopping…")
@@ -223,10 +261,11 @@ class NodeService : Service() {
         if (restart) {
             stopRequested = false
             sendStatus(NodeState.STARTING, "Restarting…")
-            startForeground(NOTIFICATION_ID, buildNotification("Restarting…"))
+            ensureForeground("Restarting…")
             runServer()
         } else {
-            sendStatus(NodeState.STOPPED, "Stopped")
+            AppConfig(applicationContext).wasRunningBeforeKill = false
+            sendStatus(NodeState.STOPPED, reason)
             finish()
         }
     }
@@ -250,12 +289,38 @@ class NodeService : Service() {
     }
 
     private fun ensureForeground(message: String): Boolean = try {
-        startForeground(NOTIFICATION_ID, buildNotification(message))
+        // Android 14+ (API 34) strictly requires FOREGROUND_SERVICE_TYPE_SPECIAL_USE for specialUse services.
+        // On Android 8–13, passing this constant throws a NoSuchFieldError, so use the standard 2-argument API.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                buildNotification(message),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, buildNotification(message))
+        }
         true
     } catch (t: Throwable) {
         sendStatus(NodeState.ERROR, t.message ?: "Foreground not allowed")
         stopSelf()
         false
+    }
+
+    private fun handleBackgroundTimeout() {
+        val isForeground = StApplication.instance?.isAppInForeground ?: false
+        if (!isForeground && (controller.isRunning() || status.isActive)) {
+            AppConfig(applicationContext).wasRunningBeforeKill = false
+            sendStatus(NodeState.STOPPING, "Stopping (background timeout)…")
+            worker.execute {
+                stopServer(restart = false, reason = "Stopped (background timeout)")
+            }
+        }
+    }
+
+    private fun scheduleBackgroundTimeout() {
+        val appConfig = AppConfig(applicationContext)
+        timeoutManager.schedule(appConfig.backgroundTimeoutMinutes)
     }
 
     private fun buildNotification(text: String): Notification {
@@ -295,6 +360,22 @@ class NodeService : Service() {
         const val EXTRA_PORT = "app.stmobile.extra.PORT"
         private const val CHANNEL_ID = "st_mobile_node"
         private const val NOTIFICATION_ID = 1001
+
+        // Publishes the active running service instance across all threads immediately
+        @Volatile
+        private var instance: NodeService? = null
+
+        fun onAppForegrounded() {
+            instance?.timeoutManager?.cancel()
+        }
+
+        fun onAppBackgrounded(context: Context) {
+            instance?.let { service ->
+                if (service.controller.isRunning() || service.status.isActive) {
+                    service.scheduleBackgroundTimeout()
+                }
+            }
+        }
 
         private val _status = MutableStateFlow(NodeStatus(NodeState.STOPPED, "Idle", NodeController.DEFAULT_PORT))
         val status: StateFlow<NodeStatus> = _status.asStateFlow()

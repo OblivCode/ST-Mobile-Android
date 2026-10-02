@@ -1,0 +1,93 @@
+package app.stmobile.node
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+
+class BackgroundTimeoutManagerTest {
+
+    @Test
+    fun testTimeoutTriggered() {
+        val latch = CountDownLatch(1)
+        val manager = BackgroundTimeoutManager {
+            latch.countDown()
+        }
+
+        try {
+            manager.schedule(50, TimeUnit.MILLISECONDS)
+            assertTrue("Timeout task should be marked scheduled", manager.isScheduled)
+
+            val fired = latch.await(500, TimeUnit.MILLISECONDS)
+            assertTrue("Timeout callback must be invoked upon expiration", fired)
+            assertFalse("Timeout task should be cleared after firing", manager.isScheduled)
+        } finally {
+            manager.shutdown()
+        }
+    }
+
+    @Test
+    fun testTimeoutCancelled() {
+        val latch = CountDownLatch(1)
+        val manager = BackgroundTimeoutManager {
+            latch.countDown()
+        }
+
+        try {
+            manager.schedule(100, TimeUnit.MILLISECONDS)
+            assertTrue(manager.isScheduled)
+
+            Thread.sleep(15)
+            manager.cancel()
+            assertFalse(manager.isScheduled)
+
+            val fired = latch.await(200, TimeUnit.MILLISECONDS)
+            assertFalse("Timeout callback must not be invoked after cancel", fired)
+        } finally {
+            manager.shutdown()
+        }
+    }
+
+    @Test
+    fun testZeroOrNegativeTimeoutDisabled() {
+        var called = false
+        val manager = BackgroundTimeoutManager {
+            called = true
+        }
+
+        try {
+            manager.schedule(0, TimeUnit.MILLISECONDS)
+            assertFalse("Zero timeout should not be scheduled", manager.isScheduled)
+
+            manager.schedule(-5, TimeUnit.MINUTES)
+            assertFalse("Negative timeout should not be scheduled", manager.isScheduled)
+
+            Thread.sleep(50)
+            assertFalse("Callback should never be invoked when timeout <= 0", called)
+        } finally {
+            manager.shutdown()
+        }
+    }
+
+    @Test
+    fun testRescheduleOverridesPrevious() {
+        val counter = AtomicInteger(0)
+        val manager = BackgroundTimeoutManager {
+            counter.incrementAndGet()
+        }
+
+        try {
+            manager.schedule(200, TimeUnit.MILLISECONDS)
+            // Immediately reschedule with shorter delay
+            manager.schedule(40, TimeUnit.MILLISECONDS)
+
+            Thread.sleep(150)
+            assertEquals("Only the rescheduled task should execute", 1, counter.get())
+        } finally {
+            manager.shutdown()
+        }
+    }
+}

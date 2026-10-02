@@ -48,6 +48,10 @@ class AppConfig(context: Context) {
         get() = prefs.getString(KEY_AUTH_PASS, DEFAULT_AUTH_PASS) ?: DEFAULT_AUTH_PASS
         set(value) = prefs.edit().putString(KEY_AUTH_PASS, value).apply()
 
+    var wasRunningBeforeKill: Boolean
+        get() = prefs.getBoolean(KEY_WAS_RUNNING_BEFORE_KILL, false)
+        set(value) = prefs.edit().putBoolean(KEY_WAS_RUNNING_BEFORE_KILL, value).apply()
+
     private fun migrateLegacySettings(context: Context) {
         val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
         if (legacy.all.isEmpty()) return
@@ -96,5 +100,6 @@ class AppConfig(context: Context) {
         private const val KEY_AUTH_ENABLED = "basic_auth_enabled"
         private const val KEY_AUTH_USER = "basic_auth_user"
         private const val KEY_AUTH_PASS = "basic_auth_pass"
+        private const val KEY_WAS_RUNNING_BEFORE_KILL = "was_running_before_kill"
     }
 }

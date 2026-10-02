@@ -7,13 +7,7 @@ import app.stmobile.models.NodeConfig
 import app.stmobile.models.StConfig
 import app.stmobile.sillytavern.PayloadManager
 import java.io.File
-import java.io.IOException
-import java.net.InetAddress
-import java.net.ServerSocket
 import java.util.concurrent.TimeUnit
-
-class PortInUseException(val port: Int) :
-    Exception("Port $port is in use and autoPortFallback is disabled")
 
 /**
  * Launches and supervises the SillyTavern Node process.
@@ -62,7 +56,7 @@ class NodeController(private val context: Context) {
         rotateIfNeeded(stderr)
 
         val targetPort = stConfig.port
-        val effectivePort = resolvePort(targetPort, appConfig.autoPortFallback)
+        val effectivePort = PortResolver.resolvePort(targetPort, appConfig.autoPortFallback)
         currentPort = effectivePort
 
         val cmd = mutableListOf<String>()
@@ -139,24 +133,8 @@ class NodeController(private val context: Context) {
         }
     }
 
-    private fun resolvePort(targetPort: Int, autoFallback: Boolean): Int {
-        if (isPortAvailable(targetPort)) return targetPort
-        if (!autoFallback) throw PortInUseException(targetPort)
-        return allocateEphemeralPort()
-    }
-
-    private fun isPortAvailable(port: Int): Boolean = try {
-        ServerSocket(port, 1, InetAddress.getByName("127.0.0.1")).use { true }
-    } catch (_: IOException) {
-        false
-    }
-
-    private fun allocateEphemeralPort(): Int {
-        return ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { it.localPort }
-    }
-
     companion object {
-        const val DEFAULT_PORT = 8000
+        const val DEFAULT_PORT = PortResolver.DEFAULT_PORT
         private const val MAX_LOG_BYTES = 10L * 1024 * 1024
 
         /** Keeps logs bounded: rotate to "<name>.1" once over the cap. */

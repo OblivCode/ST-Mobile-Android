@@ -63,7 +63,8 @@ class MainActivity : ComponentActivity() {
 
         Utils.requestNotificationPermission(this)
 
-        if (!needsExtraction && appConfig.autoStartOnAppOpen) {
+        // Auto-resumes the server on-demand if auto-start is enabled OR if the OS killed the app process while running
+        if (!needsExtraction && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
             NodeService.start(this)
         }
 
