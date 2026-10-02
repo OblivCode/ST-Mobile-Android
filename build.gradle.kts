@@ -106,6 +106,9 @@ dependencies {
     // Streaming tar extraction for the bundled SillyTavern payload.
     implementation("org.apache.commons:commons-compress:1.26.2")
 
+    // Standard and AES-256 ZIP archive management (Phase F)
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
+
     // Phase 4 UI shell (D7: Kotlin + Jetpack Compose).
     implementation(platform("androidx.compose:compose-bom:2024.09.03"))
     implementation("androidx.activity:activity-compose:1.9.2")
@@ -118,4 +121,5 @@ dependencies {
 
     // JVM unit tests
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

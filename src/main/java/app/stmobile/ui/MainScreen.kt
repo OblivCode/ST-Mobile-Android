@@ -68,6 +68,8 @@ fun MainScreen(
                 ActiveScreen.SETTINGS -> SettingsScreen(
                     onPromptBattery = onPromptBattery,
                     onResetPayload = onResetPayload,
+                    onExportBackup = onExportBackup,
+                    onImportBackup = onImportBackup,
                 )
                 ActiveScreen.WEBVIEW -> {
                     // StWebView is active and revealed underneath

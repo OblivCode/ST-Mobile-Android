@@ -17,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -47,6 +48,8 @@ import kotlin.math.roundToInt
 fun SettingsScreen(
     onPromptBattery: () -> Unit,
     onResetPayload: () -> Unit,
+    onExportBackup: () -> Unit = {},
+    onImportBackup: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -87,7 +90,7 @@ fun SettingsScreen(
 
         when (selectedTab) {
             0 -> AppSettingsTab(appConfig = appConfig, onPromptBattery = onPromptBattery, onResetPayload = onResetPayload)
-            1 -> SillyTavernSettingsTab()
+            1 -> SillyTavernSettingsTab(onExportBackup = onExportBackup, onImportBackup = onImportBackup)
             2 -> NodeEngineSettingsTab(context = context)
         }
     }
@@ -211,9 +214,44 @@ private fun AppSettingsTab(
 }
 
 @Composable
-private fun SillyTavernSettingsTab() {
-    // Blank for now per design requirements
-    Box(modifier = Modifier.fillMaxSize())
+private fun SillyTavernSettingsTab(
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "Data & Backups",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD8DEE6),
+        )
+
+        Text(
+            text = "Export your characters, chats, and configurations to an archive (with optional AES-256 password encryption), or restore an existing backup.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF8A94A3),
+        )
+
+        Button(
+            onClick = onExportBackup,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Export Backup")
+        }
+
+        OutlinedButton(
+            onClick = onImportBackup,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Restore Backup")
+        }
+    }
 }
 
 @Composable
