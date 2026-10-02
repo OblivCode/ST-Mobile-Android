@@ -30,7 +30,7 @@ class BackupManager(
     private val configFile: File,
     private val tmpDir: File,
     private val stVersionProvider: () -> String? = { null },
-    private val appVersion: String = "0.1.0",
+    private val appVersion: String = "1",
     private val contentResolver: ContentResolver? = null,
 ) {
 
@@ -548,9 +548,13 @@ class BackupManager(
             runCatching { PayloadManager(context).readManifest().stVersion }.getOrNull()
         }
 
+        internal fun resolveVersion(versionName: String?, versionCode: Long): String =
+            versionName?.takeIf { it.isNotBlank() } ?: versionCode.toString()
+
         private fun resolveAppVersion(context: Context): String = runCatching {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.1.0"
-        }.getOrDefault("0.1.0")
+            val pkg = context.packageManager.getPackageInfo(context.packageName, 0)
+            val code = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pkg)
+            resolveVersion(pkg.versionName, code)
+        }.getOrDefault("1")
     }
 }

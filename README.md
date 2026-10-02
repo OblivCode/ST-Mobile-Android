@@ -7,11 +7,15 @@ SillyTavern normally runs on a computer under Node. ST Mobile embeds that runtim
 ## Built on
 
 - **SillyTavern** (AGPL-3.0), bundled unmodified.
-- **nodejs-mobile** (MIT), the project that makes Node embeddable on mobile. The runtime here is a community fork's build of it, Node 24.
-- **Node.js** (MIT), the runtime itself.
+- **Node.js Mobile Runtime** (MIT), embedding Node.js 24 on Android.
+- **AndroidX & Jetpack Compose** (Apache-2.0), modern native UI and lifecycle coordinator.
+
+For comprehensive component attributions and third-party licenses, see [THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## License
 
-AGPL-3.0, because SillyTavern is bundled here and SillyTavern is AGPL-3.0. That is why this source is public. See [LICENSE](LICENSE).
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE) because SillyTavern is bundled herein and governed by the AGPL-3.0. In compliance with Sections 6 and 13 of the AGPL-3.0, corresponding source code is made publicly available.
 
-Not affiliated with or endorsed by SillyTavern.
+## Disclaimer
+
+ST Mobile is an independent open-source project and is not affiliated with, endorsed by, sponsored by, or officially associated with the SillyTavern project or its maintainers. SillyTavern is a registered or common-law trademark of its respective authors.

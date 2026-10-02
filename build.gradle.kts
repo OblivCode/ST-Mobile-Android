@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application") version "8.13.0"
     id("org.jetbrains.kotlin.android") version "2.0.21"
@@ -9,16 +11,39 @@ android {
     compileSdk = 35
     ndkVersion = "25.2.9519653"
 
-    fun envOrProp(name: String): String? =
-        (findProperty(name) as String?)?.takeIf { it.isNotBlank() }
-            ?: System.getenv(name)?.takeIf { it.isNotBlank() }
+    val keystorePropsFile = rootProject.file("keystore.properties")
+    val keystoreProps = Properties().apply {
+        if (keystorePropsFile.isFile && keystorePropsFile.canRead()) {
+            keystorePropsFile.inputStream().use { stream -> load(stream) }
+        }
+    }
 
-    val releaseStoreFile = envOrProp("RELEASE_STORE_FILE")
-    val releaseStorePassword = envOrProp("RELEASE_STORE_PASSWORD")
-    val releaseKeyAlias = envOrProp("RELEASE_KEY_ALIAS")
-    val releaseKeyPassword = envOrProp("RELEASE_KEY_PASSWORD") ?: releaseStorePassword
-    val signingAvailable = !releaseStoreFile.isNullOrBlank() &&
-        !releaseStorePassword.isNullOrBlank() && !releaseKeyAlias.isNullOrBlank()
+    fun envOrProp(vararg names: String): String? {
+        for (name in names) {
+            val prop = (findProperty(name) as String?)?.takeIf { it.isNotBlank() }
+            if (prop != null) return prop
+            val env = System.getenv(name)?.takeIf { it.isNotBlank() }
+            if (env != null) return env
+            val fileProp = keystoreProps.getProperty(name)?.takeIf { it.isNotBlank() }
+            if (fileProp != null) return fileProp
+        }
+        return null
+    }
+
+    val releaseStorePath = envOrProp("RELEASE_STORE_FILE", "storeFile")
+    val releaseStorePassword = envOrProp("RELEASE_STORE_PASSWORD", "storePassword")
+    val releaseKeyAlias = envOrProp("RELEASE_KEY_ALIAS", "keyAlias")
+    val releaseKeyPassword = envOrProp("RELEASE_KEY_PASSWORD", "keyPassword") ?: releaseStorePassword
+
+    val releaseStoreFile = releaseStorePath?.let { path ->
+        val candidate = file(path)
+        if (candidate.isAbsolute) candidate else rootProject.file(path)
+    }
+
+    val signingAvailable = releaseStoreFile != null &&
+        releaseStoreFile.isFile &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank()
 
     defaultConfig {
         applicationId = "app.stmobile"
@@ -26,9 +51,9 @@ android {
         targetSdk = 35
         versionCode = envOrProp("VERSION_CODE")?.toIntOrNull()
             ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1)
-        versionName = (envOrProp("VERSION_NAME")
-            ?: System.getenv("GITHUB_REF_NAME")?.removePrefix("v")
-            ?: "0.1.0")
+        // Versioning Stance (Phase G): Omit versionName for now and rely strictly
+        // on versionCode until an official public release milestone is reached.
+        envOrProp("VERSION_NAME")?.let { versionName = it }
 
         ndk {
             // The FongMi runtime bundle is arm64-v8a (+ armeabi-v7a); v1 ships arm64.
@@ -46,7 +71,7 @@ android {
     signingConfigs {
         create("release") {
             if (signingAvailable) {
-                storeFile = file(releaseStoreFile!!)
+                storeFile = releaseStoreFile
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword

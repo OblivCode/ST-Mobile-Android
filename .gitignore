@@ -6,6 +6,11 @@ local.properties
 *.iml
 .idea/
 
+# Keystore & Signing secrets (never commit private keys or credentials)
+*.jks
+*.keystore
+keystore.properties
+
 # Generated payload + runtime (produced by ci/ scripts; never commit)
 src/main/assets/st_bundle.tar
 src/main/assets/st_bundle.tar.gz

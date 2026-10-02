@@ -331,4 +331,50 @@ class BackupManagerTest {
         assertTrue(info.isValid)
         assertEquals(0, info.fileCount)
     }
+
+    @Test
+    fun testExportAndInspectionWithVersionCodeOnly() {
+        val (manager, paths) = createTestManager(appVersion = "1")
+        val (dataDir, configFile, tmpDir) = paths
+
+        configFile.writeText("port: 8000\n")
+        File(dataDir, "prompt.txt").writeText("system prompt")
+
+        val zip = File(tmpDir, "version_code_backup.zip")
+        val result = manager.exportToFile(zip)
+        assertTrue(result.isSuccess)
+        val manifest = result.getOrThrow()
+        assertEquals("1", manifest.appVersion)
+
+        val info = manager.inspectFile(zip)
+        assertTrue(info.isValid)
+        assertNotNull(info.manifest)
+        assertEquals("1", info.manifest?.appVersion)
+    }
+
+    @Test
+    fun testResolveVersionLogic() {
+        // Explicit non-blank versionName takes precedence
+        assertEquals("1.2.0", BackupManager.resolveVersion("1.2.0", 42L))
+
+        // null versionName falls back to versionCode string
+        assertEquals("42", BackupManager.resolveVersion(null, 42L))
+
+        // empty or blank versionName falls back to versionCode string
+        assertEquals("42", BackupManager.resolveVersion("", 42L))
+        assertEquals("42", BackupManager.resolveVersion("   ", 42L))
+    }
+
+    @Test
+    fun testDefaultConstructorAppVersionIsOne() {
+        val manager = BackupManager(
+            dataDir = tempFolder.newFolder("default_data"),
+            configFile = File(tempFolder.newFolder("default_config"), "config.yaml"),
+            tmpDir = tempFolder.newFolder("default_tmp"),
+        )
+        val exportZip = File(tempFolder.root, "default_export.zip")
+        val result = manager.exportToFile(exportZip)
+        assertTrue(result.isSuccess)
+        assertEquals("1", result.getOrThrow().appVersion)
+    }
 }
