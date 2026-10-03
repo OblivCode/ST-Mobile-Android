@@ -8,7 +8,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import app.stmobile.AppPaths
@@ -18,12 +17,10 @@ import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
-import app.stmobile.models.NodeStatusListener
 import app.stmobile.models.StConfig
 import app.stmobile.sillytavern.PayloadManager
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,12 +32,6 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class NodeService : Service() {
 
-    inner class LocalBinder : Binder() {
-        fun getService(): NodeService = this@NodeService
-    }
-
-    private val binder = LocalBinder()
-    private val listeners = CopyOnWriteArraySet<NodeStatusListener>()
     private val worker = Executors.newSingleThreadExecutor { r -> Thread(r, "node-service") }
     private val controller by lazy { NodeController(applicationContext) }
     private val timeoutManager by lazy { BackgroundTimeoutManager { handleBackgroundTimeout() } }
@@ -56,7 +47,7 @@ class NodeService : Service() {
     @Volatile
     private var port = NodeController.DEFAULT_PORT
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -107,27 +98,6 @@ class NodeService : Service() {
         // while the phone is locked. On-Demand Resume in MainActivity will restart the server
         // when the user actually opens the app.
         return START_NOT_STICKY
-    }
-
-    // ---- public surface for the UI ----
-
-    fun registerListener(listener: NodeStatusListener) {
-        listeners.add(listener)
-        listener.onStatus(status)
-    }
-
-    fun unregisterListener(listener: NodeStatusListener) {
-        listeners.remove(listener)
-    }
-
-    fun currentStatus(): NodeStatus = status
-
-    fun restart() {
-        worker.execute { stopServer(restart = true) }
-    }
-
-    fun stop() {
-        worker.execute { stopServer(restart = false) }
     }
 
     // ---- internals ----
@@ -279,7 +249,6 @@ class NodeService : Service() {
         val newStatus = NodeStatus(state, message, port, pid)
         status = newStatus
         _status.value = newStatus
-        for (listener in listeners) listener.onStatus(newStatus)
         val manager = getSystemService(NotificationManager::class.java)
         if (state == NodeState.STOPPED && !newStatus.isActive) {
             manager.cancel(NOTIFICATION_ID)

@@ -157,15 +157,6 @@ class PayloadManager(private val context: Context) {
         )
     }
 
-    /** Legacy helper ensuring ST tree is present; wraps extract / getExistingLayout. */
-    fun ensureExtracted(onProgress: (String) -> Unit): Layout {
-        return if (isExtractionNeeded()) {
-            extract { p -> onProgress("${p.stage} ${if (p.filesProcessed > 0) "(${p.filesProcessed} files)" else ""}".trim()) }
-        } else {
-            getExistingLayout()
-        }
-    }
-
     private fun extractBundle(
         assetName: String,
         expectedSha256: String?,

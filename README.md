@@ -14,8 +14,8 @@ SillyTavern normally runs on a computer under Node.js. ST Mobile embeds that run
 - **Background Battery Protection:** Daemon idle countdown timer (`BackgroundTimeoutManager`) that gracefully shuts down the server when backgrounded past the configured time limit.
 - **AES-256 Data Backup & Migration:** Built-in archive engine (`BackupManager`) supporting standard ZIP and WinZip-compatible AES-256 encryption (`zip4j`). Includes pre-flight archive inspection, Clean Restore with atomic unified rollback, and Additive Merge.
 - **Non-Destructive YAML Sync:** Two-way SnakeYAML synchronization for SillyTavern's `config.yaml` that preserves custom plugin settings and comments.
-- **First-Run Onboarding:** Guided setup screen with options for a fresh setup or direct onboarding from an existing SillyTavern desktop/mobile backup.
-- **Two-Tier Test Architecture:** Sub-second host JVM test suite (< 500ms) with in-memory `FakeSharedPreferences` paired with planned on-device native validation.
+- **First-Run Setup & Restore:** Clean setup screen offering a fresh payload unpack or direct restore from an existing SillyTavern backup.
+- **Fast Host JVM Unit Tests:** Pure JVM test suite (isolated without Robolectric) with planned emulation/device validation suite.
 
 ---
 
@@ -25,7 +25,7 @@ SillyTavern normally runs on a computer under Node.js. ST Mobile embeds that run
 
 Ensure the following tools are installed and configured on your host machine (Linux/macOS):
 
-- **Java Development Kit (JDK):** OpenJDK 17 (`JAVA_HOME` pointing to JDK 17).
+- **JDK:** 17.
 - **Android SDK:** Platform tools and Android SDK Platform 35 (`compileSdk = 35`, `targetSdk = 35`, `minSdk = 26`).
 - **Android NDK:** Version `25.2.9519653`.
 - **CMake:** Version `3.22.1` (available via Android SDK Manager).
@@ -37,12 +37,11 @@ Ensure the following tools are installed and configured on your host machine (Li
 The project includes an automated build script that fetches the pinned runtime, builds the compressed payload bundle, validates ELF memory alignment, and compiles the debug APK:
 
 ```bash
-cd app-native
 ./ci/build_all.sh
 ```
 
 The resulting debug APK will be located at:
-`app-native/build/outputs/apk/debug/app-debug.apk`
+`build/outputs/apk/debug/st-mobile-debug.apk`
 
 ---
 
@@ -79,43 +78,13 @@ If you prefer to execute the pipeline stages individually:
 
 ## Testing
 
-ST Mobile employs a decoupled testing architecture:
-
-### Tier 1: Host JVM Unit Tests
-Runs the entire unit test suite on the host JVM without requiring an emulator, Robolectric, or connected hardware:
+ST Mobile runs its complete unit test suite on the host JVM without requiring an emulator, Robolectric, or connected hardware:
 
 ```bash
 ./gradlew testDebugUnitTest
 ```
 
-All 40+ unit tests execute in under 500ms, covering configuration serialization, numerical clamping, port boundary edge cases, timeout concurrency, and archive operations.
-
-### Tier 2: Device & Emulation Suite
-Runs instrumented tests against connected physical hardware (e.g. Snapdragon 8 Elite via ADB/Termux) or standard Android Virtual Devices (AVD):
-
-```bash
-./gradlew connectedCheck
-```
-
----
-
-## Release Signing
-
-Release builds can be signed locally using `keystore.properties` or via CI environment variables:
-
-1. Copy `keystore.properties.example` to `keystore.properties` (this file is ignored by git):
-   ```properties
-   storeFile=/path/to/release.keystore
-   storePassword=your_store_password
-   keyAlias=your_key_alias
-   keyPassword=your_key_password
-   ```
-2. Build the signed release APK:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-
-If signing credentials are not configured, `./gradlew assembleRelease` safely completes by generating an unsigned release APK.
+All unit tests execute cleanly across configuration serialization, numerical clamping, port boundary edge cases, timeout concurrency, and archive operations.
 
 ---
 

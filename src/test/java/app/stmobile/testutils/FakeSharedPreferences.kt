@@ -11,7 +11,6 @@ class FakeSharedPreferences(
 ) : SharedPreferences {
 
     private val values = java.util.concurrent.ConcurrentHashMap<String, Any>(initialValues)
-    private val listeners = mutableSetOf<SharedPreferences.OnSharedPreferenceChangeListener>()
 
     override fun getAll(): MutableMap<String, *> = HashMap(values)
 
@@ -45,11 +44,11 @@ class FakeSharedPreferences(
     override fun edit(): SharedPreferences.Editor = EditorImpl()
 
     override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
-        if (listener != null) listeners.add(listener)
+        // No-op: in-memory test double does not dispatch change notifications
     }
 
     override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
-        if (listener != null) listeners.remove(listener)
+        // No-op
     }
 
     private inner class EditorImpl : SharedPreferences.Editor {

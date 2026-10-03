@@ -11,7 +11,3 @@ data class NodeStatus(
 ) {
     val isActive: Boolean get() = state == NodeState.STARTING || state == NodeState.RUNNING
 }
-
-fun interface NodeStatusListener {
-    fun onStatus(status: NodeStatus)
-}
