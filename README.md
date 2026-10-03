@@ -90,7 +90,7 @@ All unit tests execute cleanly across configuration serialization, numerical cla
 
 ## Architectural Reference
 
-For complete architectural details, domain package boundaries, lifecycle state machines, and launch contracts, refer to the [Architecture Guide](docs/architecture.md).
+For complete architectural details, domain package boundaries, lifecycle state machines, and launch contracts, refer to the [Architecture Guide](architecture.md).
 
 ---
 
