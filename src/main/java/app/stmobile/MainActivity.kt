@@ -88,7 +88,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val appConfig = AppConfig(this)
         val needsExtraction = PayloadManager(this).isExtractionNeeded()
-        activeScreen.value = if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD
+        val savedScreen = savedInstanceState?.getString(KEY_ACTIVE_SCREEN)?.let { name ->
+            runCatching { ActiveScreen.valueOf(name) }.getOrNull()
+        }
+        activeScreen.value = savedScreen ?: if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD
 
         Utils.requestNotificationPermission(this)
 
@@ -231,5 +234,19 @@ class MainActivity : ComponentActivity() {
                 Utils.toast(this@MainActivity, "SillyTavern payload reset")
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_ACTIVE_SCREEN, activeScreen.value.name)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    companion object {
+        private const val KEY_ACTIVE_SCREEN = "active_screen"
     }
 }
