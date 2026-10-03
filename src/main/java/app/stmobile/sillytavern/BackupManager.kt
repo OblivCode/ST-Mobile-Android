@@ -391,12 +391,14 @@ class BackupManager(
      * Employs unified rollback covering both targets if extraction or swap fails midway.
      */
     private fun performCleanRestore(zipFile: ZipFile, onProgress: (String) -> Unit): Int {
-        val stagingRoot = File(tmpDir, "restore_staging_${System.currentTimeMillis()}")
+        val targetParent = dataDir.parentFile ?: tmpDir
+        targetParent.mkdirs()
+        val stagingRoot = File(targetParent, ".restore_staging_${System.currentTimeMillis()}")
         val stagingData = File(stagingRoot, "data")
         val stagingConfig = File(stagingRoot, "config.yaml")
 
-        val rollbackData = File(tmpDir, "data_rollback_${System.currentTimeMillis()}")
-        val rollbackConfig = File(tmpDir, "config_rollback_${System.currentTimeMillis()}.yaml")
+        val rollbackData = File(targetParent, ".data_rollback_${System.currentTimeMillis()}")
+        val rollbackConfig = File(targetParent, ".config_rollback_${System.currentTimeMillis()}.yaml")
 
         var restoredFilesCount = 0
 

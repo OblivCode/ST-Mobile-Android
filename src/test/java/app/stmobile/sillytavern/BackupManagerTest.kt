@@ -377,4 +377,32 @@ class BackupManagerTest {
         assertTrue(result.isSuccess)
         assertEquals("1", result.getOrThrow().appVersion)
     }
+
+    @Test
+    fun testAtomicDirectoryPromotionWhenParentMissing() {
+        val rootDir = tempFolder.newFolder("fresh_root")
+        val nestedParent = File(rootDir, "deep/nested/app/files")
+        val dataDir = File(nestedParent, "data")
+        val configFile = File(nestedParent, "config/config.yaml")
+        val tmpDir = File(rootDir, "temp")
+
+        // Neither nestedParent nor dataDir exists
+        assertFalse(nestedParent.exists())
+        assertFalse(dataDir.exists())
+
+        val manager = BackupManager(dataDir, configFile, tmpDir)
+
+        // Create a backup archive to restore
+        val srcData = tempFolder.newFolder("src_promo")
+        File(srcData, "character.png").writeText("sample_png_bytes")
+        val backupZip = File(tmpDir, "promo.zip").apply { parentFile?.mkdirs() }
+        BackupManager(srcData, File(tempFolder.root, "none.yaml"), tmpDir).exportToFile(backupZip).getOrThrow()
+
+        // Clean restore should create parent directories and promote dataDir atomically
+        val count = manager.importFromFile(backupZip, strategy = BackupManager.Strategy.CLEAN).getOrThrow()
+        assertEquals(1, count)
+        assertTrue("Nested parent directory must be created", nestedParent.exists())
+        assertTrue("Promoted dataDir must exist", dataDir.exists())
+        assertEquals("sample_png_bytes", File(dataDir, "character.png").readText())
+    }
 }

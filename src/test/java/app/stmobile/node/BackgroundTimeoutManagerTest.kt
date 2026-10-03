@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -89,5 +90,49 @@ class BackgroundTimeoutManagerTest {
         } finally {
             manager.shutdown()
         }
+    }
+
+    @Test
+    fun testZeroDaemonLeaksAndImmediateQueuePurge() {
+        val customExecutor = ScheduledThreadPoolExecutor(1) { r ->
+            Thread(r, "test-timeout-worker").apply { isDaemon = true }
+        }.apply {
+            removeOnCancelPolicy = true
+        }
+
+        val latch = CountDownLatch(1)
+        val manager = BackgroundTimeoutManager(scheduler = customExecutor) {
+            latch.countDown()
+        }
+
+        try {
+            // Schedule long running timeout
+            manager.schedule(60, TimeUnit.MINUTES)
+            assertTrue(manager.isScheduled)
+            assertEquals("Executor queue must hold exactly 1 pending task", 1, customExecutor.queue.size)
+
+            // Cancel must purge immediately from queue due to removeOnCancelPolicy
+            manager.cancel()
+            assertFalse(manager.isScheduled)
+            assertEquals("Executor queue must be immediately purged of cancelled task", 0, customExecutor.queue.size)
+        } finally {
+            manager.shutdown()
+            assertTrue("Executor must be shut down", customExecutor.isShutdown)
+        }
+    }
+
+    @Test
+    fun testShutdownTerminatesSchedulerCleanly() {
+        val customExecutor = ScheduledThreadPoolExecutor(1)
+        val manager = BackgroundTimeoutManager(scheduler = customExecutor) {}
+
+        manager.schedule(10, TimeUnit.MINUTES)
+        assertTrue(manager.isScheduled)
+
+        manager.shutdown()
+        assertFalse(manager.isScheduled)
+        assertTrue("Scheduler must be marked shutdown", customExecutor.isShutdown)
+        val terminated = customExecutor.awaitTermination(200, TimeUnit.MILLISECONDS)
+        assertTrue("Scheduler threads must terminate cleanly", terminated)
     }
 }

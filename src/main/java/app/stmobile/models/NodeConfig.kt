@@ -1,6 +1,7 @@
 package app.stmobile.models
 
 import android.content.Context
+import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.TimeZone
@@ -44,8 +45,7 @@ data class NodeConfig(
             return runCatching { TimeZone.getDefault().id.takeIf { it.isNotBlank() } }.getOrNull() ?: "UTC"
         }
 
-        fun load(context: Context): NodeConfig {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        fun load(prefs: SharedPreferences): NodeConfig {
             val maxOldSpace = prefs.getInt(KEY_MAX_OLD_SPACE, DEFAULT_MAX_OLD_SPACE_SIZE_MB)
             val tz = prefs.getString(KEY_TIMEZONE, null) ?: defaultTimezone()
             val env = prefs.getString(KEY_NODE_ENV, DEFAULT_NODE_ENV) ?: DEFAULT_NODE_ENV
@@ -79,8 +79,7 @@ data class NodeConfig(
             )
         }
 
-        fun save(context: Context, config: NodeConfig) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        fun save(prefs: SharedPreferences, config: NodeConfig) {
             val optionsJson = JSONArray(config.extraNodeOptions).toString()
             val envJson = JSONObject(config.extraEnv).toString()
 
@@ -92,5 +91,11 @@ data class NodeConfig(
                 .putString(KEY_EXTRA_ENV, envJson)
                 .apply()
         }
+
+        fun load(context: Context): NodeConfig =
+            load(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE))
+
+        fun save(context: Context, config: NodeConfig) =
+            save(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE), config)
     }
 }

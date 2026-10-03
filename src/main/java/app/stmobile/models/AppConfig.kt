@@ -7,12 +7,11 @@ import android.content.SharedPreferences
  * Android shell-level settings persisted in SharedPreferences.
  * Distinct from SillyTavern's own server config (which lives in config.yaml).
  */
-class AppConfig(context: Context) {
+class AppConfig(private val prefs: SharedPreferences) {
 
-    private val prefs: SharedPreferences =
+    constructor(context: Context) : this(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
-    init {
+    ) {
         migrateLegacySettings(context)
     }
 
@@ -25,8 +24,8 @@ class AppConfig(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_AUTO_LAUNCH_WEBVIEW, value).apply()
 
     var backgroundTimeoutMinutes: Int
-        get() = prefs.getInt(KEY_BG_TIMEOUT, DEFAULT_BG_TIMEOUT)
-        set(value) = prefs.edit().putInt(KEY_BG_TIMEOUT, value).apply()
+        get() = prefs.getInt(KEY_BG_TIMEOUT, DEFAULT_BG_TIMEOUT).coerceAtLeast(0)
+        set(value) = prefs.edit().putInt(KEY_BG_TIMEOUT, value.coerceAtLeast(0)).apply()
 
     var autoPortFallback: Boolean
         get() = prefs.getBoolean(KEY_AUTO_PORT_FALLBACK, DEFAULT_AUTO_PORT_FALLBACK)
