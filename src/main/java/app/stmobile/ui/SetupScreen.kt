@@ -1,6 +1,8 @@
 package app.stmobile.ui
 
 import android.net.Uri
+import app.stmobile.AppPaths
+import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -73,7 +75,7 @@ fun SetupScreen(
     val logBuffer = remember { mutableStateListOf<String>() }
 
     // Dialog state for encrypted restore during onboarding
-    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingStagedFile by remember { mutableStateOf<File?>(null) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
@@ -88,13 +90,15 @@ fun SetupScreen(
             try {
                 val manager = PayloadManager(context)
                 manager.extract { p ->
-                    statusText = p.stage
-                    if (p.totalEstimate > 0 && p.filesProcessed > 0) {
-                        progress = (p.filesProcessed.toFloat() / p.totalEstimate.toFloat()).coerceIn(0f, 1f)
-                    }
-                    p.currentFile?.let { file ->
-                        if (logBuffer.size > 50) logBuffer.removeAt(0)
-                        logBuffer.add(file)
+                    scope.launch(Dispatchers.Main) {
+                        statusText = p.stage
+                        if (p.totalEstimate > 0 && p.filesProcessed > 0) {
+                            progress = (p.filesProcessed.toFloat() / p.totalEstimate.toFloat()).coerceIn(0f, 1f)
+                        }
+                        p.currentFile?.let { file ->
+                            if (logBuffer.size > 50) logBuffer.removeAt(0)
+                            logBuffer.add(file)
+                        }
                     }
                 }
                 withContext(Dispatchers.Main) {
@@ -109,7 +113,7 @@ fun SetupScreen(
         }
     }
 
-    fun startRestore(uri: Uri, password: String? = null) {
+    fun startRestore(archiveFile: File, password: String? = null) {
         errorMessage = null
         passwordError = null
         setupStep = SetupStep.RESTORING
@@ -119,30 +123,42 @@ fun SetupScreen(
         logBuffer.add("Importing user backup…")
 
         scope.launch(Dispatchers.IO) {
-            val backupManager = BackupManager(context)
-            backupManager.import(
-                uri = uri,
-                password = password,
-                strategy = BackupManager.Strategy.CLEAN,
-                onProgress = { msg -> statusText = msg },
-            ).onSuccess { count ->
-                withContext(Dispatchers.Main) {
-                    showPasswordDialog = false
-                    pendingRestoreUri = null
-                    logBuffer.add("Restored $count files. Unpacking runtime…")
-                    // After user data is restored, extract the core runtime
-                    runExtraction()
-                }
-            }.onFailure { err ->
-                withContext(Dispatchers.Main) {
-                    if (err.message?.contains("password", ignoreCase = true) == true) {
-                        passwordError = err.message
-                        showPasswordDialog = true
-                        setupStep = SetupStep.WELCOME
-                    } else {
-                        errorMessage = "Restore failed: ${err.message}"
-                        setupStep = SetupStep.ERROR
+            var preserveStagedForRetry = false
+            try {
+                val backupManager = BackupManager(context)
+                backupManager.importFromFile(
+                    archiveFile = archiveFile,
+                    password = password,
+                    strategy = BackupManager.Strategy.CLEAN,
+                    onProgress = { msg ->
+                        scope.launch(Dispatchers.Main) {
+                            statusText = msg
+                        }
+                    },
+                ).onSuccess { count ->
+                    withContext(Dispatchers.Main) {
+                        showPasswordDialog = false
+                        pendingStagedFile = null
+                        logBuffer.add("Restored $count files. Unpacking runtime…")
+                        // After user data is restored, extract the core runtime
+                        runExtraction()
                     }
+                }.onFailure { err ->
+                    withContext(Dispatchers.Main) {
+                        if (err.message?.contains("password", ignoreCase = true) == true) {
+                            passwordError = err.message
+                            preserveStagedForRetry = true
+                            showPasswordDialog = true
+                            setupStep = SetupStep.WELCOME
+                        } else {
+                            errorMessage = "Restore failed: ${err.message}"
+                            setupStep = SetupStep.ERROR
+                        }
+                    }
+                }
+            } finally {
+                if (!preserveStagedForRetry && archiveFile.exists()) {
+                    archiveFile.delete()
                 }
             }
         }
@@ -150,18 +166,33 @@ fun SetupScreen(
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            pendingRestoreUri = uri
             scope.launch(Dispatchers.IO) {
-                val backupManager = BackupManager(context)
-                val inspection = backupManager.inspect(uri)
-                withContext(Dispatchers.Main) {
-                    if (!inspection.isValid) {
-                        errorMessage = inspection.errorMessage ?: "Selected file is not a valid ZIP archive"
+                val tmpDir = AppPaths(context).tmpDir.apply { mkdirs() }
+                val staged = File(tmpDir, "staged_import_${System.currentTimeMillis()}.zip")
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        staged.outputStream().use { out -> input.copyTo(out) }
+                    } ?: throw IllegalStateException("Cannot open chosen backup file")
+
+                    val backupManager = BackupManager(context)
+                    val inspection = backupManager.inspectFile(staged)
+                    withContext(Dispatchers.Main) {
+                        if (!inspection.isValid) {
+                            staged.delete()
+                            errorMessage = inspection.errorMessage ?: "Selected file is not a valid ZIP archive"
+                            setupStep = SetupStep.ERROR
+                        } else if (inspection.isEncrypted && !inspection.isUnlocked) {
+                            pendingStagedFile = staged
+                            showPasswordDialog = true
+                        } else {
+                            startRestore(staged)
+                        }
+                    }
+                } catch (t: Throwable) {
+                    staged.delete()
+                    withContext(Dispatchers.Main) {
+                        errorMessage = t.message ?: "Failed to read backup file"
                         setupStep = SetupStep.ERROR
-                    } else if (inspection.isEncrypted && !inspection.isUnlocked) {
-                        showPasswordDialog = true
-                    } else {
-                        startRestore(uri)
                     }
                 }
             }
@@ -261,14 +292,14 @@ fun SetupScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Restore from Backup",
+                                    text = "Restore Existing SillyTavern Backup",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFD8DEE6),
                                 )
                             }
                             Text(
-                                text = "Migrate your existing characters, chats, and config from a backup ZIP archive.",
+                                text = "Select a standard SillyTavern ZIP archive (full PC install, data folder, or web backup). Only user data and settings are extracted automatically.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF8A94A3),
                             )
@@ -277,7 +308,7 @@ fun SetupScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
                             ) {
-                                Text("Restore from Backup")
+                                Text("Restore Existing SillyTavern Backup")
                             }
                         }
                     }
@@ -377,16 +408,17 @@ fun SetupScreen(
         }
     }
 
-    if (showPasswordDialog && pendingRestoreUri != null) {
+    if (showPasswordDialog && pendingStagedFile != null) {
         ImportPasswordDialog(
             errorMessage = passwordError,
             onDismiss = {
                 showPasswordDialog = false
-                pendingRestoreUri = null
+                pendingStagedFile?.delete()
+                pendingStagedFile = null
             },
             onConfirm = { enteredPassword ->
-                pendingRestoreUri?.let { uri ->
-                    startRestore(uri, enteredPassword)
+                pendingStagedFile?.let { file ->
+                    startRestore(file, enteredPassword)
                 }
             },
         )

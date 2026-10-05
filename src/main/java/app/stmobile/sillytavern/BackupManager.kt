@@ -7,6 +7,7 @@ import app.stmobile.AppPaths
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
 import net.lingala.zip4j.io.outputstream.ZipOutputStream
+import net.lingala.zip4j.model.FileHeader
 import net.lingala.zip4j.model.ZipParameters
 import net.lingala.zip4j.model.enums.AesKeyStrength
 import net.lingala.zip4j.model.enums.CompressionMethod
@@ -85,6 +86,28 @@ class BackupManager(
         MERGE,
     }
 
+    /** Precedence tiers for resolving entry collisions between modern and legacy formats. */
+    enum class EntryTier {
+        LEGACY_FALLBACK, // Tier 1: root secrets.json, public/settings.json, characters/...
+        CANONICAL_DATA,  // Tier 2: data/secrets.json, data/..., config.yaml
+        MODERN_DEFAULT,  // Tier 3: default-user/..., data/default-user/...
+    }
+
+    /** Destination classification for an entry in an incoming archive. */
+    sealed class RestoreTarget {
+        data class Data(val relativePath: String, val tier: EntryTier) : RestoreTarget()
+        data class Config(val tier: EntryTier) : RestoreTarget()
+        data object Ignore : RestoreTarget()
+    }
+
+    /** Pre-calculated selective extraction plan derived from in-memory ZIP headers. */
+    data class ResolvedRestorePlan(
+        val dataEntries: Map<String, FileHeader>,
+        val configEntry: FileHeader?,
+        val totalFileCount: Int,
+        val uncompressedSize: Long,
+    )
+
     /** Pre-flight archive inspection details. */
     data class ArchiveInfo(
         val isValid: Boolean,
@@ -100,7 +123,8 @@ class BackupManager(
 
     /**
      * Inspects a local archive file, determining validity, encryption status, and metadata.
-     * If encrypted and password is null/incorrect, reports isUnlocked = false.
+     * Uses in-memory central directory headers to selectively detect user data and config
+     * without decompressing any files.
      */
     fun inspectFile(archiveFile: File, password: String? = null): ArchiveInfo {
         if (!archiveFile.exists() || archiveFile.length() == 0L) {
@@ -119,87 +143,89 @@ class BackupManager(
 
         return try {
             val charPassword = password?.takeIf { it.isNotBlank() }?.toCharArray()
-            val zipFile = ZipFile(archiveFile, charPassword)
+            ZipFile(archiveFile, charPassword).use { zipFile ->
+                if (!zipFile.isValidZipFile) {
+                    return ArchiveInfo(
+                        isValid = false,
+                        isEncrypted = false,
+                        isUnlocked = false,
+                        manifest = null,
+                        fileCount = 0,
+                        uncompressedSize = 0L,
+                        hasData = false,
+                        hasConfig = false,
+                        errorMessage = "Not a valid ZIP archive",
+                    )
+                }
 
-            if (!zipFile.isValidZipFile) {
-                return ArchiveInfo(
-                    isValid = false,
-                    isEncrypted = false,
-                    isUnlocked = false,
-                    manifest = null,
-                    fileCount = 0,
-                    uncompressedSize = 0L,
-                    hasData = false,
-                    hasConfig = false,
-                    errorMessage = "Not a valid ZIP archive",
-                )
-            }
+                val plan = resolveRestorePlan(zipFile)
+                val isEncrypted = zipFile.isEncrypted
+                if (isEncrypted && charPassword == null) {
+                    // Encrypted archive awaiting password
+                    return ArchiveInfo(
+                        isValid = true,
+                        isEncrypted = true,
+                        isUnlocked = false,
+                        manifest = null,
+                        fileCount = plan.totalFileCount,
+                        uncompressedSize = plan.uncompressedSize,
+                        hasData = plan.dataEntries.isNotEmpty(),
+                        hasConfig = plan.configEntry != null,
+                    )
+                }
 
-            val isEncrypted = zipFile.isEncrypted
-            if (isEncrypted && charPassword == null) {
-                // Encrypted archive awaiting password
-                return ArchiveInfo(
-                    isValid = true,
-                    isEncrypted = true,
-                    isUnlocked = false,
-                    manifest = null,
-                    fileCount = zipFile.fileHeaders.count { !it.isDirectory && it.fileName.replace('\\', '/').trimStart('/') != MANIFEST_NAME },
-                    uncompressedSize = zipFile.fileHeaders.sumOf { it.uncompressedSize },
-                    hasData = zipFile.fileHeaders.any { isDataEntry(it.fileName) },
-                    hasConfig = zipFile.fileHeaders.any { isConfigEntry(it.fileName) },
-                )
-            }
-
-            // Test reading encrypted header if password was provided
-            if (isEncrypted) {
-                val firstEncrypted = zipFile.fileHeaders.firstOrNull { it.isEncrypted && !it.isDirectory }
-                if (firstEncrypted != null) {
-                    try {
-                        zipFile.getInputStream(firstEncrypted).use { stream ->
-                            val buf = ByteArray(16)
-                            stream.read(buf)
+                // Test reading encrypted header if password was provided
+                if (isEncrypted) {
+                    val firstEncrypted = zipFile.fileHeaders.firstOrNull { it.isEncrypted && !it.isDirectory }
+                    if (firstEncrypted != null) {
+                        try {
+                            zipFile.getInputStream(firstEncrypted).use { stream ->
+                                val buf = ByteArray(16)
+                                stream.read(buf)
+                            }
+                        } catch (ze: ZipException) {
+                            return ArchiveInfo(
+                                isValid = true,
+                                isEncrypted = true,
+                                isUnlocked = false,
+                                manifest = null,
+                                fileCount = plan.totalFileCount,
+                                uncompressedSize = plan.uncompressedSize,
+                                hasData = false,
+                                hasConfig = false,
+                                errorMessage = "Incorrect password",
+                            )
                         }
-                    } catch (ze: ZipException) {
-                        return ArchiveInfo(
-                            isValid = true,
-                            isEncrypted = true,
-                            isUnlocked = false,
-                            manifest = null,
-                            fileCount = zipFile.fileHeaders.count { !it.isDirectory && it.fileName.replace('\\', '/').trimStart('/') != MANIFEST_NAME },
-                            uncompressedSize = zipFile.fileHeaders.sumOf { it.uncompressedSize },
-                            hasData = false,
-                            hasConfig = false,
-                            errorMessage = "Incorrect password",
-                        )
                     }
                 }
-            }
 
-            // Extract embedded manifest if present
-            var manifest: Manifest? = null
-            val manifestHeader = zipFile.fileHeaders.firstOrNull {
-                it.fileName.replace('\\', '/').trimStart('/') == MANIFEST_NAME
-            }
-            if (manifestHeader != null) {
-                try {
-                    val text = zipFile.getInputStream(manifestHeader).bufferedReader(Charsets.UTF_8).use { it.readText() }
-                    manifest = Manifest.fromJson(text)
-                } catch (_: Exception) {
-                    // Ignore manifest parse errors for legacy compatibility
+                // Extract embedded manifest if present
+                var manifest: Manifest? = null
+                val manifestHeader = zipFile.fileHeaders.firstOrNull {
+                    it.fileName.replace('\\', '/').trimStart('/') == MANIFEST_NAME
                 }
-            }
+                if (manifestHeader != null) {
+                    try {
+                        val text = zipFile.getInputStream(manifestHeader).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                        manifest = Manifest.fromJson(text)
+                    } catch (_: Exception) {
+                        // Ignore manifest parse errors for legacy compatibility
+                    }
+                }
 
-            val headers = zipFile.fileHeaders
-            ArchiveInfo(
-                isValid = true,
-                isEncrypted = isEncrypted,
-                isUnlocked = true,
-                manifest = manifest,
-                fileCount = headers.count { !it.isDirectory && it.fileName.replace('\\', '/').trimStart('/') != MANIFEST_NAME },
-                uncompressedSize = headers.sumOf { it.uncompressedSize },
-                hasData = headers.any { isDataEntry(it.fileName) },
-                hasConfig = headers.any { isConfigEntry(it.fileName) },
-            )
+                ArchiveInfo(
+                    isValid = true,
+                    isEncrypted = isEncrypted,
+                    isUnlocked = true,
+                    manifest = manifest,
+                    fileCount = plan.totalFileCount,
+                    uncompressedSize = plan.uncompressedSize,
+                    hasData = plan.dataEntries.isNotEmpty(),
+                    hasConfig = plan.configEntry != null,
+                )
+            }
+        } catch (se: SecurityException) {
+            throw se
         } catch (t: Throwable) {
             ArchiveInfo(
                 isValid = false,
@@ -355,11 +381,11 @@ class BackupManager(
         }
 
         val charPassword = password?.takeIf { it.isNotBlank() }?.toCharArray()
-        val zipFile = ZipFile(archiveFile, charPassword)
-
-        when (strategy) {
-            Strategy.CLEAN -> performCleanRestore(zipFile, onProgress)
-            Strategy.MERGE -> performMergeRestore(zipFile, onProgress)
+        ZipFile(archiveFile, charPassword).use { zipFile ->
+            when (strategy) {
+                Strategy.CLEAN -> performCleanRestore(zipFile, onProgress)
+                Strategy.MERGE -> performMergeRestore(zipFile, onProgress)
+            }
         }
     }
 
@@ -404,38 +430,31 @@ class BackupManager(
 
         try {
             stagingRoot.mkdirs()
+            val plan = resolveRestorePlan(zipFile)
             onProgress("Extracting archive to staging…")
 
-            // 1. Extract all target files into temporary staging folder
-            val headers = zipFile.fileHeaders.filter { !it.isDirectory }
-            for (header in headers) {
-                val normalized = header.fileName.replace('\\', '/').trimStart('/')
-                when {
-                    normalized.startsWith("data/") -> {
-                        val rel = normalized.removePrefix("data/").trimStart('/')
-                        if (rel.isNotEmpty()) {
-                            val target = validateSafeChild(stagingData, rel)
-                            target.parentFile?.mkdirs()
-                            zipFile.getInputStream(header).use { input ->
-                                target.outputStream().use { out -> input.copyTo(out) }
-                            }
-                            restoredFilesCount++
-                            if (restoredFilesCount % 100 == 0) {
-                                onProgress("Staging… $restoredFilesCount files")
-                            }
-                        }
-                    }
-                    normalized == "config.yaml" || normalized == "config/config.yaml" -> {
-                        stagingConfig.parentFile?.mkdirs()
-                        zipFile.getInputStream(header).use { input ->
-                            stagingConfig.outputStream().use { out -> input.copyTo(out) }
-                        }
-                        restoredFilesCount++
-                    }
+            // 1. Extract data files into temporary staging folder
+            for ((relPath, header) in plan.dataEntries) {
+                val target = validateSafeChild(stagingData, relPath)
+                target.parentFile?.mkdirs()
+                zipFile.getInputStream(header).use { input ->
+                    target.outputStream().use { out -> input.copyTo(out, bufferSize = 65536) }
+                }
+                restoredFilesCount++
+                if (restoredFilesCount % 100 == 0 || restoredFilesCount == plan.totalFileCount) {
+                    onProgress("Staging… $restoredFilesCount files")
                 }
             }
 
-            // 2. Prepare unified rollback: preserve existing dataDir and configFile
+            // 2. Extract and sanitize config if present
+            if (plan.configEntry != null) {
+                stagingConfig.parentFile?.mkdirs()
+                val rawConfig = zipFile.getInputStream(plan.configEntry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                stagingConfig.writeText(sanitizeConfigYaml(rawConfig), Charsets.UTF_8)
+                restoredFilesCount++
+            }
+
+            // 3. Prepare unified rollback: preserve existing dataDir and configFile
             if (dataDir.exists()) {
                 if (!dataDir.renameTo(rollbackData)) {
                     dataDir.copyRecursively(rollbackData, overwrite = true)
@@ -446,7 +465,7 @@ class BackupManager(
                 configFile.copyTo(rollbackConfig, overwrite = true)
             }
 
-            // 3. Promote staged data into real locations
+            // 4. Promote staged data into real locations
             onProgress("Applying restored data…")
             if (stagingData.exists()) {
                 dataDir.parentFile?.mkdirs()
@@ -463,7 +482,7 @@ class BackupManager(
                 stagingConfig.copyTo(configFile, overwrite = true)
             }
 
-            // 4. Success: cleanup rollback and staging
+            // 5. Success: cleanup rollback and staging
             if (rollbackData.exists()) rollbackData.deleteRecursively()
             if (rollbackConfig.exists()) rollbackConfig.delete()
             stagingRoot.deleteRecursively()
@@ -494,29 +513,25 @@ class BackupManager(
      * Extracts archive entries directly over local files without deleting unmentioned files.
      */
     private fun performMergeRestore(zipFile: ZipFile, onProgress: (String) -> Unit): Int {
+        val plan = resolveRestorePlan(zipFile)
         var count = 0
-        val headers = zipFile.fileHeaders.filter { !it.isDirectory }
-        for (header in headers) {
-            val normalized = header.fileName.replace('\\', '/').trimStart('/')
-            val target: File? = when {
-                normalized.startsWith("data/") -> {
-                    val rel = normalized.removePrefix("data/").trimStart('/')
-                    if (rel.isNotEmpty()) validateSafeChild(dataDir, rel) else null
-                }
-                normalized == "config.yaml" || normalized == "config/config.yaml" -> configFile
-                else -> null
+        for ((relPath, header) in plan.dataEntries) {
+            val target = validateSafeChild(dataDir, relPath)
+            target.parentFile?.mkdirs()
+            zipFile.getInputStream(header).use { input ->
+                target.outputStream().use { out -> input.copyTo(out, bufferSize = 65536) }
             }
+            count++
+            if (count % 100 == 0 || count == plan.totalFileCount) {
+                onProgress("Merging… $count files")
+            }
+        }
 
-            if (target != null) {
-                target.parentFile?.mkdirs()
-                zipFile.getInputStream(header).use { input ->
-                    target.outputStream().use { out -> input.copyTo(out) }
-                }
-                count++
-                if (count % 100 == 0) {
-                    onProgress("Merging… $count files")
-                }
-            }
+        if (plan.configEntry != null) {
+            configFile.parentFile?.mkdirs()
+            val rawConfig = zipFile.getInputStream(plan.configEntry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            configFile.writeText(sanitizeConfigYaml(rawConfig), Charsets.UTF_8)
+            count++
         }
         onProgress("Merge complete ($count files)")
         return count
@@ -525,6 +540,9 @@ class BackupManager(
     /** Hardened Zip Slip path traversal defense enforcing trailing separator bounds. */
     fun validateSafeChild(baseDir: File, entryName: String): File {
         val normalized = entryName.replace('\\', '/')
+        if (normalized.split('/').any { it == ".." }) {
+            throw SecurityException("Zip Slip path traversal blocked: $entryName")
+        }
         val baseCanonical = baseDir.canonicalPath + File.separator
         val target = File(baseDir, normalized).canonicalFile
         if (!target.path.startsWith(baseCanonical) && target.path != baseDir.canonicalPath) {
@@ -533,18 +551,267 @@ class BackupManager(
         return target
     }
 
+    internal fun resolveRestorePlan(zipFile: ZipFile): ResolvedRestorePlan {
+        val headers = zipFile.fileHeaders.filter { !it.isDirectory }
+        val commonPrefix = detectCommonWrapperPrefix(headers)
+        val hasDefaultUser = headers.any { header ->
+            val clean = header.fileName.replace('\\', '/').trimStart('/')
+            val unPrefixed = if (commonPrefix.isNotEmpty() && clean.startsWith(commonPrefix)) {
+                clean.removePrefix(commonPrefix).trimStart('/')
+            } else clean
+            unPrefixed.startsWith("default-user/", ignoreCase = true) ||
+                unPrefixed.startsWith("data/default-user/", ignoreCase = true)
+        }
+
+        val dataCandidates = mutableMapOf<String, Pair<FileHeader, EntryTier>>()
+        var configCandidate: Pair<FileHeader, EntryTier>? = null
+
+        for (header in headers) {
+            val target = normalizeEntry(header.fileName, commonPrefix, hasDefaultUser)
+            when (target) {
+                is RestoreTarget.Data -> {
+                    val existing = dataCandidates[target.relativePath]
+                    if (existing == null || target.tier.ordinal > existing.second.ordinal) {
+                        dataCandidates[target.relativePath] = header to target.tier
+                    }
+                }
+                is RestoreTarget.Config -> {
+                    val existing = configCandidate
+                    if (existing == null || target.tier.ordinal > existing.second.ordinal) {
+                        configCandidate = header to target.tier
+                    }
+                }
+                is RestoreTarget.Ignore -> { /* skip */ }
+            }
+        }
+
+        val finalData = dataCandidates.mapValues { it.value.first }
+        val finalConfig = configCandidate?.first
+        val totalCount = finalData.size + (if (finalConfig != null) 1 else 0)
+        val totalSize = finalData.values.sumOf { it.uncompressedSize } + (finalConfig?.uncompressedSize ?: 0L)
+
+        return ResolvedRestorePlan(
+            dataEntries = finalData,
+            configEntry = finalConfig,
+            totalFileCount = totalCount,
+            uncompressedSize = totalSize,
+        )
+    }
+
+    internal fun detectCommonWrapperPrefix(headers: List<FileHeader>): String {
+        val nonDirHeaders = headers.filter { !it.isDirectory }
+        if (nonDirHeaders.isEmpty()) return ""
+
+        val validPaths = nonDirHeaders.mapNotNull { header ->
+            val clean = header.fileName.replace('\\', '/').trimStart('/')
+            if (isIgnoredMetadataOrJunk(clean)) null else clean
+        }
+        if (validPaths.isEmpty()) return ""
+
+        val firstSlash = validPaths.first().indexOf('/')
+        if (firstSlash <= 0) return ""
+        val candidate = validPaths.first().substring(0, firstSlash)
+
+        val candidateLower = candidate.lowercase()
+        // Never strip known SillyTavern root folders
+        if (candidateLower in PROTECTED_ROOT_FOLDERS || candidateLower in CANONICAL_USER_FOLDERS.keys) {
+            return ""
+        }
+
+        val prefixWithSlash = "$candidate/"
+        val allMatch = validPaths.all { it.startsWith(prefixWithSlash, ignoreCase = false) }
+        return if (allMatch) prefixWithSlash else ""
+    }
+
+    internal fun isIgnoredMetadataOrJunk(path: String): Boolean {
+        val lower = path.lowercase()
+        if (lower == MANIFEST_NAME.lowercase() || lower.endsWith("/${MANIFEST_NAME.lowercase()}")) return true
+        if (lower.startsWith("__macosx/") || lower.contains("/__macosx/")) return true
+        val baseName = lower.substringAfterLast('/')
+        return baseName in JUNK_FILENAMES
+    }
+
+    internal fun normalizeEntry(
+        rawName: String,
+        commonPrefix: String = "",
+        hasDefaultUser: Boolean = false,
+    ): RestoreTarget {
+        val clean = rawName.replace('\\', '/').trimStart('/')
+        if (clean.split('/').any { it == ".." }) {
+            throw SecurityException("Zip Slip path traversal blocked: $rawName")
+        }
+        if (isIgnoredMetadataOrJunk(clean)) {
+            return RestoreTarget.Ignore
+        }
+
+        val normalized = if (commonPrefix.isNotEmpty() && clean.startsWith(commonPrefix)) {
+            clean.removePrefix(commonPrefix).trimStart('/')
+        } else clean
+
+        val firstSegmentLower = normalized.substringBefore('/').lowercase()
+        val normalizedLower = normalized.lowercase()
+
+        // Ignore engine and runtime bloat
+        if (firstSegmentLower in IGNORED_ROOT_DIRECTORIES || normalizedLower in IGNORED_ROOT_FILES) {
+            return RestoreTarget.Ignore
+        }
+
+        // Config file mapping
+        if (normalized.equals("config.yaml", ignoreCase = true)) {
+            return RestoreTarget.Config(EntryTier.CANONICAL_DATA)
+        }
+        if (normalized.equals("config/config.yaml", ignoreCase = true)) {
+            return RestoreTarget.Config(EntryTier.LEGACY_FALLBACK)
+        }
+
+        // Secrets mapping
+        if (normalized.equals("data/default-user/secrets.json", ignoreCase = true) ||
+            normalized.equals("default-user/secrets.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/secrets.json", EntryTier.MODERN_DEFAULT)
+        }
+        if (normalized.equals("data/secrets.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/secrets.json", EntryTier.CANONICAL_DATA)
+        }
+        if (normalized.equals("secrets.json", ignoreCase = true) ||
+            normalized.equals("config/secrets.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/secrets.json", EntryTier.LEGACY_FALLBACK)
+        }
+
+        // Settings mapping
+        if (normalized.equals("data/default-user/settings.json", ignoreCase = true) ||
+            normalized.equals("default-user/settings.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/settings.json", EntryTier.MODERN_DEFAULT)
+        }
+        if (normalized.equals("data/settings.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/settings.json", EntryTier.CANONICAL_DATA)
+        }
+        if (normalized.equals("settings.json", ignoreCase = true) ||
+            normalized.equals("public/settings.json", ignoreCase = true) ||
+            normalized.equals("config/settings.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/settings.json", EntryTier.LEGACY_FALLBACK)
+        }
+
+        // Stats file mapping (if present in public/stats.json)
+        if (normalized.equals("public/stats.json", ignoreCase = true)) {
+            return RestoreTarget.Data("default-user/stats.json", EntryTier.LEGACY_FALLBACK)
+        }
+
+        // Modern default-user entries
+        val defaultUserPrefix = when {
+            normalized.startsWith("data/default-user/", ignoreCase = true) -> "data/default-user/"
+            normalized.startsWith("default-user/", ignoreCase = true) -> "default-user/"
+            else -> null
+        }
+        if (defaultUserPrefix != null) {
+            val subPath = normalized.substring(defaultUserPrefix.length).trimStart('/')
+            if (subPath.isEmpty()) return RestoreTarget.Ignore
+            val folderKey = subPath.substringBefore('/').lowercase()
+            val canonical = CANONICAL_USER_FOLDERS[folderKey]
+            val finalRel = if (canonical != null) {
+                val sub = subPath.substringAfter('/', "")
+                if (sub.isNotEmpty()) "default-user/$canonical/$sub" else "default-user/$canonical"
+            } else {
+                "default-user/$subPath"
+            }
+            return RestoreTarget.Data(finalRel, EntryTier.MODERN_DEFAULT)
+        }
+
+        // Entries starting with data/
+        if (normalized.startsWith("data/", ignoreCase = true)) {
+            val rel = normalized.substring("data/".length).trimStart('/')
+            if (rel.isEmpty()) return RestoreTarget.Ignore
+            val folderKey = rel.substringBefore('/').lowercase()
+            val canonical = CANONICAL_USER_FOLDERS[folderKey]
+            if (canonical != null && !hasDefaultUser) {
+                val sub = rel.substringAfter('/', "")
+                val targetPath = if (sub.isNotEmpty()) "default-user/$canonical/$sub" else "default-user/$canonical"
+                return RestoreTarget.Data(targetPath, EntryTier.CANONICAL_DATA)
+            }
+            return RestoreTarget.Data(rel, EntryTier.CANONICAL_DATA)
+        }
+
+        // Root user folders (e.g. characters/..., chats/..., etc.)
+        val folderKey = normalized.substringBefore('/').lowercase()
+        val canonical = CANONICAL_USER_FOLDERS[folderKey]
+        if (canonical != null) {
+            val sub = normalized.substringAfter('/', "")
+            val targetPath = if (sub.isNotEmpty()) "default-user/$canonical/$sub" else "default-user/$canonical"
+            return RestoreTarget.Data(targetPath, EntryTier.LEGACY_FALLBACK)
+        }
+
+        // Legacy public/ folder entries (e.g. public/characters/...)
+        if (normalized.startsWith("public/", ignoreCase = true)) {
+            val rel = normalized.substring("public/".length).trimStart('/')
+            val publicFolderKey = rel.substringBefore('/').lowercase()
+            val publicCanonical = CANONICAL_USER_FOLDERS[publicFolderKey]
+            if (publicCanonical != null) {
+                val sub = rel.substringAfter('/', "")
+                val targetPath = if (sub.isNotEmpty()) "default-user/$publicCanonical/$sub" else "default-user/$publicCanonical"
+                return RestoreTarget.Data(targetPath, EntryTier.LEGACY_FALLBACK)
+            }
+            return RestoreTarget.Ignore
+        }
+
+        return RestoreTarget.Ignore
+    }
+
+    internal fun sanitizeConfigYaml(content: String): String {
+        var updated = content.replace(Regex("""(?m)^(\s*backend\s*:\s*)["']?simple-git["']?"""), "$1builtin")
+        updated = updated.replace(Regex("""(?m)^(\s*enableServerPlugins\s*:\s*)true\b"""), "$1false")
+        return updated
+    }
+
     private fun isDataEntry(name: String): Boolean {
-        val normalized = name.replace('\\', '/').trimStart('/')
-        return normalized.startsWith("data/")
+        val target = normalizeEntry(name, "", true)
+        return target is RestoreTarget.Data
     }
 
     private fun isConfigEntry(name: String): Boolean {
-        val normalized = name.replace('\\', '/').trimStart('/')
-        return normalized == "config.yaml" || normalized == "config/config.yaml"
+        val target = normalizeEntry(name, "", true)
+        return target is RestoreTarget.Config
     }
 
     companion object {
         const val MANIFEST_NAME = "backup_manifest.json"
+
+        val CANONICAL_USER_FOLDERS = mapOf(
+            "characters" to "characters",
+            "chats" to "chats",
+            "worlds" to "worlds",
+            "groups" to "groups",
+            "group chats" to "group chats",
+            "backgrounds" to "backgrounds",
+            "user avatars" to "User Avatars",
+            "user" to "user",
+            "themes" to "themes",
+            "movingui" to "movingUI",
+            "instruct" to "instruct",
+            "context" to "context",
+            "quickreplies" to "QuickReplies",
+            "assets" to "assets",
+            "thumbnails" to "thumbnails",
+            "vectors" to "vectors",
+            "backups" to "backups",
+            "sysprompt" to "sysprompt",
+            "reasoning" to "reasoning",
+            "novelai settings" to "NovelAI Settings",
+            "koboldai settings" to "KoboldAI Settings",
+            "openai settings" to "OpenAI Settings",
+            "textgen settings" to "TextGen Settings",
+        )
+
+        val PROTECTED_ROOT_FOLDERS = setOf("data", "default-user", "config", "public")
+
+        val IGNORED_ROOT_DIRECTORIES = setOf(
+            "node_modules", "src", "scripts", "docker", ".git", ".github", ".cxx", ".gradle", "build", "dist", "docs"
+        )
+
+        val IGNORED_ROOT_FILES = setOf(
+            "server.js", "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
+            "start.bat", "start.sh", "update.bat", "update.sh", "dockerfile", "license", "readme.md"
+        )
+
+        val JUNK_FILENAMES = setOf(".ds_store", "thumbs.db", "desktop.ini")
 
         private fun resolveStVersion(context: Context): () -> String? = {
             runCatching { PayloadManager(context).readManifest().stVersion }.getOrNull()
