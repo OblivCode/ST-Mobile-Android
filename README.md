@@ -86,7 +86,7 @@ ST Mobile implements a multi-tier testing pipeline combining fast host JVM unit 
   ```bash
   ./gradlew testDebugUnitTest
   ```
-  Runs 90 pure JVM unit tests across 10 classes in ~500ms covering payload unpacking transactions, launch specs, HTTP polling, YAML syncing, backup/restore, and UI routing.
+  Runs 90 pure JVM unit tests across 10 classes covering payload unpacking transactions, launch specs, HTTP polling, YAML syncing, backup/restore, and UI routing.
 
 - **Static Native APK Inspection (Tier 2):**
   ```bash
