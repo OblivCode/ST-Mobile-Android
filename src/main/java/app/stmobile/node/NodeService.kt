@@ -136,42 +136,23 @@ class NodeService : Service() {
             }
             sendStatus(NodeState.STARTING, probeMsg)
 
-            var serverReady = false
-            val probeUrl = URL("http://127.0.0.1:${launchResult.effectivePort}")
-            val maxProbes = 120 // 120 * 250ms = 30 seconds
-            for (i in 0 until maxProbes) {
-                if (stopRequested) break
-                if (!controller.isRunning()) {
-                    break
-                }
-                try {
-                    val conn = probeUrl.openConnection() as HttpURLConnection
-                    conn.connectTimeout = 500
-                    conn.readTimeout = 500
-                    val code = conn.responseCode
-                    conn.disconnect()
-                    if (code in 200..499) {
-                        serverReady = true
-                        break
-                    }
-                } catch (_: Exception) {
-                    // Endpoint not listening yet
-                }
-                try {
-                    Thread.sleep(250)
-                } catch (_: InterruptedException) {
-                    break
-                }
-            }
+            val readiness = ServerReadinessPoller.poll(
+                port = launchResult.effectivePort,
+                maxWaitMs = 30_000,
+                intervalMs = 250,
+                probeTimeoutMs = 500,
+                isProcessAlive = { controller.isRunning() },
+                isStopRequested = { stopRequested },
+            )
 
-            if (stopRequested) {
+            if (readiness == ReadinessStatus.CANCELLED || stopRequested) {
                 controller.stop()
                 finish()
                 return
             }
 
-            if (!serverReady) {
-                if (!controller.isRunning()) {
+            if (readiness != ReadinessStatus.READY) {
+                if (!controller.isRunning() || readiness == ReadinessStatus.PROCESS_EXITED) {
                     sendStatus(NodeState.ERROR, "Server process terminated unexpectedly")
                 } else {
                     sendStatus(NodeState.ERROR, "Server failed to respond within 30 seconds")

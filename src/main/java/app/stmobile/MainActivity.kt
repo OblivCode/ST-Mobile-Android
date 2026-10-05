@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -23,6 +24,7 @@ import app.stmobile.ui.ExportBackupDialog
 import app.stmobile.ui.ImportPasswordDialog
 import app.stmobile.ui.ImportStrategyDialog
 import app.stmobile.ui.MainScreen
+import app.stmobile.ui.NavigationController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -35,7 +37,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 class MainActivity : ComponentActivity() {
 
-    private val activeScreen = mutableStateOf(ActiveScreen.SETUP)
+    private lateinit var navController: NavigationController
 
     // Pending state for export and import across SAF contracts
     private var pendingExportPassword by mutableStateOf<String?>(null)
@@ -85,13 +87,15 @@ class MainActivity : ComponentActivity() {
     private val showImportStrategyDialog = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val appConfig = AppConfig(this)
         val needsExtraction = PayloadManager(this).isExtractionNeeded()
-        val savedScreen = savedInstanceState?.getString(KEY_ACTIVE_SCREEN)?.let { name ->
-            runCatching { ActiveScreen.valueOf(name) }.getOrNull()
+        val defaultScreen = if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD
+        navController = NavigationController.fromBundle(savedInstanceState, defaultScreen)
+        if (needsExtraction) {
+            navController.navigateTo(ActiveScreen.SETUP)
         }
-        activeScreen.value = savedScreen ?: if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD
 
         Utils.requestNotificationPermission(this)
 
@@ -105,30 +109,21 @@ class MainActivity : ComponentActivity() {
                 val nodeStatus by NodeService.status.collectAsState()
 
                 LaunchedEffect(nodeStatus.state) {
-                    if (nodeStatus.state == NodeState.RUNNING &&
-                        appConfig.autoLaunchWebViewOnStart &&
-                        activeScreen.value == ActiveScreen.DASHBOARD
-                    ) {
-                        activeScreen.value = ActiveScreen.WEBVIEW
-                    } else if (nodeStatus.state != NodeState.RUNNING && activeScreen.value == ActiveScreen.WEBVIEW) {
-                        activeScreen.value = ActiveScreen.DASHBOARD
-                    }
+                    navController.onNodeStateChanged(nodeStatus.state, appConfig.autoLaunchWebViewOnStart)
                 }
 
                 MainScreen(
-                    currentScreen = activeScreen.value,
+                    navController = navController,
                     status = nodeStatus,
-                    onSelectScreen = { activeScreen.value = it },
                     onStartServer = { NodeService.start(this@MainActivity) },
                     onStopServer = { NodeService.stop(this@MainActivity) },
-                    onOpenSillyTavern = { activeScreen.value = ActiveScreen.WEBVIEW },
                     onExportBackup = { showExportDialog.value = true },
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
                     onResetPayload = { resetPayload() },
                     onSetupComplete = {
-                        activeScreen.value = ActiveScreen.DASHBOARD
+                        navController.navigateTo(ActiveScreen.DASHBOARD)
                         if (appConfig.autoStartOnAppOpen) NodeService.start(this@MainActivity)
                     },
                 )
@@ -230,7 +225,7 @@ class MainActivity : ComponentActivity() {
             }
             PayloadManager(this@MainActivity).resetPayload()
             withContext(Dispatchers.Main) {
-                activeScreen.value = ActiveScreen.SETUP
+                navController.navigateTo(ActiveScreen.SETUP)
                 Utils.toast(this@MainActivity, "SillyTavern payload reset")
             }
         }
@@ -238,15 +233,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(KEY_ACTIVE_SCREEN, activeScreen.value.name)
+        navController.saveInstanceState(outState)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-    }
-
-    companion object {
-        private const val KEY_ACTIVE_SCREEN = "active_screen"
     }
 }

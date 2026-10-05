@@ -51,6 +51,10 @@ class AppConfig(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_WAS_RUNNING_BEFORE_KILL, false)
         set(value) = prefs.edit().putBoolean(KEY_WAS_RUNNING_BEFORE_KILL, value).apply()
 
+    var webViewMenuQuickToolbar: Boolean
+        get() = prefs.getBoolean(KEY_WEBVIEW_MENU_QUICK_TOOLBAR, DEFAULT_WEBVIEW_MENU_QUICK_TOOLBAR)
+        set(value) = prefs.edit().putBoolean(KEY_WEBVIEW_MENU_QUICK_TOOLBAR, value).apply()
+
     private fun migrateLegacySettings(context: Context) {
         val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
         if (legacy.all.isEmpty()) return
@@ -85,11 +89,12 @@ class AppConfig(private val prefs: SharedPreferences) {
         private const val LEGACY_PREFS_NAME = "app_settings"
 
         const val DEFAULT_AUTO_START = false
-        const val DEFAULT_AUTO_LAUNCH_WEBVIEW = false
+        const val DEFAULT_AUTO_LAUNCH_WEBVIEW = true
         const val DEFAULT_BG_TIMEOUT = 5
         const val DEFAULT_AUTO_PORT_FALLBACK = true
         const val DEFAULT_AUTH_USER = "user"
         const val DEFAULT_AUTH_PASS = "password"
+        const val DEFAULT_WEBVIEW_MENU_QUICK_TOOLBAR = true
 
         private const val KEY_AUTO_START = "auto_start_on_app_open"
         private const val KEY_AUTO_LAUNCH_WEBVIEW = "auto_launch_webview_on_start"
@@ -100,5 +105,6 @@ class AppConfig(private val prefs: SharedPreferences) {
         private const val KEY_AUTH_USER = "basic_auth_user"
         private const val KEY_AUTH_PASS = "basic_auth_pass"
         private const val KEY_WAS_RUNNING_BEFORE_KILL = "was_running_before_kill"
+        private const val KEY_WEBVIEW_MENU_QUICK_TOOLBAR = "webview_menu_quick_toolbar"
     }
 }

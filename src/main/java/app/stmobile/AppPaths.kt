@@ -4,9 +4,16 @@ import android.content.Context
 import java.io.File
 
 /** Single source of truth for every path the app touches (PLAN.md §3.1). */
-class AppPaths(private val context: Context) {
-    val filesDir: File get() = context.filesDir
-    val cacheDir: File get() = context.cacheDir
+class AppPaths(
+    val filesDir: File,
+    val cacheDir: File,
+    val nativeLibDir: String,
+) {
+    constructor(context: Context) : this(
+        filesDir = context.filesDir,
+        cacheDir = context.cacheDir,
+        nativeLibDir = context.applicationInfo.nativeLibraryDir,
+    )
 
     /** Replaceable application tree (extracted from assets). */
     val stDir: File get() = File(filesDir, "st")
@@ -21,7 +28,6 @@ class AppPaths(private val context: Context) {
     val nodeTmpDir: File get() = File(cacheDir, "node_tmp")
 
     /** Executable location: read-only, extracted from the APK, exec-safe (W^X). */
-    val nativeLibDir: String get() = context.applicationInfo.nativeLibraryDir
     val launcher: File get() = File(nativeLibDir, "libstnode.so")
 
     val stEntry: File get() = File(stDir, "server.js")

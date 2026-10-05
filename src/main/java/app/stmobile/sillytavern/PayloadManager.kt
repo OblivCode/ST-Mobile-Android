@@ -1,6 +1,7 @@
 package app.stmobile.sillytavern
 
 import android.content.Context
+import android.content.SharedPreferences
 import app.stmobile.AppPaths
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
@@ -8,7 +9,13 @@ import org.json.JSONObject
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.zip.GZIPInputStream
@@ -17,7 +24,17 @@ import java.util.zip.GZIPInputStream
  * Owns the bundled SillyTavern payload: first-run extraction, payload
  * versioning, config seeding, and the config/data symlinks.
  */
-class PayloadManager(private val context: Context) {
+class PayloadManager(
+    private val paths: AppPaths,
+    private val prefs: SharedPreferences,
+    private val assetOpener: (String) -> InputStream,
+) {
+
+    constructor(context: Context) : this(
+        paths = AppPaths(context),
+        prefs = context.getSharedPreferences("payload", Context.MODE_PRIVATE),
+        assetOpener = { name -> context.assets.open(name) },
+    )
 
     data class Manifest(
         val payloadVersion: String,
@@ -49,11 +66,8 @@ class PayloadManager(private val context: Context) {
         val errorMessage: String? = null
     )
 
-    private val prefs = context.getSharedPreferences("payload", Context.MODE_PRIVATE)
-    private val paths = AppPaths(context)
-
     fun readManifest(): Manifest {
-        val text = context.assets.open("payload_manifest.json")
+        val text = assetOpener("payload_manifest.json")
             .bufferedReader(Charsets.UTF_8).use { it.readText() }
         val json = JSONObject(text)
         return Manifest(
@@ -87,7 +101,7 @@ class PayloadManager(private val context: Context) {
         }
 
         if (!paths.configFile.exists()) {
-            context.assets.open("default_config.yaml").use { input ->
+            assetOpener("default_config.yaml").use { input ->
                 paths.configFile.outputStream().use { out -> input.copyTo(out) }
             }
         }
@@ -133,7 +147,7 @@ class PayloadManager(private val context: Context) {
 
         if (!paths.configFile.exists()) {
             onProgress(ExtractProgress(stage = "Seeding default config…", filesProcessed = 11000))
-            context.assets.open("default_config.yaml").use { input ->
+            assetOpener("default_config.yaml").use { input ->
                 paths.configFile.outputStream().use { out -> input.copyTo(out) }
             }
         }
@@ -163,62 +177,66 @@ class PayloadManager(private val context: Context) {
         onFileProgress: (Int, String) -> Unit
     ) {
         val tmpNew = File(paths.tmpDir, "st_new")
-        if (tmpNew.exists()) tmpNew.deleteRecursively()
+        if (tmpNew.exists()) safeDeleteRecursively(tmpNew)
         tmpNew.mkdirs()
 
-        // Digest raw asset bytes to verify SHA-256 recorded in manifest
-        val digest = MessageDigest.getInstance("SHA-256")
-        context.assets.open(assetName).use { raw ->
-            val digestIn = DigestInputStream(raw, digest)
-            val buffered = BufferedInputStream(digestIn, 1 shl 16)
-            val source = if (assetName.endsWith(".gz")) GZIPInputStream(buffered, 1 shl 16) else buffered
-            source.use { input ->
-                TarArchiveInputStream(input).use { tar ->
-                    var files = 0
-                    var lastReportTime = System.currentTimeMillis()
-                    while (true) {
-                        val entry: TarArchiveEntry = tar.nextEntry ?: break
-                        val name = entry.name.removePrefix("st/")
-                        if (name.isBlank()) continue
-                        val target = safeResolve(tmpNew, name)
-                        if (entry.isDirectory) {
-                            target.mkdirs()
-                        } else {
-                            target.parentFile?.mkdirs()
-                            FileOutputStream(target).use { out -> tar.copyTo(out) }
-                            if ((entry.mode and 0b001_000_000) != 0) target.setExecutable(true, true)
-                            files++
-                            val now = System.currentTimeMillis()
-                            // Throttle progress to at most once per 100 files or every 100ms
-                            if (files % 100 == 0 || now - lastReportTime >= 100) {
-                                lastReportTime = now
-                                onFileProgress(files, name)
+        try {
+            // Digest raw asset bytes to verify SHA-256 recorded in manifest
+            val digest = MessageDigest.getInstance("SHA-256")
+            assetOpener(assetName).use { raw ->
+                val digestIn = DigestInputStream(raw, digest)
+                val buffered = BufferedInputStream(digestIn, 1 shl 16)
+                val source = if (assetName.endsWith(".gz")) GZIPInputStream(buffered, 1 shl 16) else buffered
+                source.use { input ->
+                    TarArchiveInputStream(input).use { tar ->
+                        var files = 0
+                        var lastReportTime = System.currentTimeMillis()
+                        while (true) {
+                            val entry: TarArchiveEntry = tar.nextEntry ?: break
+                            val name = entry.name.removePrefix("st/")
+                            if (name.isBlank()) continue
+                            val target = safeResolve(tmpNew, name)
+                            if (entry.isDirectory) {
+                                target.mkdirs()
+                            } else {
+                                target.parentFile?.mkdirs()
+                                FileOutputStream(target).use { out -> tar.copyTo(out) }
+                                if ((entry.mode and 0b001_000_000) != 0) target.setExecutable(true, true)
+                                files++
+                                val now = System.currentTimeMillis()
+                                // Throttle progress to at most once per 100 files or every 100ms
+                                if (files % 100 == 0 || now - lastReportTime >= 100) {
+                                    lastReportTime = now
+                                    onFileProgress(files, name)
+                                }
                             }
                         }
+                        onFileProgress(files, "Unpack complete")
                     }
-                    onFileProgress(files, "Unpack complete")
                 }
             }
-        }
 
-        val actualSha = digest.digest().joinToString("") { "%02x".format(it) }
-        if (expectedSha256 != null && !actualSha.equals(expectedSha256, ignoreCase = true)) {
-            tmpNew.deleteRecursively()
-            throw IllegalStateException(
-                "SillyTavern payload checksum mismatch (expected $expectedSha256, got $actualSha)"
-            )
-        }
+            val actualSha = digest.digest().joinToString("") { "%02x".format(it) }
+            if (expectedSha256 != null && !actualSha.equals(expectedSha256, ignoreCase = true)) {
+                throw IllegalStateException(
+                    "SillyTavern payload checksum mismatch (expected $expectedSha256, got $actualSha)"
+                )
+            }
 
-        // Replace st/ via a temp swap so a failure never leaves a half tree.
-        val stDir = paths.stDir
-        val old = File(paths.tmpDir, "st_old")
-        if (old.exists()) old.deleteRecursively()
-        if (stDir.exists() && !stDir.renameTo(old)) stDir.deleteRecursively()
-        if (!tmpNew.renameTo(stDir)) {
-            tmpNew.copyRecursively(stDir, overwrite = true)
-            tmpNew.deleteRecursively()
+            // Replace st/ via a temp swap so a failure never leaves a half tree.
+            val stDir = paths.stDir
+            val old = File(paths.tmpDir, "st_old")
+            if (old.exists()) safeDeleteRecursively(old)
+            if (stDir.exists() && !stDir.renameTo(old)) safeDeleteRecursively(stDir)
+            if (!tmpNew.renameTo(stDir)) {
+                tmpNew.copyRecursively(stDir, overwrite = true)
+                safeDeleteRecursively(tmpNew)
+            }
+            if (old.exists()) safeDeleteRecursively(old)
+        } catch (t: Throwable) {
+            safeDeleteRecursively(tmpNew)
+            throw t
         }
-        if (old.exists()) old.deleteRecursively()
     }
 
     private fun safeResolve(root: File, name: String): File {
@@ -236,7 +254,7 @@ class PayloadManager(private val context: Context) {
                 if (Files.readSymbolicLink(link.toPath()) == target.toPath()) return
                 link.delete()
             } else if (link.exists()) {
-                if (!target.exists()) link.renameTo(target) else link.deleteRecursively()
+                if (!target.exists()) link.renameTo(target) else safeDeleteRecursively(link)
             }
             target.parentFile?.mkdirs()
             Files.createSymbolicLink(link.toPath(), target.toPath())
@@ -252,10 +270,33 @@ class PayloadManager(private val context: Context) {
      */
     fun resetPayload(): Boolean {
         prefs.edit().remove(KEY_INSTALLED).commit()
-        return paths.stDir.deleteRecursively()
+        return safeDeleteRecursively(paths.stDir)
     }
 
     companion object {
         private const val KEY_INSTALLED = "installed_payload_version"
+
+        /**
+         * Deletes a directory tree without traversing into symbolic links, preventing
+         * accidental data loss of targets linked under st/data or st/config.
+         */
+        fun safeDeleteRecursively(root: File): Boolean {
+            if (!root.exists() && !Files.isSymbolicLink(root.toPath())) return true
+            return try {
+                Files.walkFileTree(root.toPath(), object : SimpleFileVisitor<Path>() {
+                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                        Files.deleteIfExists(file)
+                        return FileVisitResult.CONTINUE
+                    }
+                    override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+                        Files.deleteIfExists(dir)
+                        return FileVisitResult.CONTINUE
+                    }
+                })
+                true
+            } catch (_: Exception) {
+                root.deleteRecursively()
+            }
+        }
     }
 }

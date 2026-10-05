@@ -55,6 +55,8 @@ android {
         // on versionCode until an official public release milestone is reached.
         envOrProp("VERSION_NAME")?.let { versionName = it }
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         ndk {
             // The FongMi runtime bundle is arm64-v8a (+ armeabi-v7a); v1 ships arm64.
             abiFilters += listOf("arm64-v8a")
@@ -106,6 +108,18 @@ android {
             // Do not strip the launcher — it is an executable, not a library.
             keepDebugSymbols += "**/libstnode.so"
         }
+        resources {
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/LICENSE*",
+                "/META-INF/NOTICE*",
+                "/META-INF/DEPENDENCIES"
+            )
+        }
+    }
+
+    testOptions {
+        animationsDisabled = true
     }
 
     // NOTE: do not add "tar" to noCompress — the payload must be deflated in
@@ -147,4 +161,9 @@ dependencies {
     // JVM unit tests
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+
+    // Tier 3: Connected device instrumentation tests
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }

@@ -9,13 +9,15 @@ SillyTavern normally runs on a computer under Node.js. ST Mobile embeds that run
 ## Key Features
 
 - **Embedded Node.js 24 Runtime:** Runs real Node.js directly on Android using a native ELF launcher (`libstnode.so`) linked against `libnode.so` and `libc++_shared.so`.
-- **Zero-Reload WebView Host:** Uses a custom Jetpack Compose WebView coordinator that preserves browser state (`View.INVISIBLE`) when switching between the Dashboard, Settings, and SillyTavern.
+- **Zero-Reload WebView Host & Edge-Docked Quick Toolbar:** Uses a custom Jetpack Compose WebView coordinator that preserves browser state (`View.INVISIBLE`) when switching between screens. Features an edge-docked quick toolbar with Android system gesture exclusion rects (`Modifier.systemGestureExclusion()`) providing one-tap access to Dashboard, Reload, and Settings without triggering accidental edge back-swipes.
+- **Edge-to-Edge Window Insets & Soft Keyboard Adaptation:** Built strictly against modern edge-to-edge contracts (`enableEdgeToEdge`), integrating `Modifier.imePadding()` on scroll containers so software keyboards never cover input fields in Settings or Setup.
+- **Resilient Auto-Launch & Pure Screen Routing:** Pure functional routing state machine (`computeNextScreen`, `computeBackScreen`) that auto-launches the web view on server start, retains backstack history from the quick toolbar, and gracefully handles server restart flaps.
 - **Smart Port Resolution & Auto-Fallback:** Loopback probing with `SO_REUSEADDR` to safely detect occupied ports and dynamically allocate kernel ephemeral ports (`1..65535`).
 - **Background Battery Protection:** Daemon idle countdown timer (`BackgroundTimeoutManager`) that gracefully shuts down the server when backgrounded past the configured time limit.
 - **AES-256 Data Backup & Migration:** Built-in archive engine (`BackupManager`) supporting standard ZIP and WinZip-compatible AES-256 encryption (`zip4j`). Includes pre-flight archive inspection, Clean Restore with atomic unified rollback, and Additive Merge.
 - **Non-Destructive YAML Sync:** Two-way SnakeYAML synchronization for SillyTavern's `config.yaml` that preserves custom plugin settings and comments.
 - **First-Run Setup & Restore:** Clean setup screen offering a fresh payload unpack or direct restore from an existing SillyTavern backup.
-- **Fast Host JVM Unit Tests:** Pure JVM test suite (isolated without Robolectric) with planned emulation/device validation suite.
+- **Fast Host JVM Unit Tests:** Pure JVM test suite (isolated without Robolectric) verifying configuration persistence, upgrade semantics, routing state machines, port probing, and archive operations.
 
 ---
 

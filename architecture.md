@@ -2,6 +2,7 @@
 
 A high-level map of how the app is organised. For the runtime contract, on-device layout, build
 pipeline and the reasoning behind each choice, see [`technical-breakdown.md`](technical-breakdown.md).
+For the 3-tier testing framework, testable seams, and validation contracts, see [`testing.md`](testing.md).
 
 ---
 
@@ -20,7 +21,7 @@ A Jetpack Compose shell hosts the UI and a WebView pointed at the local server.
 | `models` | Typed configuration and state: `AppConfig` (app settings), `StConfig` (SillyTavern `config.yaml`), `NodeConfig` (V8 and environment options), `NodeStatus` (lifecycle state). |
 | `node` | Process supervision: `NodeService` (foreground service and status flow), `NodeController` (launches and stops the process), `PortResolver` (port probing and fallback), `BackgroundTimeoutManager` (idle shutdown). |
 | `sillytavern` | `PayloadManager` (unpacks the bundled SillyTavern) and `BackupManager` (export, import, restore of user data). |
-| `ui` | Compose screens: setup, dashboard, settings, the WebView host, backup dialogs, and navigation. |
+| `ui` | Compose screens: setup, dashboard, settings, WebView host with edge-docked quick toolbar and gesture exclusion, backup dialogs, and navigation state machine (`computeNextScreen`, `computeBackScreen`). |
 
 ### Dependency rules
 
@@ -94,6 +95,13 @@ sequenceDiagram
     end
 ```
 
+### Screen routing and window insets contract
+
+Top-level navigation and system insets follow a strict pure contract:
+- **`computeNextScreen`**: Automatically navigates from `DASHBOARD` to `WEBVIEW` when the server reports `RUNNING` (if `autoLaunchWebViewOnStart` is enabled), and returns to `DASHBOARD` if the server stops or encounters an error. Active configuration sessions on `SETTINGS` or `SETUP` are preserved without interruption.
+- **`computeBackScreen`**: Tracks navigation origin so entering Settings via the WebView quick toolbar returns directly to `WEBVIEW` on Back (provided the server remains `RUNNING`), otherwise falling back to `DASHBOARD`.
+- **Gesture exclusion & soft keyboard insets**: The right-edge docked menu handle registers Android system gesture exclusion rects (`Modifier.systemGestureExclusion()`) to prevent conflict with system back-swipes, while all scroll containers apply `Modifier.imePadding()` to ensure text fields remain unobstructed by the on-screen keyboard.
+
 ## 4. Data and backups
 
 User state (`config/config.yaml` and `data/`) is kept apart from the replaceable SillyTavern tree
@@ -103,7 +111,11 @@ as a merge. `StConfig` edits `config.yaml` without dropping keys it does not kno
 
 ## 5. Testing
 
-- **Host JVM unit tests** (`src/test`): run with `./gradlew testDebugUnitTest`, no emulator needed.
-  They cover configuration persistence and clamping, port resolution, the background timeout,
-  backup and restore, YAML sync, and screen routing.
-- **Emulation and device tests** (`src/androidTest`): planned, not implemented yet.
+ST Mobile employs a rigorous three-tier testing strategy designed to provide rapid developer feedback, enforce native artifact invariants in CI, and verify execution integrity on physical ARM64 hardware without compromising user data:
+
+- **Tier 1: Host JVM Unit Tests** (`src/test/java/app/stmobile/`): 87 pure JVM tests executed in ~500ms via `./gradlew testDebugUnitTest`. Tests run completely isolated from Android runtime dependencies using inverted dependency constructors, covering payload extraction transactions, launch specs, readiness polling, non-destructive YAML parsing, navigation routing, and backup cryptography.
+- **Tier 2: Static Native APK Inspection** (`ci/check_apk.sh`): Automated APK auditing verifying that native libraries (`libstnode.so`, `libnode.so`, `libc++_shared.so`) match ELF64/AArch64 targets, DT_NEEDED dependencies are strictly satisfied, ELF load segments meet Android 15 16 KB page alignment, payload assets match SHA-256 manifests, and DEX bytecode is free of unstripped development strings.
+- **Tier 3: Physical Device Smoke Tests** (`src/androidTest/java/app/stmobile/`): Hardware instrumentation tests executed via `ci/run_device_tests.sh` on connected ARM64 devices (or via wireless ADB). Tests exercise sandboxed payload extraction, native Node.js process execution under Android SELinux / W^X constraints, and loopback HTTP socket readiness and restart recovery.
+
+For complete test inventories, architectural seams, failure simulation details, and execution instructions, see the dedicated [Testing Architecture & Verification Guide](testing.md).
+

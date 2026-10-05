@@ -2,6 +2,7 @@ package app.stmobile.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -12,12 +13,10 @@ import app.stmobile.models.NodeStatus
 
 @Composable
 fun MainScreen(
-    currentScreen: ActiveScreen,
+    navController: NavigationController,
     status: NodeStatus,
-    onSelectScreen: (ActiveScreen) -> Unit,
     onStartServer: () -> Unit,
     onStopServer: () -> Unit,
-    onOpenSillyTavern: () -> Unit,
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit,
     onExportLogs: () -> Unit,
@@ -25,16 +24,16 @@ fun MainScreen(
     onResetPayload: () -> Unit,
     onSetupComplete: () -> Unit,
 ) {
-    BackHandler(enabled = currentScreen == ActiveScreen.SETTINGS) {
-        onSelectScreen(ActiveScreen.DASHBOARD)
+    BackHandler(enabled = navController.canGoBack(status.state)) {
+        navController.handleBack(status.state)
     }
 
     Scaffold(
         bottomBar = {
-            if (currentScreen == ActiveScreen.DASHBOARD || currentScreen == ActiveScreen.SETTINGS) {
+            if (navController.currentScreen == ActiveScreen.DASHBOARD || navController.currentScreen == ActiveScreen.SETTINGS) {
                 BottomNavDock(
-                    currentScreen = currentScreen,
-                    onSelectScreen = onSelectScreen,
+                    currentScreen = navController.currentScreen,
+                    onSelectScreen = { navController.navigateTo(it) },
                 )
             }
         },
@@ -42,34 +41,35 @@ fun MainScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .consumeWindowInsets(padding),
         ) {
             // Layer 0: StWebView kept alive underneath when server is running
-            if (currentScreen != ActiveScreen.SETUP && status.state == NodeState.RUNNING) {
+            if (navController.currentScreen != ActiveScreen.SETUP && status.state == NodeState.RUNNING) {
                 StWebView(
                     url = "http://127.0.0.1:${status.port}",
-                    visible = currentScreen == ActiveScreen.WEBVIEW,
-                    onNavigateToDashboard = { onSelectScreen(ActiveScreen.DASHBOARD) },
+                    visible = navController.currentScreen == ActiveScreen.WEBVIEW,
+                    onNavigateToDashboard = { navController.navigateTo(ActiveScreen.DASHBOARD) },
+                    onBackToDashboard = { navController.exitWebViewToDashboard() },
+                    onNavigateToSettings = { navController.navigateTo(ActiveScreen.SETTINGS) },
                 )
             }
 
             // Layer 1: Foreground screens (opaque backgrounds absorb touches)
-            when (currentScreen) {
+            when (navController.currentScreen) {
                 ActiveScreen.SETUP -> SetupScreen(onSetupComplete = onSetupComplete)
                 ActiveScreen.DASHBOARD -> DashboardScreen(
                     status = status,
                     onStartServer = onStartServer,
                     onStopServer = onStopServer,
-                    onOpenSillyTavern = onOpenSillyTavern,
-                    onExportBackup = onExportBackup,
-                    onImportBackup = onImportBackup,
-                    onExportLogs = onExportLogs,
+                    onOpenSillyTavern = { navController.navigateTo(ActiveScreen.WEBVIEW) },
                 )
                 ActiveScreen.SETTINGS -> SettingsScreen(
                     onPromptBattery = onPromptBattery,
                     onResetPayload = onResetPayload,
                     onExportBackup = onExportBackup,
                     onImportBackup = onImportBackup,
+                    onExportLogs = onExportLogs,
                 )
                 ActiveScreen.WEBVIEW -> {
                     // StWebView is active and revealed underneath

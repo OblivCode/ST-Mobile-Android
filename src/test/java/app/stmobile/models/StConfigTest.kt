@@ -109,4 +109,86 @@ class StConfigTest {
         val reloadedDisk = StConfig.fromFile(file)
         assertEquals(7050, reloadedDisk.port)
     }
+
+    @Test
+    fun testServerPluginsAndSkipContentCheckProperties() {
+        val yaml = """
+            enableServerPlugins: "true"
+            skipContentCheck: false
+        """.trimIndent()
+        val config = StConfig.fromYaml(yaml)
+
+        assertTrue(config.enableServerPlugins)
+        assertFalse(config.skipContentCheck)
+
+        config.enableServerPlugins = false
+        config.skipContentCheck = true
+
+        val dumped = StConfig.fromYaml(config.dumpYaml())
+        assertFalse(dumped.enableServerPlugins)
+        assertTrue(dumped.skipContentCheck)
+    }
+
+    @Test
+    fun testFromFileOrDefaultBehavior() {
+        val file = File(tempFolder.root, "non_existent_config.yaml")
+        var providerInvoked = false
+        val defaultYaml = "port: 8088\nlisten: true\n"
+
+        // 1. File absent: invokes defaultProvider
+        val config = StConfig.fromFileOrDefault(file) {
+            providerInvoked = true
+            defaultYaml.byteInputStream()
+        }
+        assertTrue("Provider must be invoked when file is absent", providerInvoked)
+        assertEquals(8088, config.port)
+        assertTrue(config.listen)
+
+        // Save to create file on disk
+        config.save(file)
+        assertTrue(file.exists())
+
+        // 2. File present: reads file directly without invoking provider
+        providerInvoked = false
+        val reloaded = StConfig.fromFileOrDefault(file) {
+            providerInvoked = true
+            "port: 9999\n".byteInputStream()
+        }
+        assertFalse("Provider must NOT be invoked when file is present on disk", providerInvoked)
+        assertEquals(8088, reloaded.port)
+    }
+
+    @Test
+    fun testEmptyOrNonMapYamlHandling() {
+        val emptyConfig = StConfig.fromYaml("")
+        assertEquals(StConfig.DEFAULT_PORT, emptyConfig.port)
+        assertFalse(emptyConfig.listen)
+
+        val nonMapConfig = StConfig.fromYaml("scalar string instead of yaml map")
+        assertEquals(StConfig.DEFAULT_PORT, nonMapConfig.port)
+    }
+
+    @Test
+    fun testDeepNestedPathCreationOverwritingPrimitive() {
+        val config = StConfig.fromYaml("root: 42\n")
+        // Overwriting primitive 'root' with nested path 'root.child.leaf'
+        config.setPath("root.child.leaf", "nested_secret")
+        assertEquals("nested_secret", config.getPath("root.child.leaf"))
+
+        val dumped = StConfig.fromYaml(config.dumpYaml())
+        assertEquals("nested_secret", dumped.getPath("root.child.leaf"))
+    }
+
+    @Test
+    fun testWhitelistModifications() {
+        val config = StConfig.fromYaml("port: 8000\n")
+        assertEquals(listOf("127.0.0.1", "::1"), config.whitelist)
+
+        val customWhitelist = listOf("10.0.0.1", "192.168.1.100")
+        config.whitelist = customWhitelist
+        assertEquals(customWhitelist, config.whitelist)
+
+        val reloaded = StConfig.fromYaml(config.dumpYaml())
+        assertEquals(customWhitelist, reloaded.whitelist)
+    }
 }

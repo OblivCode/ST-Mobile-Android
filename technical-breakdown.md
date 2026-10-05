@@ -57,7 +57,7 @@ there is no `app/` directory. Source lives under `src/main/java/app/stmobile/`.
 | :--- | :--- |
 | `src/main/cpp/launcher.cpp` | The entire launcher: calls `node::Start()` and returns its exit code. |
 | `src/main/cpp/CMakeLists.txt` | Builds the launcher against the prebuilt runtime and sets 16 KB alignment. |
-| `MainActivity.kt` | Lifecycle coordinator, top-level screen routing, and the file-picker contracts for backups. |
+| `MainActivity.kt` | Lifecycle coordinator, pure screen routing (`computeNextScreen`, `computeBackScreen`), backstack tracking, and file-picker contracts. |
 | `StApplication.kt` | Tracks app foreground/background with a 1 second debounce so rotation does not count as leaving. |
 | `AppPaths.kt` | Single source of truth for every filesystem path. |
 | `Utils.kt` | Battery-optimisation prompt (with OEM fallbacks), notification permission, log sharing, toasts. |
@@ -71,7 +71,7 @@ there is no `app/` directory. Source lives under `src/main/java/app/stmobile/`.
 | `node/BackgroundTimeoutManager.kt` | Idle countdown that stops the server after the app has been backgrounded for N minutes. |
 | `sillytavern/PayloadManager.kt` | Extract, verify, version, and swap the bundled SillyTavern. |
 | `sillytavern/BackupManager.kt` | Export and import user data (ZIP, optional AES-256), pre-flight inspection, clean or merge restore. |
-| `ui/` | Compose screens: `SetupScreen`, `DashboardScreen`, `SettingsScreen`, `StWebView`, `BackupDialogs`, `MainScreen`, `Navigation`. |
+| `ui/` | Compose screens: `SetupScreen`, `DashboardScreen`, `SettingsScreen`, `StWebView` (with edge-docked quick toolbar and gesture exclusion rects), `BackupDialogs`, `MainScreen`, `Navigation`. |
 
 **Build configuration** (`build.gradle.kts`): AGP 8.13.0, Kotlin 2.0.21, Jetpack Compose, Java 17,
 `compileSdk` 35, `minSdk` 26, `targetSdk` 35, NDK 25.2.9519653, CMake 3.22.1, and
@@ -175,20 +175,13 @@ so the final swap is a same-filesystem rename instead of a slow copy.
 6. The service reports `RUNNING` with the process id and port. If the app is in the background at
    that moment, the idle timeout is armed. A separate supervisor thread waits for the process to
    exit.
-7. The UI observes a process-level status flow, so it does not bind to the service. When the state is
-   `RUNNING` it points the WebView at the local address.
-8. The WebView waits until it has a real size before loading, so SillyTavern lays out against a
-   correctly sized viewport. It then reloads once after first paint, which fixes a quirk where
-   viewport units resolve to zero on the first pass. When another screen is shown, the WebView is
-   hidden but kept alive, so pages and chat state are not lost.
-9. When the process exits, the supervisor reports `STOPPED` if a stop was requested or the exit code
-   was 0, and `ERROR` with the exit code otherwise, then stops the service.
+7. The UI observes a process-level status flow, so it does not bind to the service. When the state transitions to `RUNNING`, `computeNextScreen` automatically switches the view to `WEBVIEW` if `autoLaunchWebViewOnStart` is enabled (the default), while leaving the user uninterrupted if currently navigating `SETTINGS` or `SETUP`.
+8. The WebView waits until it has a real size before loading, so SillyTavern lays out against a correctly sized viewport. It then reloads once after first paint, which fixes a quirk where viewport units resolve to zero on the first pass. When another screen is shown, the WebView is hidden (`View.INVISIBLE`) but kept alive, so pages and chat state are not lost. An edge-docked menu handle provides a quick toolbar for jumping to Dashboard, Reload, or Settings without disrupting browser state, registering Android system gesture exclusion rects (`Modifier.systemGestureExclusion()`) against edge-swipe false triggers. Navigating to Settings records the previous screen so pressing Back returns directly to the active WebView.
+9. When the process exits, the supervisor reports `STOPPED` if a stop was requested or the exit code was 0, and `ERROR` with the exit code otherwise, then stops the service.
 
-**Background timeout.** When the app has been out of sight for the configured number of minutes
-(default 5, `0` disables it), the service stops the server and removes its notification. Coming
-back to the app cancels the countdown. The service is `START_NOT_STICKY`, so Android does not quietly
-revive Node while the phone is locked. If the system did kill the app while the server was running,
-the app notices on the next launch and starts the server again.
+**Background timeout.** When the app has been out of sight for the configured number of minutes (default 5, `0` disables it), the service stops the server and removes its notification. Coming back to the app cancels the countdown. The service is `START_NOT_STICKY`, so Android does not quietly revive Node while the phone is locked. If the system did kill the app while the server was running, the app notices on the next launch and starts the server again.
+
+**Soft keyboard & edge-to-edge insets.** The app runs edge-to-edge (`enableEdgeToEdge()`). Scroll containers in `SettingsScreen` and `SetupScreen` apply `Modifier.imePadding()` before vertical scrolling, ensuring soft keyboards resize the scroll viewport so input fields (like idle timeouts and restore passwords) are never obscured.
 
 ## 7. Decisions and why
 

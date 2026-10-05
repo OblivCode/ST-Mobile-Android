@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,9 +48,10 @@ import kotlin.math.roundToInt
 fun SettingsScreen(
     onPromptBattery: () -> Unit,
     onResetPayload: () -> Unit,
+    modifier: Modifier = Modifier,
     onExportBackup: () -> Unit = {},
     onImportBackup: () -> Unit = {},
-    modifier: Modifier = Modifier,
+    onExportLogs: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appConfig = remember { AppConfig(context) }
@@ -87,7 +91,11 @@ fun SettingsScreen(
 
         when (selectedTab) {
             0 -> AppSettingsTab(appConfig = appConfig, onPromptBattery = onPromptBattery, onResetPayload = onResetPayload)
-            1 -> SillyTavernSettingsTab(onExportBackup = onExportBackup, onImportBackup = onImportBackup)
+            1 -> SillyTavernSettingsTab(
+                onExportBackup = onExportBackup,
+                onImportBackup = onImportBackup,
+                onExportLogs = onExportLogs,
+            )
             2 -> NodeEngineSettingsTab(context = context)
         }
     }
@@ -102,12 +110,14 @@ private fun AppSettingsTab(
     var autoStart by remember { mutableStateOf(appConfig.autoStartOnAppOpen) }
     var autoLaunch by remember { mutableStateOf(appConfig.autoLaunchWebViewOnStart) }
     var autoPortFallback by remember { mutableStateOf(appConfig.autoPortFallback) }
+    var quickToolbar by remember { mutableStateOf(appConfig.webViewMenuQuickToolbar) }
     var bgTimeout by remember { mutableStateOf(appConfig.backgroundTimeoutMinutes.toString()) }
     var showResetDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -132,7 +142,14 @@ private fun AppSettingsTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Auto-launch SillyTavern", color = Color(0xFFD8DEE6))
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text("Auto-launch SillyTavern", color = Color(0xFFD8DEE6))
+                Text(
+                    "Automatically switch to the SillyTavern interface whenever the server becomes running",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
             Switch(
                 checked = autoLaunch,
                 onCheckedChange = {
@@ -153,6 +170,28 @@ private fun AppSettingsTab(
                 onCheckedChange = {
                     autoPortFallback = it
                     appConfig.autoPortFallback = it
+                },
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text("WebView menu quick toolbar", color = Color(0xFFD8DEE6))
+                Text(
+                    "Show a dock with Dashboard, Reload, and Settings shortcuts instead of immediately returning to Dashboard",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = quickToolbar,
+                onCheckedChange = {
+                    quickToolbar = it
+                    appConfig.webViewMenuQuickToolbar = it
                 },
             )
         }
@@ -214,10 +253,12 @@ private fun AppSettingsTab(
 private fun SillyTavernSettingsTab(
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit,
+    onExportLogs: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -248,6 +289,28 @@ private fun SillyTavernSettingsTab(
         ) {
             Text("Restore Backup")
         }
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "Diagnostics & Logs",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFD8DEE6),
+        )
+
+        Text(
+            text = "Share or export the application log file for troubleshooting and debugging server issues.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF8A94A3),
+        )
+
+        OutlinedButton(
+            onClick = onExportLogs,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Export Logs")
+        }
     }
 }
 
@@ -259,6 +322,7 @@ private fun NodeEngineSettingsTab(context: android.content.Context) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
