@@ -80,19 +80,35 @@ If you prefer to execute the pipeline stages individually:
 
 ## Testing
 
-ST Mobile runs its complete unit test suite on the host JVM without requiring an emulator, Robolectric, or connected hardware:
+ST Mobile implements a multi-tier testing pipeline combining fast host JVM unit tests, automated CI APK inspection, and physical ARM64 hardware verification:
 
-```bash
-./gradlew testDebugUnitTest
-```
+- **Host JVM Unit Tests (Tier 1):**
+  ```bash
+  ./gradlew testDebugUnitTest
+  ```
+  Runs 90 pure JVM unit tests across 10 classes in ~500ms covering payload unpacking transactions, launch specs, HTTP polling, YAML syncing, backup/restore, and UI routing.
 
-All unit tests execute cleanly across configuration serialization, numerical clamping, port boundary edge cases, timeout concurrency, and archive operations.
+- **Static Native APK Inspection (Tier 2):**
+  ```bash
+  ./ci/check_apk.sh [path/to/apk]
+  ```
+  Audits APK ZIP integrity, native ELF64 binaries, dynamic linker dependencies, Android 15 16 KB page alignment, asset SHA-256 manifests, and DEX bytecode string leakage.
+
+- **Physical Device Smoke Tests (Tier 3):**
+  ```bash
+  ./ci/run_device_tests.sh
+  ```
+  Executes on-device instrumentation tests (4 tests across 3 classes) on connected ARM64 hardware (or wireless ADB) verifying streaming extraction, native Node.js execution under Android SELinux / W^X boundaries, and loopback socket restart recovery.
+
+For complete test inventories, architectural seams, failure simulations, and execution guides, see the [Testing Architecture & Verification Guide](testing.md).
 
 ---
 
-## Architectural Reference
+## Architectural & Technical References
 
-For complete architectural details, domain package boundaries, lifecycle state machines, and launch contracts, refer to the [Architecture Guide](architecture.md).
+- [Architecture Guide](architecture.md) — High-level system architecture, subsystem boundaries, data flows, and state machines.
+- [Technical Breakdown](technical-breakdown.md) — Exhaustive code-level breakdown, native launcher mechanics, security models, and recovery paths.
+- [Testing Architecture & Verification](testing.md) — Multi-tier test suite design, test catalog, failure simulation, and verification scopes.
 
 ---
 

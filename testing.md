@@ -19,8 +19,8 @@ Robolectric simulates the Android OS on host JVMs by downloading multi-hundred-m
 ```mermaid
 flowchart TD
     subgraph Tier1["Tier 1: Host JVM Unit Tests (Gradle)"]
-        T1_Desc["Target: Logic, Contracts, Serialization, State Machines<br/>Environment: Pure Host JVM (Linux/macOS/Windows)<br/>Execution: ~500 ms (87 tests across 10 classes)<br/>Gate: Every commit / PR (`./gradlew testDebugUnitTest`)"]
-        T1_Classes["PayloadManagerTest (10)<br/>ProcessLaunchContractTest (5)<br/>ReadinessPollingTest (6)<br/>PortResolverTest (9)<br/>BackgroundTimeoutManagerTest (6)<br/>BackupManagerTest (15)<br/>StConfigTest (8) / NodeConfigTest (6) / AppConfigTest (6)<br/>NavigationTest (16: NavigationController + routing)"]
+        T1_Desc["Target: Logic, Contracts, Serialization, State Machines<br/>Environment: Pure Host JVM (Linux/macOS/Windows)<br/>Execution: ~500 ms (90 tests across 10 classes)<br/>Gate: Every commit / PR (`./gradlew testDebugUnitTest`)"]
+        T1_Classes["PayloadManagerTest (10)<br/>ProcessLaunchContractTest (5)<br/>ReadinessPollingTest (6)<br/>PortResolverTest (9)<br/>BackgroundTimeoutManagerTest (6)<br/>BackupManagerTest (15)<br/>StConfigTest (8) / NodeConfigTest (6) / AppConfigTest (6)<br/>NavigationTest (19: NavigationController + routing)"]
     end
 
     subgraph Tier2["Tier 2: Static APK Artifact Inspection (ci/check_apk.sh)"]
@@ -29,8 +29,8 @@ flowchart TD
     end
 
     subgraph Tier3["Tier 3: Physical Device Smoke Tests (ci/run_device_tests.sh)"]
-        T3_Desc["Target: Live ARM64 Hardware Execution<br/>Environment: Real Android Device (Snapdragon 8 Elite)<br/>Execution: ~10 s<br/>Gate: Pre-release verification / manual gate (`ci/run_device_tests.sh`)"]
-        T3_Smoke["PayloadExtractionSmokeTest (AssetManager streaming)<br/>Arm64RuntimeSmokeTest (libstnode.so W^X execution)<br/>LoopbackNetworkSmokeTest (SELinux loopback & recovery)"]
+        T3_Desc["Target: Live ARM64 Hardware Execution<br/>Environment: Real Android Device (Snapdragon 8 Elite)<br/>Execution: ~10 s (4 tests across 3 classes)<br/>Gate: Pre-release verification / manual gate (`ci/run_device_tests.sh`)"]
+        T3_Smoke["PayloadExtractionSmokeTest (1 test)<br/>Arm64RuntimeSmokeTest (1 test)<br/>LoopbackNetworkSmokeTest (2 tests)"]
     end
 
     Tier1 --> Tier2 --> Tier3
@@ -59,7 +59,7 @@ src/test/java/app/stmobile/
 ├── testutils/
 │   └── FakeSharedPreferences.kt   (Architectural test double)
 └── ui/
-    └── NavigationTest.kt          (16 tests)
+    └── NavigationTest.kt          (19 tests)
 ```
 
 ### 2.1 `sillytavern/PayloadManagerTest.kt` (10 tests)
@@ -187,15 +187,14 @@ Validates application preferences and upgrade migration semantics.
 | `testUpgradeSemantics_explicitUserOverridesPreserved` | Asserts that user-modified settings survive app updates. |
 | `testUpgradeSemantics_mutationOfUnwrittenKeyPersists` | Mutating an unwritten key writes it to SharedPreferences and persists across reloads. |
 
-### 2.10 `ui/NavigationTest.kt` (16 tests)
+### 2.10 `ui/NavigationTest.kt` (19 tests)
 Validates both pure screen transition routing and the stateful `NavigationController` backstack machine.
 
 | Test Group | Tests Included | Architectural Role |
 | :--- | :--- | :--- |
-| **ActiveScreen Enum** | `testActiveScreenEnumValues` | Verifies `ActiveScreen` enum values: `SETUP`, `DASHBOARD`, `SETTINGS`, `WEBVIEW`. |
-| **Pure State Transitions** | `testComputeNextScreen_autoLaunchOnRunning`<br/>`testComputeNextScreen_disabledAutoLaunch`<br/>`testComputeNextScreen_serverStoppedFromWebView`<br/>`testComputeNextScreen_serverErrorFromWebView`<br/>`testComputeNextScreen_serverStartingFromWebView`<br/>`testComputeNextScreen_preservesSettingsOnRunning`<br/>`testComputeNextScreen_preservesSetupOnRunning`<br/>`testComputeNextScreen_restartFlapHandling` | Pure function `computeNextScreen`: automatically launches `WEBVIEW` when server reaches `RUNNING` (if enabled), returns to `DASHBOARD` on stop/error/starting, preserves configuration screens, and safely handles server restart flapping without getting stuck. |
-| **Pure Back Routing** | `testComputeBackScreen_fromSettingsToWebViewWhenRunning`<br/>`testComputeBackScreen_fromSettingsFallbackToDashboardWhenStopped`<br/>`testComputeBackScreen_fromSettingsFallbackWhenError`<br/>`testComputeBackScreen_fromSettingsToDashboardWhenPreviousWasDashboard`<br/>`testComputeBackScreen_defaultFallback`<br/>`testComputeBackScreen_preservesSetupAndDashboard` | Pure function `computeBackScreen`: returns from Settings to WebView if entered via Quick Toolbar while running, falling back to Dashboard if stopped or errored. |
-| **Stateful BackStack Machine** | `testNavigationController_initialState`<br/>`testNavigationController_navigateToPushesToBackStack` | Tests `NavigationController`: backstack multi-hop, tab toggle deduplication, and `NavigationSnapshot` state restoration across Android process death. |
+| **ActiveScreen Enum** (1) | `testActiveScreenEnumValues` | Verifies `ActiveScreen` enum values: `SETUP`, `DASHBOARD`, `SETTINGS`, `WEBVIEW`. |
+| **Pure Next-Screen Transitions** (8) | `testComputeNextScreen_autoLaunchOnRunning`<br/>`testComputeNextScreen_disabledAutoLaunch`<br/>`testComputeNextScreen_serverStoppedFromWebView`<br/>`testComputeNextScreen_serverErrorFromWebView`<br/>`testComputeNextScreen_serverStartingFromWebView`<br/>`testComputeNextScreen_preservesSettingsOnRunning`<br/>`testComputeNextScreen_preservesSetupOnRunning`<br/>`testComputeNextScreen_restartFlapHandling` | Pure function `computeNextScreen`: automatically launches `WEBVIEW` when server reaches `RUNNING` (if auto-launch enabled), returns to `DASHBOARD` on stop/error/starting, preserves configuration screens without interruption, and safely handles server restart flapping without getting stuck. |
+| **NavigationController & BackStack Machine** (10) | `testNavController_quickToolbarDashboardThenBackReturnsToWebView`<br/>`testNavController_quickToolbarSettingsThenBackReturnsToWebView`<br/>`testNavController_fullBackStackMultiHop`<br/>`testNavController_tabToggleDeduplication`<br/>`testNavController_rootDashboardExits`<br/>`testNavController_serverStoppedSkipsDeadWebView`<br/>`testNavController_snapshotSaveAndRestore`<br/>`testNavController_exitWebViewToDashboardClearsStackAndExitsOnNextBack`<br/>`testNavController_exitWebViewToDashboard_multiHopThroughSettingsUnwindsToExit`<br/>`testNavController_exitWebViewToDashboard_reopenWebViewResetsLifecycle` | Stateful `NavigationController`: manages backstack history, quick toolbar origin returns to WebView on Back, multi-hop stack unwinding, tab deduplication, process death state preservation via `NavigationSnapshot`, and safe fallback skipping dead WebView when server is stopped. |
 
 ### 2.11 `testutils/FakeSharedPreferences.kt` (Test Double)
 An in-memory, thread-safe implementation of Android's `SharedPreferences` and `SharedPreferences.Editor` using `ConcurrentHashMap`. Enables testing preference reads, writes, batch updates (`apply()` / `commit()`), and upgrade semantics on standard JVMs without Android mocks or Robolectric.
@@ -216,8 +215,10 @@ classDiagram
 
     class FakeSharedPreferences {
         -ConcurrentHashMap values
-        +getString() / putString()
-        +apply() / commit()
+        +getString()
+        +putString()
+        +apply()
+        +commit()
     }
 
     class PayloadManager {
@@ -384,10 +385,14 @@ sequenceDiagram
 - Queries `ro.product.cpu.abi`: if not `arm64-v8a`, gracefully skips.
 - Exports `ANDROID_SERIAL="$DEVICE"` so Gradle targets the device unambiguously.
 
-### 6.2 Smoke Test Suites (`src/androidTest/java/app/stmobile/`)
-1. **[PayloadExtractionSmokeTest.kt](src/androidTest/java/app/stmobile/PayloadExtractionSmokeTest.kt):** Streams `st_bundle.tar` from `AssetManager` into isolated sandbox directory `cacheDir/smoke_sandbox_extraction/` without touching user data.
-2. **[Arm64RuntimeSmokeTest.kt](src/androidTest/java/app/stmobile/Arm64RuntimeSmokeTest.kt):** Spawns `libstnode.so` directly on hardware with `-e "console.log('ARM64_SMOKE_OK:' + process.arch)"`, proving live execution, W^X compliance, and dynamic linking.
-3. **[LoopbackNetworkSmokeTest.kt](src/androidTest/java/app/stmobile/LoopbackNetworkSmokeTest.kt):** Spawns Node HTTP server on an ephemeral loopback port, asserts HTTP 200 connectivity through Android SELinux, and tests process kill and clean restart recovery.
+### 6.2 Smoke Test Suites (`src/androidTest/java/app/stmobile/`) (4 tests across 3 classes)
+
+| Class | Method | Architectural Verification |
+| :--- | :--- | :--- |
+| **`PayloadExtractionSmokeTest`** | `testStreamingExtractionFromAssetManagerIntoAppStorage` | Streams `st_bundle.tar` from `AssetManager` into isolated sandbox directory `cacheDir/smoke_sandbox_extraction/` without touching user data. Asserts safe resolution blocks ZipSlip path traversal and validates file entry integrity. |
+| **`Arm64RuntimeSmokeTest`** | `testArm64NodeBinaryExecutionAndDynamicLinking` | Verifies `nativeLibraryDir/libstnode.so` has execute permissions under Android W^X security rules. Spawns the binary via `ProcessBuilder` with `-e "console.log('ARM64_SMOKE_OK:' + process.arch)"`, asserting clean zero exit status, stdout output `ARM64_SMOKE_OK:arm64`, and successful dynamic linking against `libnode.so` and `libc++_shared.so`. |
+| **`LoopbackNetworkSmokeTest`** | `testLoopbackNetworkingUnderAndroidSelinux` | Allocates an ephemeral loopback port (`127.0.0.1`), starts a lightweight Node HTTP server, and verifies round-trip HTTP 200 GET communication (`"ST_LOOPBACK_OK"`) through Android SELinux loopback network policies. |
+| | `testProcessKillAndRestartRecovery` | Forcibly terminates the running Node server process (`destroyForcibly()`), allocates a new ephemeral port, spawns a second server instance, and verifies immediate socket binding and HTTP readiness recovery. |
 
 ---
 
@@ -395,18 +400,32 @@ sequenceDiagram
 
 | Action | Command | Scope |
 | :--- | :--- | :--- |
-| **Run Unit Tests (Tier 1)** | `./gradlew testDebugUnitTest` | JVM only (~500 ms) |
-| **Verify APK Artifact (Tier 2)** | `bash ci/check_apk.sh [path/to/apk]` | Host shell (~2 s) |
-| **Run Device Tests (Tier 3)** | `bash ci/run_device_tests.sh` | Attached device (~10 s) |
+| **Run Unit Tests (Tier 1)** | `./gradlew testDebugUnitTest` | JVM only (90 tests in ~500 ms) |
+| **Verify APK Artifact (Tier 2)** | `bash ci/check_apk.sh [path/to/apk]` | Host shell (7 checks in ~2 s) |
+| **Run Device Tests (Tier 3)** | `bash ci/run_device_tests.sh` | Attached device (4 tests in ~10 s) |
 | **Assemble Test APKs** | `./gradlew assembleDebugAndroidTest` | Gradle build |
 | **Build Everything** | `bash ci/build_all.sh` | Fetch $\to$ Bundle $\to$ APK |
 
 ---
 
-## 8. CI Integration & Known Gaps
+## 8. Verification Environments & Execution Scopes
 
-1. **GitHub Actions CI:** `.github/workflows/build.yml` currently runs `ci/build_all.sh`. Tier 1 (`./gradlew testDebugUnitTest`) and Tier 2 (`ci/check_apk.sh`) should be added as mandatory gates on every pull request.
-2. **Hardware Constraint:** Tier 3 requires physical ARM64 hardware and is executed locally via wireless ADB or USB prior to release.
+The three tiers are segregated by operational dependencies so verification can occur across different execution contexts:
+
+1. **Host Developer Environment (Tier 1):**
+   - **Command:** `./gradlew testDebugUnitTest`
+   - **Prerequisites:** JDK 17. No Android device or emulator required.
+   - **Scope:** Executes all 90 host unit tests covering data models, configuration serialization, launch specifications, readiness polling, archive operations, and navigation state machines.
+
+2. **Artifact Packaging Audit (Tier 2):**
+   - **Command:** `bash ci/check_apk.sh [path/to/apk]`
+   - **Prerequisites:** Linux/macOS host with `unzip`, `zipinfo`, `readelf`, and `python3`.
+   - **Scope:** Directly inspects built APK archives, validating ELF64 headers, machine architecture, dynamic linker `DT_NEEDED` dependencies, 16 KB page memory alignment (`ci/check_elf_align.py`), payload assets, and production bytecode string hygiene.
+
+3. **Physical Hardware Validation (Tier 3):**
+   - **Command:** `bash ci/run_device_tests.sh`
+   - **Prerequisites:** Physical Android device with `arm64-v8a` ABI connected via USB or wireless ADB.
+   - **Scope:** Executes `connectedDebugAndroidTest` (4 tests) on real silicon, validating asset streaming extraction, native ELF execution under Android W^X rules, and loopback socket networking under Android SELinux.
 
 ---
 
