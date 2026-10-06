@@ -63,6 +63,7 @@ there is no `app/` directory. Source lives under `src/main/java/app/stmobile/`.
 | `Utils.kt` | Battery-optimisation prompt (with OEM fallbacks), notification permission, log sharing, toasts. |
 | `models/AppConfig.kt` | App settings in SharedPreferences: auto-start, background timeout, port fallback, basic auth. |
 | `models/StConfig.kt` | Two-way SnakeYAML sync for `config.yaml`, preserving keys the app does not know about. |
+| `models/StUserSettings.kt` | Two-way JSON aggregate sync for SillyTavern's `settings.json`, controlling native user preferences. |
 | `models/NodeConfig.kt` | V8 memory ceiling (`--max-old-space-size`, clamped to 256 to 4096 MB), timezone, extra runtime options. |
 | `models/NodeStatus.kt` | Lifecycle state enum and the status record shared with the UI. |
 | `node/NodeService.kt` | Foreground service that owns the server process, its status flow, and its lifecycle. |
@@ -71,7 +72,7 @@ there is no `app/` directory. Source lives under `src/main/java/app/stmobile/`.
 | `node/BackgroundTimeoutManager.kt` | Idle countdown that stops the server after the app has been backgrounded for N minutes. |
 | `sillytavern/PayloadManager.kt` | Extract, verify, version, and swap the bundled SillyTavern. |
 | `sillytavern/BackupManager.kt` | Export and import user data (ZIP, optional AES-256), pre-flight inspection, clean or merge restore. |
-| `ui/` | Compose screens: `SetupScreen`, `DashboardScreen`, `SettingsScreen`, `StWebView` (with edge-docked quick toolbar and gesture exclusion rects), `BackupDialogs`, `MainScreen`, `Navigation`. |
+| `ui/` | Compose screens: `SetupScreen`, `DashboardScreen`, `SettingsScreen` (modularized into `AppSettingsTab`, `SillyTavernSettingsTab`, `NodeEngineSettingsTab`), `StWebView` (with edge-docked quick toolbar and gesture exclusion rects), `BackupDialogs`, `MainScreen`, `Navigation`. |
 
 **Build configuration** (`build.gradle.kts`): AGP 8.13.0, Kotlin 2.0.21, Jetpack Compose, Java 17,
 `compileSdk` 35, `minSdk` 26, `targetSdk` 35, NDK 25.2.9519653, CMake 3.22.1, and

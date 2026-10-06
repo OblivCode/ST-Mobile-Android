@@ -22,6 +22,9 @@ class AppPaths(
     val configDir: File get() = File(filesDir, "config")
     val configFile: File get() = File(configDir, "config.yaml")
     val dataDir: File get() = File(filesDir, "data")
+    val defaultUserDir: File get() = File(dataDir, "default-user")
+    val defaultUserSettingsFile: File get() = File(defaultUserDir, "settings.json")
+    val defaultContentSettingsFile: File get() = File(stDir, "default/content/settings.json")
 
     val logsDir: File get() = File(filesDir, "logs")
     val tmpDir: File get() = File(filesDir, "tmp")

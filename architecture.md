@@ -18,10 +18,10 @@ A Jetpack Compose shell hosts the UI and a WebView pointed at the local server.
 | Package | Responsibility |
 | :--- | :--- |
 | `app.stmobile` | `MainActivity` (lifecycle coordinator and backup file contracts), `StApplication` (foreground/background tracking), `AppPaths` (every filesystem path), `Utils` (battery prompt, notification permission, log sharing). |
-| `models` | Typed configuration and state: `AppConfig` (app settings), `StConfig` (SillyTavern `config.yaml`), `NodeConfig` (V8 and environment options), `NodeStatus` (lifecycle state). |
+| `models` | Typed configuration and state: `AppConfig` (app settings), `StConfig` (SillyTavern `config.yaml`), `StUserSettings` (SillyTavern `settings.json` client preferences), `NodeConfig` (V8 and environment options), `NodeStatus` (lifecycle state). |
 | `node` | Process supervision: `NodeService` (foreground service and status flow), `NodeController` (launches and stops the process), `PortResolver` (port probing and fallback), `BackgroundTimeoutManager` (idle shutdown). |
 | `sillytavern` | `PayloadManager` (unpacks the bundled SillyTavern) and `BackupManager` (export, import, restore of user data). |
-| `ui` | Compose screens: setup, dashboard, settings, WebView host with edge-docked quick toolbar and gesture exclusion, backup dialogs, and navigation state machine (`computeNextScreen`, `computeBackScreen`). |
+| `ui` | Compose screens: setup, dashboard, modular settings (`AppSettingsTab`, `SillyTavernSettingsTab`, `NodeEngineSettingsTab`), WebView host with edge-docked quick toolbar and gesture exclusion, backup dialogs, and navigation state machine (`computeNextScreen`, `computeBackScreen`). |
 
 ### Dependency rules
 
