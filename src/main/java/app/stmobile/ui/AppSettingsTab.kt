@@ -52,7 +52,6 @@ import app.stmobile.models.StUserSettings
 fun AppSettingsTab(
     appConfig: AppConfig,
     onPromptBattery: () -> Unit,
-    onResetPayload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -62,7 +61,6 @@ fun AppSettingsTab(
     var quickToolbar by remember { mutableStateOf(appConfig.webViewMenuQuickToolbar) }
     var autoSyncLanguage by remember { mutableStateOf(appConfig.autoSyncLanguage) }
     var bgTimeout by remember { mutableStateOf(appConfig.backgroundTimeoutMinutes.toString()) }
-    var showResetDialog by rememberSaveable { mutableStateOf(false) }
     var showAppLanguageDialog by rememberSaveable { mutableStateOf(false) }
 
     // Active app shell locale tag from AppCompatDelegate
@@ -233,17 +231,6 @@ fun AppSettingsTab(
         ) {
             Text(stringResource(R.string.settings_battery_exemption))
         }
-
-        Button(
-            onClick = { showResetDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4A2525),
-                contentColor = Color(0xFFFFB4AB),
-            ),
-        ) {
-            Text(stringResource(R.string.settings_reset_payload))
-        }
     }
 
     if (showAppLanguageDialog) {
@@ -321,27 +308,6 @@ fun AppSettingsTab(
             confirmButton = {
                 TextButton(onClick = { showAppLanguageDialog = false }) {
                     Text(stringResource(R.string.btn_close))
-                }
-            },
-        )
-    }
-
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.dialog_reset_payload_title)) },
-            text = { Text(stringResource(R.string.dialog_reset_payload_msg)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showResetDialog = false
-                    onResetPayload()
-                }) {
-                    Text(stringResource(R.string.btn_reset))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text(stringResource(R.string.btn_cancel))
                 }
             },
         )

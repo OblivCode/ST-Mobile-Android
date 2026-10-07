@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,13 +20,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -34,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,33 +46,72 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.stmobile.R
-import app.stmobile.Utils
 import app.stmobile.sillytavern.PayloadManager
+import app.stmobile.sillytavern.UpdateCheckResult
+import app.stmobile.sillytavern.UpdateInfo
 
 @Composable
 fun UpdatesScreen(
-    isInstalled: Boolean,
-    onResetPayload: () -> Unit,
-    onImportArchive: () -> Unit = {},
+    installedInfo: PayloadManager.InstalledInfo,
+    isInstalling: Boolean,
+    installProgress: PayloadManager.ExtractProgress?,
+    installErrorMessage: String?,
+    isCheckingUpdates: Boolean,
+    updateCheckResult: UpdateCheckResult?,
+    onCheckForUpdates: () -> Unit,
+    onUpdatePayload: (UpdateInfo) -> Unit,
+    onImportArchive: () -> Unit,
+    onReinstallPayload: () -> Unit,
+    onCancelInstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var showResetDialog by remember { mutableStateOf(false) }
+    var showRepairDialog by rememberSaveable { mutableStateOf(false) }
 
     val manifest = remember {
         runCatching { PayloadManager(context).readManifest() }.getOrNull()
     }
 
-    val stVersion = manifest?.stVersion ?: manifest?.payloadVersion ?: "1.12.0"
-    val nodeVersion = manifest?.nodeVersion ?: "24.20.0 (libnode.so)"
     val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
     val channelText = stringResource(R.string.updates_channel_release)
-    val statusText = if (isInstalled) {
-        stringResource(R.string.updates_status_up_to_date)
-    } else {
-        stringResource(R.string.status_not_installed)
+
+    // Formatted SillyTavern version string
+    val stVersionDisplay = when {
+        !installedInfo.isInstalled -> stringResource(R.string.status_not_installed)
+        !installedInfo.stCommit.isNullOrBlank() -> {
+            val shortCommit = installedInfo.stCommit.take(8)
+            "v${installedInfo.stVersion} (${stringResource(R.string.updates_commit, shortCommit)})"
+        }
+        installedInfo.sourceDescription?.contains("Archive", ignoreCase = true) == true ||
+            installedInfo.sourceDescription?.contains("SAF", ignoreCase = true) == true -> {
+            "v${installedInfo.stVersion} (${stringResource(R.string.updates_custom_archive)})"
+        }
+        else -> "v${installedInfo.stVersion ?: manifest?.stVersion ?: "1.19.0"}"
+    }
+
+    val nodeEngineDisplay = installedInfo.nodeVersion ?: manifest?.nodeVersion ?: "24.20.0 (libnode.so)"
+
+    // Dynamic status text and tint
+    val (statusText, statusColor) = when {
+        isInstalling -> Pair(stringResource(R.string.dashboard_status_installing), Color(0xFFE5C07B))
+        isCheckingUpdates -> Pair(stringResource(R.string.updates_status_checking), Color(0xFF61AFEF))
+        updateCheckResult is UpdateCheckResult.UpdateAvailable -> Pair(
+            stringResource(R.string.updates_status_update_available, "v${updateCheckResult.update.stVersion}"),
+            Color(0xFF7EC8A9),
+        )
+        updateCheckResult is UpdateCheckResult.Error -> Pair(
+            stringResource(R.string.updates_status_check_failed, updateCheckResult.message),
+            Color(0xFFE06C75),
+        )
+        updateCheckResult is UpdateCheckResult.UpToDate -> Pair(
+            stringResource(R.string.updates_status_up_to_date),
+            Color(0xFF7EC8A9),
+        )
+        installedInfo.isInstalled -> Pair(stringResource(R.string.updates_status_up_to_date), Color(0xFF7EC8A9))
+        else -> Pair(stringResource(R.string.status_not_installed), Color(0xFFE5C07B))
     }
 
     Box(
@@ -119,7 +163,7 @@ fun UpdatesScreen(
                     Spacer(Modifier.height(4.dp))
 
                     Text(
-                        text = stringResource(R.string.updates_sillytavern_version, stVersion),
+                        text = stringResource(R.string.updates_sillytavern_version, stVersionDisplay),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFFD8DEE6),
                     )
@@ -132,7 +176,7 @@ fun UpdatesScreen(
                     )
 
                     Text(
-                        text = stringResource(R.string.updates_node_engine, nodeVersion),
+                        text = stringResource(R.string.updates_node_engine, nodeEngineDisplay),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF8A94A3),
                     )
@@ -147,28 +191,222 @@ fun UpdatesScreen(
                         text = stringResource(R.string.updates_status, statusText),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isInstalled) Color(0xFF7EC8A9) else Color(0xFFE5C07B),
+                        color = statusColor,
                     )
                 }
             }
 
-            // Actions
+            // In-Place Installation / Update Progress Card
+            if (isInstalling) {
+                val hasBytes = (installProgress?.totalBytes ?: 0L) > 0L && (installProgress?.bytesProcessed ?: 0L) > 0L
+                val pct = if (hasBytes) {
+                    (installProgress!!.bytesProcessed.toFloat() / installProgress.totalBytes.toFloat()).coerceIn(0f, 1f)
+                } else if ((installProgress?.totalEstimate ?: 0) > 0 && (installProgress?.filesProcessed ?: 0) > 0) {
+                    (installProgress!!.filesProcessed.toFloat() / installProgress.totalEstimate.toFloat()).coerceIn(0f, 1f)
+                } else 0f
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.dashboard_status_installing),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFE5C07B),
+                        )
+
+                        Text(
+                            text = installProgress?.stage ?: stringResource(R.string.dashboard_status_installing),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFD8DEE6),
+                        )
+
+                        Spacer(Modifier.height(4.dp))
+
+                        if (pct > 0f) {
+                            LinearProgressIndicator(
+                                progress = { pct },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                if (hasBytes) {
+                                    val currentMb = installProgress!!.bytesProcessed.toDouble() / (1024.0 * 1024.0)
+                                    val totalMb = installProgress.totalBytes.toDouble() / (1024.0 * 1024.0)
+                                    val speedText = if (installProgress.speedBytesPerSec > 0) {
+                                        val speedMb = installProgress.speedBytesPerSec.toDouble() / (1024.0 * 1024.0)
+                                        " (%.1f MB/s)".format(speedMb)
+                                    } else ""
+                                    Text(
+                                        text = "%.1f MB / %.1f MB%s".format(currentMb, totalMb, speedText),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${installProgress!!.filesProcessed} / ${installProgress.totalEstimate} files",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                }
+                                Text(
+                                    text = "${(pct * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF8A94A3),
+                                )
+                            }
+                        } else {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                            )
+                        }
+
+                        installProgress?.currentFile?.let { currentFile ->
+                            Text(
+                                text = currentFile,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF6B7685),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Button(
+                            onClick = onCancelInstall,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4A2525),
+                                contentColor = Color(0xFFFFB4AB),
+                            ),
+                        ) {
+                            Text(stringResource(R.string.btn_cancel))
+                        }
+                    }
+                }
+            }
+
+            // Update Available Card
+            val updateAvailable = (updateCheckResult as? UpdateCheckResult.UpdateAvailable)?.update
+            if (updateAvailable != null && !isInstalling) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF162520)),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.SystemUpdate,
+                                contentDescription = null,
+                                tint = Color(0xFF7EC8A9),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.updates_available_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF7EC8A9),
+                            )
+                        }
+
+                        Text(
+                            text = stringResource(R.string.updates_available_version, "v${updateAvailable.stVersion}"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFD8DEE6),
+                        )
+
+                        if (updateAvailable.bundleSize > 0) {
+                            val sizeMb = updateAvailable.bundleSize.toDouble() / (1024.0 * 1024.0)
+                            Text(
+                                text = stringResource(R.string.updates_available_size, "%.1f MB".format(sizeMb)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF8A94A3),
+                            )
+                        }
+
+                        if (updateAvailable.publishedAt.isNotBlank()) {
+                            Text(
+                                text = stringResource(R.string.updates_available_published, updateAvailable.publishedAt.take(10)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF8A94A3),
+                            )
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+
+                        Button(
+                            onClick = { onUpdatePayload(updateAvailable) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E5A44),
+                                contentColor = Color(0xFFB5EAD0),
+                            ),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.SystemUpdate, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.updates_btn_update))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Actions Group (disabled during extraction)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Check for updates
+                // Check for updates (or Check Again if update is already displayed)
                 Button(
-                    onClick = {
-                        Utils.toast(context, context.getString(R.string.updates_phase_l4_notice))
-                    },
+                    onClick = onCheckForUpdates,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isInstalling && !isCheckingUpdates,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Refresh, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.updates_btn_check))
+                        if (isCheckingUpdates) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color(0xFFD8DEE6),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.updates_status_checking))
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            val btnLabel = if (updateAvailable != null) {
+                                stringResource(R.string.updates_btn_check_again)
+                            } else {
+                                stringResource(R.string.updates_btn_check)
+                            }
+                            Text(btnLabel)
+                        }
                     }
                 }
 
@@ -177,6 +415,7 @@ fun UpdatesScreen(
                     onClick = onImportArchive,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isInstalling,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Archive, contentDescription = null)
@@ -187,9 +426,10 @@ fun UpdatesScreen(
 
                 // Reinstall / Repair Payload
                 Button(
-                    onClick = { showResetDialog = true },
+                    onClick = { showRepairDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isInstalling,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4A2525),
                         contentColor = Color(0xFFFFB4AB),
@@ -205,21 +445,21 @@ fun UpdatesScreen(
         }
     }
 
-    if (showResetDialog) {
+    if (showRepairDialog) {
         AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.dialog_reset_payload_title)) },
-            text = { Text(stringResource(R.string.dialog_reset_payload_msg)) },
+            onDismissRequest = { showRepairDialog = false },
+            title = { Text(stringResource(R.string.dialog_repair_payload_title)) },
+            text = { Text(stringResource(R.string.dialog_repair_payload_msg)) },
             confirmButton = {
                 TextButton(onClick = {
-                    showResetDialog = false
-                    onResetPayload()
+                    showRepairDialog = false
+                    onReinstallPayload()
                 }) {
-                    Text(stringResource(R.string.btn_reset))
+                    Text(stringResource(R.string.btn_repair))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
+                TextButton(onClick = { showRepairDialog = false }) {
                     Text(stringResource(R.string.btn_cancel))
                 }
             },

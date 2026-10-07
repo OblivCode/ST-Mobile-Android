@@ -21,6 +21,10 @@ import app.stmobile.sillytavern.BackupManager
 import app.stmobile.sillytavern.LocalArchivePayloadSource
 import app.stmobile.sillytavern.PayloadManager
 import app.stmobile.sillytavern.PayloadSource
+import app.stmobile.sillytavern.RemotePayloadSource
+import app.stmobile.sillytavern.UpdateChecker
+import app.stmobile.sillytavern.UpdateCheckResult
+import app.stmobile.sillytavern.UpdateInfo
 import app.stmobile.ui.ActiveScreen
 import app.stmobile.ui.ExportBackupDialog
 import app.stmobile.ui.ImportPasswordDialog
@@ -38,18 +42,23 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
- * and SAF backup contracts (Phase D, Phase F, Phase L.1).
+ * SAF backup contracts, and in-app OTA lifecycle management (Phase D, Phase F, Phase L.1, Phase L.4).
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavigationController
 
-    // Installation state for dynamic dashboard flow (Phase L.1)
+    // Installation and payload inspection state (Phase L.1, Phase L.4)
     private var isInstalled by mutableStateOf(false)
+    private var installedInfo by mutableStateOf(PayloadManager.InstalledInfo(isInstalled = false))
     private var isInstalling by mutableStateOf(false)
     private var installProgress by mutableStateOf<PayloadManager.ExtractProgress?>(null)
     private var installErrorMessage by mutableStateOf<String?>(null)
     private var installJob: Job? = null
+
+    // OTA update checking state (Phase L.4)
+    private var isCheckingUpdates by mutableStateOf(false)
+    private var updateCheckResult by mutableStateOf<UpdateCheckResult?>(null)
 
     // Pending state for export and import across SAF contracts
     private var pendingExportPassword by mutableStateOf<String?>(null)
@@ -95,19 +104,7 @@ class MainActivity : AppCompatActivity() {
 
     private val payloadArchiveLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
-                if (wasActive) {
-                    NodeService.stop(this@MainActivity)
-                    withTimeoutOrNull(3000) {
-                        NodeService.status.first { it.state == NodeState.STOPPED }
-                    }
-                }
-                withContext(Dispatchers.Main) {
-                    navController.navigateTo(ActiveScreen.DASHBOARD)
-                    installPayload(LocalArchivePayloadSource(uri, contentResolver))
-                }
-            }
+            installPayload(LocalArchivePayloadSource(uri, contentResolver))
         }
     }
 
@@ -121,7 +118,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val appConfig = AppConfig(this)
         val payloadManager = PayloadManager(this)
-        isInstalled = payloadManager.isInstalled()
+        installedInfo = payloadManager.getInstalledInfo()
+        isInstalled = installedInfo.isInstalled
         navController = NavigationController.fromBundle(savedInstanceState, ActiveScreen.DASHBOARD)
 
         Utils.requestNotificationPermission(this)
@@ -143,9 +141,12 @@ class MainActivity : AppCompatActivity() {
                     navController = navController,
                     status = nodeStatus,
                     isInstalled = isInstalled,
+                    installedInfo = installedInfo,
                     isInstalling = isInstalling,
                     installProgress = installProgress,
                     installErrorMessage = installErrorMessage,
+                    isCheckingUpdates = isCheckingUpdates,
+                    updateCheckResult = updateCheckResult,
                     onInstallPayload = { installPayload() },
                     onCancelInstall = { cancelInstall() },
                     onStartServer = { NodeService.start(this@MainActivity) },
@@ -154,7 +155,9 @@ class MainActivity : AppCompatActivity() {
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
-                    onResetPayload = { resetPayload() },
+                    onCheckForUpdates = { checkForUpdates() },
+                    onUpdatePayload = { update -> performUpdate(update) },
+                    onReinstallPayload = { reinstallPayload() },
                     onImportArchive = { payloadArchiveLauncher.launch(arrayOf("application/zip", "application/x-tar", "application/gzip", "*/*")) },
                 )
 
@@ -220,13 +223,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun installPayload(source: PayloadSource? = null) {
+    private fun installPayload(
+        source: PayloadSource? = null,
+        isUpdate: Boolean = false,
+        isRepair: Boolean = false,
+    ) {
         if (isInstalling) return
         isInstalling = true
         installErrorMessage = null
         installProgress = null
 
         installJob = lifecycleScope.launch(Dispatchers.IO) {
+            val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            if (wasActive) {
+                NodeService.stop(this@MainActivity)
+                withTimeoutOrNull(5000) {
+                    NodeService.status.first { it.state == NodeState.STOPPED }
+                }
+            }
             val payloadManager = PayloadManager(this@MainActivity)
             val effectiveSource = source ?: payloadManager.defaultPayloadSource()
             try {
@@ -241,13 +255,23 @@ class MainActivity : AppCompatActivity() {
                 )
                 withContext(Dispatchers.Main) {
                     isInstalled = true
+                    installedInfo = payloadManager.getInstalledInfo()
                     isInstalling = false
                     installProgress = null
-                    if (source != null) {
-                        Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_success))
+                    when {
+                        isUpdate -> {
+                            updateCheckResult = UpdateCheckResult.UpToDate(
+                                currentVersion = installedInfo.stVersion ?: "",
+                                latestVersion = installedInfo.stVersion ?: "",
+                            )
+                            Utils.toast(this@MainActivity, getString(R.string.toast_update_success))
+                        }
+                        isRepair -> Utils.toast(this@MainActivity, getString(R.string.toast_repair_success))
+                        source is LocalArchivePayloadSource -> Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_success))
+                        source != null -> Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_success))
                     }
                     val appConfig = AppConfig(this@MainActivity)
-                    if (appConfig.autoStartOnAppOpen) {
+                    if (wasActive || appConfig.autoStartOnAppOpen) {
                         NodeService.start(this@MainActivity)
                     }
                 }
@@ -260,12 +284,49 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     isInstalling = false
                     installErrorMessage = t.message ?: "Extraction failed"
-                    if (source != null) {
-                        Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_failed, t.message ?: ""))
+                    when {
+                        isUpdate -> Utils.toast(this@MainActivity, t.message ?: "Update failed")
+                        source != null -> Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_failed, t.message ?: ""))
                     }
                 }
             }
         }
+    }
+
+    private fun checkForUpdates() {
+        if (isCheckingUpdates) return
+        isCheckingUpdates = true
+        lifecycleScope.launch {
+            val payloadManager = PayloadManager(this@MainActivity)
+            val info = payloadManager.getInstalledInfo()
+            val result = UpdateChecker().checkForUpdates(
+                currentPayloadVersion = info.payloadVersion,
+                currentStVersion = info.stVersion,
+            )
+            withContext(Dispatchers.Main) {
+                isCheckingUpdates = false
+                updateCheckResult = result
+                if (result is UpdateCheckResult.UpToDate) {
+                    Utils.toast(this@MainActivity, getString(R.string.toast_check_up_to_date))
+                } else if (result is UpdateCheckResult.Error) {
+                    Utils.toast(this@MainActivity, result.message)
+                }
+            }
+        }
+    }
+
+    private fun performUpdate(update: UpdateInfo) {
+        val remoteSource = RemotePayloadSource(
+            url = update.bundleUrl,
+            versionStamp = update.payloadVersion,
+            expectedSha256 = update.bundleSha256,
+            sourceDescription = "OTA (${update.tagName})",
+        )
+        installPayload(remoteSource, isUpdate = true)
+    }
+
+    private fun reinstallPayload() {
+        installPayload(null, isRepair = true)
     }
 
     private fun cancelInstall() {
@@ -311,17 +372,18 @@ class MainActivity : AppCompatActivity() {
             val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
                 NodeService.stop(this@MainActivity)
-                withTimeoutOrNull(3000) {
+                withTimeoutOrNull(5000) {
                     NodeService.status.first { it.state == NodeState.STOPPED }
                 }
             }
             PayloadManager(this@MainActivity).resetPayload()
             withContext(Dispatchers.Main) {
                 isInstalled = false
+                installedInfo = PayloadManager.InstalledInfo(isInstalled = false)
                 installErrorMessage = null
                 installProgress = null
                 navController.navigateTo(ActiveScreen.DASHBOARD)
-                Utils.toast(this@MainActivity, getString(R.string.toast_payload_reset))
+                Utils.toast(this@MainActivity, getString(R.string.toast_repair_success))
             }
         }
     }

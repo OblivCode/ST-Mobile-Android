@@ -51,6 +51,17 @@ class PayloadManager(
         val bundleSha256: String?,
         val tarSha256: String? = null,
         val tarBundle: String? = null,
+        val stCommit: String? = null,
+        val nodeRuntime: String? = null,
+    )
+
+    data class InstalledInfo(
+        val isInstalled: Boolean,
+        val payloadVersion: String? = null,
+        val stVersion: String? = null,
+        val stCommit: String? = null,
+        val nodeVersion: String? = null,
+        val sourceDescription: String? = null,
     )
 
     data class Layout(
@@ -90,6 +101,45 @@ class PayloadManager(
             bundleSha256 = json.optString("bundle_sha256").ifBlank { null },
             tarSha256 = json.optString("tar_sha256").ifBlank { null },
             tarBundle = json.optString("tar_bundle").ifBlank { null },
+            stCommit = json.optString("st_commit").ifBlank { null },
+            nodeRuntime = json.optString("node_runtime").ifBlank { null },
+        )
+    }
+
+    /**
+     * Inspects currently installed payload state and metadata.
+     */
+    fun getInstalledInfo(): InstalledInfo {
+        if (!isInstalled()) {
+            return InstalledInfo(isInstalled = false)
+        }
+        val payloadVersion = prefs.getString(KEY_INSTALLED, null)
+        var stVersion = prefs.getString(KEY_ST_VERSION, null)
+        var stCommit = prefs.getString(KEY_ST_COMMIT, null)
+        val sourceDesc = prefs.getString(KEY_SOURCE_DESC, null)
+
+        val manifest = runCatching { readManifest() }.getOrNull()
+        if (stVersion == null || stCommit == null) {
+            if (payloadVersion == manifest?.payloadVersion) {
+                stVersion = stVersion ?: manifest?.stVersion
+                stCommit = stCommit ?: manifest?.stCommit
+            } else {
+                val pkgFile = File(paths.stDir, "package.json")
+                if (pkgFile.exists()) {
+                    runCatching {
+                        stVersion = stVersion ?: JSONObject(pkgFile.readText()).optString("version").ifBlank { null }
+                    }
+                }
+            }
+        }
+
+        return InstalledInfo(
+            isInstalled = true,
+            payloadVersion = payloadVersion,
+            stVersion = stVersion ?: manifest?.stVersion ?: "1.19.0",
+            stCommit = stCommit ?: manifest?.stCommit,
+            nodeVersion = manifest?.nodeVersion ?: "24.20.0 (libnode.so)",
+            sourceDescription = sourceDesc,
         )
     }
 
@@ -199,7 +249,24 @@ class PayloadManager(
         ensureSymlink(paths.stConfigLink, paths.configFile)
         ensureSymlink(paths.stDataLink, paths.dataDir)
 
-        prefs.edit().putString(KEY_INSTALLED, source.versionStamp).apply()
+        val manifest = runCatching { readManifest() }.getOrNull()
+        val pkgJsonVersion = runCatching {
+            val pkgFile = File(paths.stDir, "package.json")
+            if (pkgFile.exists()) JSONObject(pkgFile.readText()).optString("version").ifBlank { null } else null
+        }.getOrNull()
+
+        val effectiveStVersion = pkgJsonVersion ?: manifest?.stVersion
+        val effectiveCommit = if (source is AssetPayloadSource || source.versionStamp == manifest?.payloadVersion) {
+            manifest?.stCommit
+        } else null
+
+        prefs.edit()
+            .putString(KEY_INSTALLED, source.versionStamp)
+            .putString(KEY_ST_VERSION, effectiveStVersion)
+            .putString(KEY_ST_COMMIT, effectiveCommit)
+            .putString(KEY_SOURCE_DESC, source.sourceDescription)
+            .apply()
+
         onProgress(ExtractProgress(stage = "Setup complete", filesProcessed = 11000, isCompleted = true))
 
         return Layout(
@@ -468,7 +535,12 @@ class PayloadManager(
      * Preserves user data and configuration outside of stDir.
      */
     fun resetPayload(): Boolean {
-        prefs.edit().remove(KEY_INSTALLED).commit()
+        prefs.edit()
+            .remove(KEY_INSTALLED)
+            .remove(KEY_ST_VERSION)
+            .remove(KEY_ST_COMMIT)
+            .remove(KEY_SOURCE_DESC)
+            .commit()
         return safeDeleteRecursively(paths.stDir)
     }
 
@@ -479,7 +551,10 @@ class PayloadManager(
     }
 
     companion object {
-        private const val KEY_INSTALLED = "installed_payload_version"
+        const val KEY_INSTALLED = "installed_payload_version"
+        const val KEY_ST_VERSION = "installed_st_version"
+        const val KEY_ST_COMMIT = "installed_st_commit"
+        const val KEY_SOURCE_DESC = "installed_source_desc"
 
         /**
          * Deletes a directory tree without traversing into symbolic links, preventing

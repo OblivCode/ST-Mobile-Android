@@ -11,15 +11,20 @@ import androidx.compose.ui.Modifier
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
 import app.stmobile.sillytavern.PayloadManager
+import app.stmobile.sillytavern.UpdateCheckResult
+import app.stmobile.sillytavern.UpdateInfo
 
 @Composable
 fun MainScreen(
     navController: NavigationController,
     status: NodeStatus,
     isInstalled: Boolean,
+    installedInfo: PayloadManager.InstalledInfo,
     isInstalling: Boolean,
     installProgress: PayloadManager.ExtractProgress?,
     installErrorMessage: String?,
+    isCheckingUpdates: Boolean,
+    updateCheckResult: UpdateCheckResult?,
     onInstallPayload: () -> Unit,
     onCancelInstall: () -> Unit,
     onStartServer: () -> Unit,
@@ -28,7 +33,9 @@ fun MainScreen(
     onImportBackup: () -> Unit,
     onExportLogs: () -> Unit,
     onPromptBattery: () -> Unit,
-    onResetPayload: () -> Unit,
+    onCheckForUpdates: () -> Unit,
+    onUpdatePayload: (UpdateInfo) -> Unit,
+    onReinstallPayload: () -> Unit,
     onImportArchive: () -> Unit = {},
 ) {
     // Intercept hardware Back to cancel installation if active
@@ -83,9 +90,17 @@ fun MainScreen(
                     onOpenSillyTavern = { navController.navigateTo(ActiveScreen.WEBVIEW) },
                 )
                 ActiveScreen.UPDATES -> UpdatesScreen(
-                    isInstalled = isInstalled,
-                    onResetPayload = onResetPayload,
+                    installedInfo = installedInfo,
+                    isInstalling = isInstalling,
+                    installProgress = installProgress,
+                    installErrorMessage = installErrorMessage,
+                    isCheckingUpdates = isCheckingUpdates,
+                    updateCheckResult = updateCheckResult,
+                    onCheckForUpdates = onCheckForUpdates,
+                    onUpdatePayload = onUpdatePayload,
                     onImportArchive = onImportArchive,
+                    onReinstallPayload = onReinstallPayload,
+                    onCancelInstall = onCancelInstall,
                 )
                 ActiveScreen.BACKUPS -> BackupsScreen(
                     onExportBackup = onExportBackup,
@@ -93,7 +108,6 @@ fun MainScreen(
                 )
                 ActiveScreen.SETTINGS -> SettingsScreen(
                     onPromptBattery = onPromptBattery,
-                    onResetPayload = onResetPayload,
                     onExportBackup = onExportBackup,
                     onImportBackup = onImportBackup,
                     onExportLogs = onExportLogs,

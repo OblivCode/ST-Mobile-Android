@@ -25,7 +25,6 @@ import app.stmobile.models.AppConfig
 @Composable
 fun SettingsScreen(
     onPromptBattery: () -> Unit,
-    onResetPayload: () -> Unit,
     modifier: Modifier = Modifier,
     onExportBackup: () -> Unit = {},
     onImportBackup: () -> Unit = {},
@@ -75,7 +74,6 @@ fun SettingsScreen(
             0 -> AppSettingsTab(
                 appConfig = appConfig,
                 onPromptBattery = onPromptBattery,
-                onResetPayload = onResetPayload,
             )
             1 -> SillyTavernSettingsTab(
                 onExportBackup = onExportBackup,

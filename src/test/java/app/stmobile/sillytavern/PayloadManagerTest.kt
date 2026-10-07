@@ -1,6 +1,7 @@
 package app.stmobile.sillytavern
 
 import app.stmobile.AppPaths
+import app.stmobile.testutils.FakeHttpURLConnection
 import app.stmobile.testutils.FakeSharedPreferences
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
@@ -401,26 +402,6 @@ class PayloadManagerTest {
             }
         }
         return baos.toByteArray()
-    }
-
-    private class FakeHttpURLConnection(
-        url: URL,
-        private val responseCode: Int,
-        private val responseMessage: String = "OK",
-        private val responseHeaders: Map<String, String> = emptyMap(),
-        private val responseData: ByteArray = ByteArray(0),
-    ) : HttpURLConnection(url) {
-        var isDisconnected = false
-        override fun connect() {}
-        override fun disconnect() { isDisconnected = true }
-        override fun usingProxy() = false
-        override fun getResponseCode() = responseCode
-        override fun getResponseMessage() = responseMessage
-        override fun getHeaderField(name: String): String? = responseHeaders.entries
-            .firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
-        override fun getContentLength(): Int = responseData.size
-        override fun getContentLengthLong(): Long = responseData.size.toLong()
-        override fun getInputStream(): InputStream = ByteArrayInputStream(responseData)
     }
 
     @Test
@@ -972,5 +953,49 @@ class PayloadManagerTest {
         assertTrue(layout.stEntry.exists())
         assertEquals("console.log('GzipStream');", layout.stEntry.readText())
         assertEquals("v-remote-gz", prefs.getString("installed_payload_version", null))
+    }
+
+    @Test
+    fun testReadManifestWithCommitAndNodeRuntime() {
+        val json = """
+            {
+              "payload_version": "st-1.19.0-7e8663cd",
+              "st_version": "1.19.0",
+              "st_commit": "7e8663cd9c184a550b37238218bdd32c6efc68e9",
+              "node_version": "v24.20.0",
+              "node_runtime": "FongMi/nodejs-mobile v24.20.0-android.2",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "gz-sha",
+              "tar_bundle": "st_bundle.tar",
+              "tar_sha256": "tar-sha"
+            }
+        """.trimIndent()
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p8"), tempFolder.newFolder("c8"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { ByteArrayInputStream(json.toByteArray()) },
+        )
+        val manifest = manager.readManifest()
+        assertEquals("7e8663cd9c184a550b37238218bdd32c6efc68e9", manifest.stCommit)
+        assertEquals("FongMi/nodejs-mobile v24.20.0-android.2", manifest.nodeRuntime)
+    }
+
+    @Test
+    fun testGetInstalledInfoWhenNotInstalledAndInstalled() {
+        val (manager, paths, prefs) = createTestSetup()
+        val initialInfo = manager.getInstalledInfo()
+        assertFalse("Must report not installed initially", initialInfo.isInstalled)
+
+        // Simulate extraction
+        manager.extract(manager.defaultPayloadSource()) {}
+        val installedInfo = manager.getInstalledInfo()
+        assertTrue("Must report installed after extraction", installedInfo.isInstalled)
+        assertEquals("1.12.0", installedInfo.stVersion)
+        assertEquals("v1.0.0", installedInfo.payloadVersion)
+
+        // Verify reset clears info
+        manager.resetPayload()
+        val resetInfo = manager.getInstalledInfo()
+        assertFalse("Must report not installed after reset", resetInfo.isInstalled)
     }
 }
