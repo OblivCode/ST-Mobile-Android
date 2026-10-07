@@ -23,6 +23,7 @@ class AppConfigTest {
         assertEquals("basicAuthPassword default should be 'password'", "password", config.basicAuthPassword)
         assertFalse("wasRunningBeforeKill default should be false", config.wasRunningBeforeKill)
         assertTrue("webViewMenuQuickToolbar default should be true", config.webViewMenuQuickToolbar)
+        assertTrue("autoSyncLanguage default should be true", config.autoSyncLanguage)
     }
 
     @Test
@@ -40,6 +41,7 @@ class AppConfigTest {
         config.basicAuthPassword = "customPassword123"
         config.wasRunningBeforeKill = true
         config.webViewMenuQuickToolbar = false
+        config.autoSyncLanguage = false
 
         // Verify on instance
         assertTrue(config.autoStartOnAppOpen)
@@ -52,6 +54,7 @@ class AppConfigTest {
         assertEquals("customPassword123", config.basicAuthPassword)
         assertTrue(config.wasRunningBeforeKill)
         assertFalse(config.webViewMenuQuickToolbar)
+        assertFalse(config.autoSyncLanguage)
 
         // Verify across independent AppConfig instance on the same SharedPreferences
         val reloaded = AppConfig(prefs)
@@ -65,6 +68,7 @@ class AppConfigTest {
         assertEquals("customPassword123", reloaded.basicAuthPassword)
         assertTrue(reloaded.wasRunningBeforeKill)
         assertFalse(reloaded.webViewMenuQuickToolbar)
+        assertFalse(reloaded.autoSyncLanguage)
     }
 
     @Test
@@ -114,6 +118,7 @@ class AppConfigTest {
         assertTrue("Unwritten autoLaunchWebViewOnStart adopts true", config.autoLaunchWebViewOnStart)
         assertTrue("Unwritten autoPortFallback adopts true", config.autoPortFallback)
         assertTrue("Unwritten webViewMenuQuickToolbar adopts true", config.webViewMenuQuickToolbar)
+        assertTrue("Unwritten autoSyncLanguage adopts true", config.autoSyncLanguage)
         assertEquals("Unwritten backgroundTimeoutMinutes adopts 5", 5, config.backgroundTimeoutMinutes)
         assertEquals("Unwritten basicAuthUsername adopts 'user'", "user", config.basicAuthUsername)
         assertEquals("Unwritten basicAuthPassword adopts 'password'", "password", config.basicAuthPassword)
@@ -127,6 +132,7 @@ class AppConfigTest {
             .putBoolean("auto_launch_webview_on_start", false)
             .putBoolean("auto_port_fallback", false)
             .putBoolean("webview_menu_quick_toolbar", false)
+            .putBoolean("auto_sync_language", false)
             .putInt("background_timeout_minutes", 0)
             .putString("basic_auth_user", "custom_admin")
             .putString("basic_auth_pass", "secret_pass_123")
@@ -137,6 +143,7 @@ class AppConfigTest {
         assertFalse("Explicit user override for autoLaunchWebViewOnStart preserved", config.autoLaunchWebViewOnStart)
         assertFalse("Explicit user override for autoPortFallback preserved", config.autoPortFallback)
         assertFalse("Explicit user override for webViewMenuQuickToolbar preserved", config.webViewMenuQuickToolbar)
+        assertFalse("Explicit user override for autoSyncLanguage preserved", config.autoSyncLanguage)
         assertEquals("Explicit user override for backgroundTimeoutMinutes preserved", 0, config.backgroundTimeoutMinutes)
         assertEquals("Explicit user override for basicAuthUsername preserved", "custom_admin", config.basicAuthUsername)
         assertEquals("Explicit user override for basicAuthPassword preserved", "secret_pass_123", config.basicAuthPassword)

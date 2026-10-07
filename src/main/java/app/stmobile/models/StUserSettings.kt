@@ -80,6 +80,13 @@ class StUserSettings(
             getOrCreatePowerUser().put("font_scale", clamped.toDouble())
         }
 
+    var uiLanguage: String
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optString("ui_language", DEFAULT_UI_LANGUAGE)
+            ?: DEFAULT_UI_LANGUAGE
+        set(value) {
+            getOrCreatePowerUser().put("ui_language", value)
+        }
+
     /** Direct access to the underlying preserved JSON object. */
     fun raw(): JSONObject = rawJson
 
@@ -130,6 +137,7 @@ class StUserSettings(
         const val DEFAULT_FONT_SCALE = 1.0f
         const val MIN_FONT_SCALE = 0.5f
         const val MAX_FONT_SCALE = 1.5f
+        const val DEFAULT_UI_LANGUAGE = ""
 
         fun fromJson(jsonText: String, sourceFile: File? = null): StUserSettings {
             val obj = runCatching { JSONObject(jsonText) }.getOrElse { JSONObject() }

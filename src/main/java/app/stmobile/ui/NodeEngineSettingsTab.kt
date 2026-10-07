@@ -17,10 +17,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.stmobile.R
 import app.stmobile.Utils
 import app.stmobile.models.NodeConfig
 import kotlin.math.roundToInt
@@ -42,7 +44,7 @@ fun NodeEngineSettingsTab(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "V8 Maximum Heap Size: $maxOldSpace MB",
+            text = stringResource(R.string.engine_max_heap, maxOldSpace),
             style = MaterialTheme.typography.titleMedium,
             color = Color(0xFFD8DEE6),
         )
@@ -57,7 +59,7 @@ fun NodeEngineSettingsTab(
                 runCatching {
                     NodeConfig.save(context, updated)
                 }.onFailure { e ->
-                    Utils.toast(context, "Failed to save engine config: ${e.message}")
+                    Utils.toast(context, context.getString(R.string.toast_save_engine_failed, e.message ?: ""))
                 }
             },
             valueRange = 256f..4096f,
@@ -66,7 +68,7 @@ fun NodeEngineSettingsTab(
         )
 
         Text(
-            text = "Allocates V8 maximum old space size (--max-old-space-size). Changes take effect on next server start.",
+            text = stringResource(R.string.engine_max_heap_desc),
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF8A94A3),
         )

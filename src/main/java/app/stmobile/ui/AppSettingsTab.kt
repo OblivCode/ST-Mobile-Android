@@ -1,10 +1,17 @@
 package app.stmobile.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -14,7 +21,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,9 +36,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import app.stmobile.R
 import app.stmobile.models.AppConfig
+import app.stmobile.models.StLocales
+import app.stmobile.models.StUserSettings
 
 @Composable
 fun AppSettingsTab(
@@ -38,12 +55,28 @@ fun AppSettingsTab(
     onResetPayload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var autoStart by remember { mutableStateOf(appConfig.autoStartOnAppOpen) }
     var autoLaunch by remember { mutableStateOf(appConfig.autoLaunchWebViewOnStart) }
     var autoPortFallback by remember { mutableStateOf(appConfig.autoPortFallback) }
     var quickToolbar by remember { mutableStateOf(appConfig.webViewMenuQuickToolbar) }
+    var autoSyncLanguage by remember { mutableStateOf(appConfig.autoSyncLanguage) }
     var bgTimeout by remember { mutableStateOf(appConfig.backgroundTimeoutMinutes.toString()) }
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
+    var showAppLanguageDialog by rememberSaveable { mutableStateOf(false) }
+
+    // Active app shell locale tag from AppCompatDelegate
+    val currentLocales = AppCompatDelegate.getApplicationLocales()
+    val currentAppTag = if (!currentLocales.isEmpty) currentLocales[0]?.toLanguageTag()?.substringBefore('-') ?: "" else ""
+    val currentAppLocale = StLocales.findAppLocale(currentAppTag)
+    val currentAppLocaleName = currentAppLocale?.let { "${it.nativeName} (${it.englishName})" }
+        ?: stringResource(R.string.locale_system_default)
+
+    // Check if SillyTavern has a distinct language that can be matched
+    val userSettings = remember { StUserSettings.load(context) }
+    val stMappedTag = StLocales.mapStLocaleToAppLocale(userSettings.uiLanguage)
+    val canMatchStLanguage = !autoSyncLanguage && stMappedTag != null && stMappedTag != currentAppTag
+    val stLocaleDisplay = StLocales.findLocale(userSettings.uiLanguage)?.nativeName ?: userSettings.uiLanguage
 
     Column(
         modifier = modifier
@@ -58,7 +91,7 @@ fun AppSettingsTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Auto-start server on app launch", color = Color(0xFFD8DEE6))
+            Text(stringResource(R.string.settings_auto_start), color = Color(0xFFD8DEE6))
             Switch(
                 checked = autoStart,
                 onCheckedChange = {
@@ -74,9 +107,9 @@ fun AppSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Auto-launch SillyTavern", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.settings_auto_launch), color = Color(0xFFD8DEE6))
                 Text(
-                    "Automatically switch to the SillyTavern interface whenever the server becomes running",
+                    stringResource(R.string.settings_auto_launch_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -95,7 +128,7 @@ fun AppSettingsTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Auto fallback port if occupied", color = Color(0xFFD8DEE6))
+            Text(stringResource(R.string.settings_auto_port_fallback), color = Color(0xFFD8DEE6))
             Switch(
                 checked = autoPortFallback,
                 onCheckedChange = {
@@ -111,9 +144,9 @@ fun AppSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("WebView menu quick toolbar", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.settings_quick_toolbar), color = Color(0xFFD8DEE6))
                 Text(
-                    "Show a dock with Dashboard, Reload, and Settings shortcuts instead of immediately returning to Dashboard",
+                    stringResource(R.string.settings_quick_toolbar_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -127,6 +160,61 @@ fun AppSettingsTab(
             )
         }
 
+        // Language & Localization Settings
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_auto_sync_lang), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_auto_sync_lang_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = autoSyncLanguage,
+                onCheckedChange = {
+                    autoSyncLanguage = it
+                    appConfig.autoSyncLanguage = it
+                },
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showAppLanguageDialog = true },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_app_language), color = Color(0xFFD8DEE6))
+                Text(
+                    currentAppLocaleName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7EC8A9),
+                )
+            }
+            OutlinedButton(onClick = { showAppLanguageDialog = true }) {
+                Text(stringResource(R.string.btn_change))
+            }
+        }
+
+        if (canMatchStLanguage) {
+            OutlinedButton(
+                onClick = {
+                    val targetLocales = if (stMappedTag.isNullOrEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(stMappedTag)
+                    AppCompatDelegate.setApplicationLocales(targetLocales)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_match_st_language, stLocaleDisplay))
+            }
+        }
+
         OutlinedTextField(
             value = bgTimeout,
             onValueChange = { input ->
@@ -134,7 +222,7 @@ fun AppSettingsTab(
                 bgTimeout = filtered
                 filtered.toIntOrNull()?.let { appConfig.backgroundTimeoutMinutes = it }
             },
-            label = { Text("Background idle timeout (minutes, 0 to disable)") },
+            label = { Text(stringResource(R.string.settings_bg_timeout)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -143,7 +231,7 @@ fun AppSettingsTab(
             onClick = onPromptBattery,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Request Battery Optimization Exemption")
+            Text(stringResource(R.string.settings_battery_exemption))
         }
 
         Button(
@@ -154,26 +242,106 @@ fun AppSettingsTab(
                 contentColor = Color(0xFFFFB4AB),
             ),
         ) {
-            Text("Reset SillyTavern Payload")
+            Text(stringResource(R.string.settings_reset_payload))
         }
+    }
+
+    if (showAppLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showAppLanguageDialog = false },
+            title = { Text(stringResource(R.string.settings_app_language)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    StLocales.SUPPORTED_APP_LOCALES.forEach { appLocale ->
+                        val isSelected = currentAppTag.equals(appLocale.tag, ignoreCase = true)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showAppLanguageDialog = false
+                                    val list = if (appLocale.tag.isEmpty()) {
+                                        LocaleListCompat.getEmptyLocaleList()
+                                    } else {
+                                        LocaleListCompat.forLanguageTags(appLocale.tag)
+                                    }
+                                    AppCompatDelegate.setApplicationLocales(list)
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    showAppLanguageDialog = false
+                                    val list = if (appLocale.tag.isEmpty()) {
+                                        LocaleListCompat.getEmptyLocaleList()
+                                    } else {
+                                        LocaleListCompat.forLanguageTags(appLocale.tag)
+                                    }
+                                    AppCompatDelegate.setApplicationLocales(list)
+                                },
+                            )
+                            Column(modifier = Modifier.padding(start = 8.dp)) {
+                                Text(
+                                    text = if (appLocale.tag.isEmpty()) stringResource(R.string.locale_system_default) else appLocale.nativeName,
+                                    color = Color(0xFFD8DEE6),
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                if (appLocale.tag.isNotEmpty()) {
+                                    Text(
+                                        text = appLocale.englishName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                showAppLanguageDialog = false
+                                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                                runCatching { context.startActivity(intent) }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.btn_open_system_locale))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAppLanguageDialog = false }) {
+                    Text(stringResource(R.string.btn_close))
+                }
+            },
+        )
     }
 
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset Payload") },
-            text = { Text("This will reinstall the bundled SillyTavern application code. User data (characters, chats) will be preserved.") },
+            title = { Text(stringResource(R.string.dialog_reset_payload_title)) },
+            text = { Text(stringResource(R.string.dialog_reset_payload_msg)) },
             confirmButton = {
                 TextButton(onClick = {
                     showResetDialog = false
                     onResetPayload()
                 }) {
-                    Text("Reset")
+                    Text(stringResource(R.string.btn_reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             },
         )

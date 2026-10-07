@@ -62,10 +62,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.LocaleManagerCompat
+import app.stmobile.R
 import app.stmobile.models.AppConfig
+import app.stmobile.models.StLocales
+import app.stmobile.models.StUserSettings
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 @Composable
@@ -77,6 +83,13 @@ fun StWebView(
     onNavigateToSettings: () -> Unit = {},
     onBackToDashboard: () -> Unit = onNavigateToDashboard,
 ) {
+    val context = LocalContext.current
+    val appConfig = remember(context) { AppConfig(context) }
+    val userSettings = remember(context) { StUserSettings.load(context) }
+    val currentLocales = LocaleManagerCompat.getApplicationLocales(context)
+    val currentAppLocale = if (!currentLocales.isEmpty) currentLocales[0] ?: Locale.getDefault() else Locale.getDefault()
+    val effectiveStLanguage = StLocales.getEffectiveLocale(userSettings.uiLanguage, appConfig.autoSyncLanguage, currentAppLocale)
+
     var pendingFileCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
     var didInitialReload by remember { mutableStateOf(false) }
     var pendingUrl by remember { mutableStateOf<String?>(null) }
@@ -129,6 +142,20 @@ fun StWebView(
                                 didInitialReload = true
                                 view?.postDelayed({ view.loadUrl(finishedUrl ?: "about:blank") }, 250)
                             }
+                            // Synchronize SillyTavern UI language with the effective locale
+                            val syncJs = """
+                                (function() {
+                                    try {
+                                        var desired = '$effectiveStLanguage';
+                                        var current = localStorage.getItem('language');
+                                        if (current !== desired) {
+                                            localStorage.setItem('language', desired);
+                                            location.reload();
+                                        }
+                                    } catch(e) {}
+                                })();
+                            """.trimIndent()
+                            view?.evaluateJavascript(syncJs, null)
                         }
                     }
 
@@ -305,7 +332,7 @@ fun EdgeDockedMenuHandle(
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
+                    contentDescription = stringResource(R.string.cd_menu),
                     tint = Color(0xFF7EC8A9),
                     modifier = Modifier.size(20.dp),
                 )
@@ -346,7 +373,7 @@ fun EdgeDockedMenuHandle(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Dashboard,
-                            contentDescription = "Dashboard",
+                            contentDescription = stringResource(R.string.cd_dashboard),
                             tint = Color(0xFF7EC8A9),
                         )
                     }
@@ -358,7 +385,7 @@ fun EdgeDockedMenuHandle(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reload",
+                            contentDescription = stringResource(R.string.cd_reload),
                             tint = Color(0xFF7EC8A9),
                         )
                     }
@@ -370,7 +397,7 @@ fun EdgeDockedMenuHandle(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = stringResource(R.string.cd_settings),
                             tint = Color(0xFF7EC8A9),
                         )
                     }
@@ -381,7 +408,7 @@ fun EdgeDockedMenuHandle(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = stringResource(R.string.cd_close),
                             tint = Color(0xFFB0BEC5),
                         )
                     }

@@ -24,6 +24,7 @@ class StUserSettingsTest {
         assertTrue("fastUiMode default should be true", settings.fastUiMode)
         assertFalse("reducedMotion default should be false", settings.reducedMotion)
         assertEquals("fontScale default should be 1.0f", 1.0f, settings.fontScale, 0.001f)
+        assertEquals("uiLanguage default should be empty string", "", settings.uiLanguage)
     }
 
     @Test
@@ -41,7 +42,8 @@ class StUserSettingsTest {
                     "fast_ui_mode": true,
                     "font_scale": 1.1,
                     "send_on_enter": 0,
-                    "auto_load_chat": false
+                    "auto_load_chat": false,
+                    "ui_language": "zh-cn"
                 }
             }
         """.trimIndent()
@@ -55,8 +57,9 @@ class StUserSettingsTest {
         assertEquals(1.1f, settings.fontScale, 0.001f)
         assertEquals(0, settings.sendOnEnter)
         assertEquals(false, settings.autoLoadChat)
+        assertEquals("zh-cn", settings.uiLanguage)
 
-        // Mutate Phase N fields
+        // Mutate Phase N / O fields
         settings.autoLoadChat = true
         settings.autoConnect = true
         settings.compactInputArea = false
@@ -64,6 +67,7 @@ class StUserSettingsTest {
         settings.fastUiMode = false
         settings.reducedMotion = true
         settings.fontScale = 1.35f
+        settings.uiLanguage = "ru-ru"
 
         // Serialize and re-read
         val dumped = settings.raw().toString()
@@ -77,6 +81,7 @@ class StUserSettingsTest {
         assertFalse(reloaded.fastUiMode)
         assertTrue(reloaded.reducedMotion)
         assertEquals(1.35f, reloaded.fontScale, 0.001f)
+        assertEquals("ru-ru", reloaded.uiLanguage)
 
         // Verify surrounding root and power_user properties are 100% intact
         assertEquals("TestUser", reloaded.raw().getString("username"))
@@ -88,6 +93,7 @@ class StUserSettingsTest {
         assertEquals("Default (Dark)", powerUser.getString("theme"))
         assertEquals(10, powerUser.getInt("blur_strength"))
         assertEquals(55, powerUser.getInt("chat_width"))
+        assertEquals("ru-ru", powerUser.getString("ui_language"))
     }
 
     @Test

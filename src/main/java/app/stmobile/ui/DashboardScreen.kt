@@ -23,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.stmobile.R
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
 
@@ -52,6 +54,14 @@ fun DashboardScreen(
         NodeState.STOPPING -> Color(0xFFD19A66)
         NodeState.STOPPED -> Color(0xFF8A94A3)
         NodeState.ERROR -> Color(0xFFE06C75)
+    }
+
+    val stateLabel = when (status.state) {
+        NodeState.RUNNING -> stringResource(R.string.status_running)
+        NodeState.STARTING -> stringResource(R.string.status_starting)
+        NodeState.STOPPING -> stringResource(R.string.status_stopping)
+        NodeState.STOPPED -> stringResource(R.string.status_stopped)
+        NodeState.ERROR -> stringResource(R.string.status_error)
     }
 
     Box(
@@ -83,14 +93,14 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = status.state.name,
+                            text = stateLabel,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = stateColor,
                         )
                         if (status.port > 0) {
                             Text(
-                                text = "Port: ${status.port}",
+                                text = stringResource(R.string.dashboard_port, status.port),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color(0xFF8A94A3),
                             )
@@ -108,7 +118,7 @@ fun DashboardScreen(
                     if (status.pid != null) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "PID: ${status.pid}",
+                            text = stringResource(R.string.dashboard_pid, status.pid),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF8A94A3),
                         )
@@ -127,7 +137,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 ) {
-                    Text("Start Server")
+                    Text(stringResource(R.string.dashboard_btn_start))
                 }
 
                 Button(
@@ -142,7 +152,7 @@ fun DashboardScreen(
                         disabledContentColor = Color(0xFF6B5858),
                     ),
                 ) {
-                    Text("Stop Server")
+                    Text(stringResource(R.string.dashboard_btn_stop))
                 }
 
                 Button(
@@ -157,7 +167,7 @@ fun DashboardScreen(
                         disabledContentColor = Color(0xFF4D6657),
                     ),
                 ) {
-                    Text("Open SillyTavern")
+                    Text(stringResource(R.string.dashboard_btn_open))
                 }
             }
         }

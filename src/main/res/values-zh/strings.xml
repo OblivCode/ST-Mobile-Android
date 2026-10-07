@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">ST Mobile</string>
+    <string name="fgs_special_use_subtype">运行本地 SillyTavern Node.js 服务</string>
+    <string name="notification_channel_name">ST Mobile 服务</string>
+    <string name="notification_action_stop">停止</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_close">关闭</string>
+    <string name="btn_change">更改</string>
+    <string name="btn_export">导出</string>
+    <string name="btn_unlock">解锁</string>
+    <string name="btn_restore">恢复</string>
+    <string name="btn_reset">重置</string>
+    <string name="locale_system_default">系统默认</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">仪表盘</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_port">端口：%1$d</string>
+    <string name="dashboard_pid">PID：%1$d</string>
+    <string name="dashboard_btn_start">启动服务</string>
+    <string name="dashboard_btn_stop">停止服务</string>
+    <string name="dashboard_btn_open">打开 SillyTavern</string>
+    <string name="status_idle">空闲</string>
+    <string name="status_running">运行中</string>
+    <string name="status_starting">启动中…</string>
+    <string name="status_stopping">停止中…</string>
+    <string name="status_stopped">已停止</string>
+    <string name="status_error">错误</string>
+
+    <!-- Settings Screen Tabs -->
+    <string name="tab_app">应用</string>
+    <string name="tab_sillytavern">SillyTavern</string>
+    <string name="tab_node_engine">Node 引擎</string>
+
+    <!-- App Settings Tab -->
+    <string name="settings_auto_start">打开应用时自动启动服务</string>
+    <string name="settings_auto_launch">自动打开 SillyTavern</string>
+    <string name="settings_auto_launch_desc">服务运行就绪后自动切换至 SillyTavern 界面</string>
+    <string name="settings_auto_port_fallback">端口占用时自动后退备用端口</string>
+    <string name="settings_quick_toolbar">WebView 悬浮菜单快捷工具栏</string>
+    <string name="settings_quick_toolbar_desc">显示包含仪表盘、刷新和设置快捷方式的快捷栏，而不是直接返回仪表盘</string>
+    <string name="settings_bg_timeout">后台空闲超时（分钟，0为禁用）</string>
+    <string name="settings_battery_exemption">请求忽略电池优化</string>
+    <string name="settings_reset_payload">重置 SillyTavern 核心文件</string>
+    <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>
+    <string name="settings_auto_sync_lang_desc">使 SillyTavern 界面语言与原生应用语言保持同步</string>
+    <string name="settings_app_language">应用界面语言</string>
+    <string name="settings_app_language_desc">配置原生应用界面的显示语言</string>
+    <string name="btn_match_st_language">匹配 SillyTavern 语言 (%1$s)</string>
+    <string name="btn_open_system_locale">系统语言设置</string>
+
+    <!-- Reset Payload Dialog -->
+    <string name="dialog_reset_payload_title">重置核心文件</string>
+    <string name="dialog_reset_payload_msg">这将重新安装内置的 SillyTavern 应用程序代码。用户数据（角色、聊天记录）将保留。</string>
+
+    <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_user_title">用户偏好设置</string>
+    <string name="st_settings_user_desc">设置直接同步至 SillyTavern 的 settings.json。刷新页面（通过悬浮菜单 🔄 按钮）或重启服务后生效。</string>
+    <string name="st_settings_ui_language">界面语言</string>
+    <string name="st_settings_ui_language_desc">SillyTavern Web 界面的显示语言。支持17种内置语言包。</string>
+    <string name="st_settings_lang_synced">已与应用同步 (%1$s)</string>
+    <string name="btn_sync_app_language">同步为应用语言 (%1$s)</string>
+    <string name="st_settings_auto_load_chat">自动加载最后对话</string>
+    <string name="st_settings_auto_load_chat_desc">打开时自动恢复当前角色与聊天记录，无需重新挑选角色</string>
+    <string name="st_settings_auto_connect">自动连接 API</string>
+    <string name="st_settings_auto_connect_desc">启动时自动连接预设后端接口</string>
+    <string name="st_settings_compact_input">紧凑输入框模式</string>
+    <string name="st_settings_compact_input_desc">单行消息输入框，以便虚拟键盘弹出时保留聊天记录可见性</string>
+    <string name="st_settings_send_on_enter">回车键发送消息</string>
+    <string name="st_settings_send_auto">自动（外接键盘发送，软键盘换行）</string>
+    <string name="st_settings_send_disabled">禁用（回车始终换行）</string>
+    <string name="st_settings_send_enabled">启用（回车始终发送）</string>
+
+    <!-- SillyTavern Settings Tab - Send on Enter Dialog -->
+    <string name="dialog_send_on_enter_title">回车键发送行为</string>
+    <string name="dialog_send_auto_title">自动（电脑/实体键盘）</string>
+    <string name="dialog_send_auto_desc">实体键盘回车发送；虚拟键盘回车换行</string>
+    <string name="dialog_send_disabled_title">禁用</string>
+    <string name="dialog_send_disabled_desc">回车键始终插入新行</string>
+    <string name="dialog_send_enabled_title">启用</string>
+    <string name="dialog_send_enabled_desc">回车键始终直接发送消息</string>
+
+    <!-- SillyTavern Settings Tab - Performance & Display -->
+    <string name="st_settings_fast_ui">快速界面模式 (Fast UI)</string>
+    <string name="st_settings_fast_ui_desc">禁用高耗能 GPU 模糊效果与滤镜，提供更流畅的滚动体验并节省电量</string>
+    <string name="st_settings_reduced_motion">减弱动态效果</string>
+    <string name="st_settings_reduced_motion_desc">禁用界面过渡动画，让导航与抽屉开合更迅速</string>
+    <string name="st_settings_font_scale">字体缩放：%1$d%%</string>
+    <string name="st_settings_font_scale_desc" formatted="false">调节文本大小以适应不同设备屏幕 DPI (50% – 150%)。</string>
+
+    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
+    <string name="st_settings_backups_title">数据与备份</string>
+    <string name="st_settings_backups_desc">将角色、对话和配置文件导出为压缩包（支持 AES-256 密码加密），或恢复现有备份。</string>
+    <string name="btn_export_backup">导出备份</string>
+    <string name="btn_restore_backup">恢复备份</string>
+    <string name="st_settings_logs_title">诊断与日志</string>
+    <string name="st_settings_logs_desc">分享或导出应用程序日志文件，用于排查与诊断服务器问题。</string>
+    <string name="btn_export_logs">导出日志</string>
+
+    <!-- Node Engine Settings Tab -->
+    <string name="engine_max_heap">V8 最大堆内存大小：%1$d MB</string>
+    <string name="engine_max_heap_desc">分配 V8 引擎最大 old space 内存空间 (--max-old-space-size)。下次启动服务生效。</string>
+
+    <!-- Backup Dialogs - Export -->
+    <string name="dialog_export_title">导出备份</string>
+    <string name="dialog_export_desc">将所有角色卡、聊天记录、设置和 config.yaml 打包归档为 ZIP 文件。</string>
+    <string name="dialog_export_encrypt">使用密码加密 (AES-256)</string>
+    <string name="dialog_export_password">密码</string>
+    <string name="dialog_export_confirm_password">确认密码</string>
+    <string name="dialog_export_mismatch">两次输入的密码不一致</string>
+
+    <!-- Backup Dialogs - Import Password -->
+    <string name="dialog_import_pwd_title">加密备份归档</string>
+    <string name="dialog_import_pwd_desc">此压缩文件受 AES-256 加密保护。请输入密码以解锁：</string>
+    <string name="dialog_import_pwd_label">归档密码</string>
+    <string name="error_incorrect_password">密码错误</string>
+
+    <!-- Backup Dialogs - Import Strategy -->
+    <string name="dialog_restore_title">恢复备份</string>
+    <string name="dialog_restore_archive_details">归档详情</string>
+    <string name="dialog_restore_st_version">SillyTavern 版本：%1$s</string>
+    <string name="restore_legacy_external">旧版 / 外部</string>
+    <string name="dialog_restore_files_count">待恢复文件数：%1$d</string>
+    <string name="dialog_restore_created">创建时间：%1$s</string>
+    <string name="dialog_restore_strategy_title">选择恢复策略：</string>
+    <string name="dialog_restore_clean_title">全新覆盖恢复 (Replace)</string>
+    <string name="dialog_restore_clean_desc">原子替换用户数据。清理孤立旧文件。</string>
+    <string name="dialog_restore_merge_title">合并恢复 (Merge)</string>
+    <string name="dialog_restore_merge_desc">仅覆盖冲突文件，保留归档中不存在的本地文件。</string>
+
+    <!-- Setup Screen (Onboarding) -->
+    <string name="setup_welcome_title">欢迎使用 ST Mobile</string>
+    <string name="setup_welcome_subtitle">在 Android 本地零依赖运行 SillyTavern。请选择初始化环境的方式：</string>
+    <string name="setup_fresh_title">全新安装</string>
+    <string name="setup_fresh_desc">解压内置 SillyTavern 运行时并生成默认初始配置。</string>
+    <string name="setup_start_setup">开始安装</string>
+    <string name="setup_restore_title">从现有备份恢复</string>
+    <string name="setup_restore_desc">选择标准 SillyTavern ZIP 归档（电脑完整安装包、data 文件夹或网页导出备份）。仅恢复用户数据与设置。</string>
+    <string name="setup_details">详细信息</string>
+    <string name="setup_hide_details">隐藏信息</string>
+    <string name="setup_retry">重试安装</string>
+    <string name="setup_back_options">返回选项</string>
+    <string name="setup_status_preparing">正在准备运行时…</string>
+    <string name="setup_status_starting">正在初始化 SillyTavern…</string>
+    <string name="setup_status_restoring">正在恢复备份数据…</string>
+
+    <!-- Content Descriptions for Accessibility -->
+    <string name="cd_menu">菜单</string>
+    <string name="cd_dashboard">仪表盘</string>
+    <string name="cd_reload">刷新</string>
+    <string name="cd_settings">设置</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_toggle_pwd">切换密码可见性</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_export_success">备份导出成功</string>
+    <string name="toast_export_failed">导出失败：%1$s</string>
+    <string name="toast_invalid_backup">无效的备份文件：%1$s</string>
+    <string name="toast_restore_success">已成功恢复 %1$d 个文件</string>
+    <string name="toast_restore_failed">恢复失败：%1$s</string>
+    <string name="toast_payload_reset">SillyTavern 核心文件已重置</string>
+    <string name="toast_save_settings_failed">保存设置失败：%1$s</string>
+    <string name="toast_save_engine_failed">保存引擎配置失败：%1$s</string>
+</resources>

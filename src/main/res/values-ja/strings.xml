@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">ST Mobile</string>
+    <string name="fgs_special_use_subtype">ローカル SillyTavern Node.js サーバーを実行</string>
+    <string name="notification_channel_name">ST Mobile サーバー</string>
+    <string name="notification_action_stop">停止</string>
+    <string name="btn_cancel">キャンセル</string>
+    <string name="btn_close">閉じる</string>
+    <string name="btn_change">変更</string>
+    <string name="btn_export">エクスポート</string>
+    <string name="btn_unlock">ロック解除</string>
+    <string name="btn_restore">復元</string>
+    <string name="btn_reset">リセット</string>
+    <string name="locale_system_default">システムデフォルト</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">ダッシュボード</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_port">ポート: %1$d</string>
+    <string name="dashboard_pid">PID: %1$d</string>
+    <string name="dashboard_btn_start">サーバー起動</string>
+    <string name="dashboard_btn_stop">サーバー停止</string>
+    <string name="dashboard_btn_open">SillyTavern を開く</string>
+    <string name="status_idle">待機中</string>
+    <string name="status_running">実行中</string>
+    <string name="status_starting">起動中…</string>
+    <string name="status_stopping">停止中…</string>
+    <string name="status_stopped">停止</string>
+    <string name="status_error">エラー</string>
+
+    <!-- Settings Screen Tabs -->
+    <string name="tab_app">アプリ</string>
+    <string name="tab_sillytavern">SillyTavern</string>
+    <string name="tab_node_engine">Node エンジン</string>
+
+    <!-- App Settings Tab -->
+    <string name="settings_auto_start">アプリ起動時にサーバーを自動起動</string>
+    <string name="settings_auto_launch">SillyTavern を自動表示</string>
+    <string name="settings_auto_launch_desc">サーバーの準備ができ次第、自動的に SillyTavern 画面へ切り替えます</string>
+    <string name="settings_auto_port_fallback">ポート使用中時に自動フォールバック</string>
+    <string name="settings_quick_toolbar">WebView クイックツールバー</string>
+    <string name="settings_quick_toolbar_desc">直接戻る代わりにダッシュボード・リロード・設定のドックを表示します</string>
+    <string name="settings_bg_timeout">バックグラウンド待機タイムアウト（分、0で無効）</string>
+    <string name="settings_battery_exemption">バッテリー最適化の免除をリクエスト</string>
+    <string name="settings_reset_payload">SillyTavern ファイルのリセット</string>
+    <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>
+    <string name="settings_auto_sync_lang_desc">SillyTavern のインターフェース言語をアプリ言語と同期させます</string>
+    <string name="settings_app_language">アプリ言語</string>
+    <string name="settings_app_language_desc">ネイティブアプリ画面の表示言語を設定</string>
+    <string name="btn_match_st_language">SillyTavern の言語に合わせる (%1$s)</string>
+    <string name="btn_open_system_locale">システム言語設定を開く</string>
+
+    <!-- Reset Payload Dialog -->
+    <string name="dialog_reset_payload_title">ファイルのリセット</string>
+    <string name="dialog_reset_payload_msg">内蔵された SillyTavern アプリケーションコードを再インストールします。ユーザーデータ（キャラクター、チャット）は保持されます。</string>
+
+    <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_user_title">ユーザー設定</string>
+    <string name="st_settings_user_desc">SillyTavern の settings.json と直接同期されます。ページ再読み込み（🔄 ボタン）またはサーバー再起動後に反映されます。</string>
+    <string name="st_settings_ui_language">UI 言語</string>
+    <string name="st_settings_ui_language_desc">SillyTavern Web クライアントの表示言語。17 種類の言語パックに対応。</string>
+    <string name="st_settings_lang_synced">アプリと同期中 (%1$s)</string>
+    <string name="btn_sync_app_language">アプリ言語と同期 (%1$s)</string>
+    <string name="st_settings_auto_load_chat">最後のチャットを自動読み込み</string>
+    <string name="st_settings_auto_load_chat_desc">起動時に前回のキャラクターとチャット履歴をすぐに再開します</string>
+    <string name="st_settings_auto_connect">API に自動接続</string>
+    <string name="st_settings_auto_connect_desc">起動時にバックエンド接続を自動確立します</string>
+    <string name="st_settings_compact_input">コンパクト入力エリア</string>
+    <string name="st_settings_compact_input_desc">キーボード表示時でもチャット履歴が見えるよう 1 行入力にします</string>
+    <string name="st_settings_send_on_enter">Enter で送信</string>
+    <string name="st_settings_send_auto">自動（外付けキーボードは送信、ソフトキーボードは改行）</string>
+    <string name="st_settings_send_disabled">無効（Enter は常に改行を挿入）</string>
+    <string name="st_settings_send_enabled">有効（Enter は常にメッセージを送信）</string>
+
+    <!-- SillyTavern Settings Tab - Send on Enter Dialog -->
+    <string name="dialog_send_on_enter_title">Enter キーの動作</string>
+    <string name="dialog_send_auto_title">自動（PC/外付けキーボード）</string>
+    <string name="dialog_send_auto_desc">物理キーボードでは送信、仮想キーボードでは改行</string>
+    <string name="dialog_send_disabled_title">無効</string>
+    <string name="dialog_send_disabled_desc">Enter キーで常に新しい行を挿入</string>
+    <string name="dialog_send_enabled_title">有効</string>
+    <string name="dialog_send_enabled_desc">Enter キーで常にメッセージを送信</string>
+
+    <!-- SillyTavern Settings Tab - Performance & Display -->
+    <string name="st_settings_fast_ui">高速 UI モード (Fast UI)</string>
+    <string name="st_settings_fast_ui_desc">GPU 負荷の高いぼかしやフィルターを無効化し、滑らかなスクロールと省電力を実現します</string>
+    <string name="st_settings_reduced_motion">視覚効果を減らす</string>
+    <string name="st_settings_reduced_motion_desc">画面遷移アニメーションを無効化し、すばやい画面切り替えを実現します</string>
+    <string name="st_settings_font_scale">フォント倍率: %1$d%%</string>
+    <string name="st_settings_font_scale_desc" formatted="false">画面密度に応じた文字の読みやすさを調整 (50% – 150%)。</string>
+
+    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
+    <string name="st_settings_backups_title">データとバックアップ</string>
+    <string name="st_settings_backups_desc">キャラクター、チャット、設定を ZIP アーカイブに書き出すか（AES-256 暗号化対応）、既存のバックアップを復元します。</string>
+    <string name="btn_export_backup">バックアップを書き出し</string>
+    <string name="btn_restore_backup">バックアップを復元</string>
+    <string name="st_settings_logs_title">診断とログ</string>
+    <string name="st_settings_logs_desc">サーバーの不具合調査のためにログファイルを共有・書き出します。</string>
+    <string name="btn_export_logs">ログを書き出し</string>
+
+    <!-- Node Engine Settings Tab -->
+    <string name="engine_max_heap">V8 最大ヒープサイズ: %1$d MB</string>
+    <string name="engine_max_heap_desc">V8 の最大オールドスペースサイズ (--max-old-space-size) を割り当てます。次回起動時に反映されます。</string>
+
+    <!-- Backup Dialogs - Export -->
+    <string name="dialog_export_title">バックアップの書き出し</string>
+    <string name="dialog_export_desc">すべてのキャラクター、チャット、設定、config.yaml を ZIP にまとめます。</string>
+    <string name="dialog_export_encrypt">パスワードで暗号化 (AES-256)</string>
+    <string name="dialog_export_password">パスワード</string>
+    <string name="dialog_export_confirm_password">パスワードの確認</string>
+    <string name="dialog_export_mismatch">パスワードが一致しません</string>
+
+    <!-- Backup Dialogs - Import Password -->
+    <string name="dialog_import_pwd_title">暗号化されたバックアップ</string>
+    <string name="dialog_import_pwd_desc">このアーカイブは AES-256 暗号化で保護されています。解除パスワードを入力してください:</string>
+    <string name="dialog_import_pwd_label">アーカイブのパスワード</string>
+    <string name="error_incorrect_password">パスワードが正しくありません</string>
+
+    <!-- Backup Dialogs - Import Strategy -->
+    <string name="dialog_restore_title">バックアップの復元</string>
+    <string name="dialog_restore_archive_details">アーカイブの詳細</string>
+    <string name="dialog_restore_st_version">SillyTavern バージョン: %1$s</string>
+    <string name="restore_legacy_external">レガシー / 外部</string>
+    <string name="dialog_restore_files_count">復元対象ファイル数: %1$d</string>
+    <string name="dialog_restore_created">作成日時: %1$s</string>
+    <string name="dialog_restore_strategy_title">復元方法の選択:</string>
+    <string name="dialog_restore_clean_title">完全クリーン復元 (上書き置換)</string>
+    <string name="dialog_restore_clean_desc">ユーザーデータを完全に置き換えます。不要な古いファイルは削除されます。</string>
+    <string name="dialog_restore_merge_title">マージ復元 (統合)</string>
+    <string name="dialog_restore_merge_desc">競合するファイルのみ上書きし、アーカイブにないローカルファイルは保持します。</string>
+
+    <!-- Setup Screen (Onboarding) -->
+    <string name="setup_welcome_title">ST Mobile へようこそ</string>
+    <string name="setup_welcome_subtitle">外部依存なしで Android 上でローカルに SillyTavern を動かします。環境設定を選択してください:</string>
+    <string name="setup_fresh_title">新規インストール</string>
+    <string name="setup_fresh_desc">内蔵 SillyTavern ランタイムを展開し、初期設定を作成します。</string>
+    <string name="setup_start_setup">セットアップを開始</string>
+    <string name="setup_restore_title">既存のバックアップから復元</string>
+    <string name="setup_restore_desc">標準の SillyTavern ZIP アーカイブ（PC インストール、data フォルダ、Web バックアップ）を選択します。データと設定のみ復元されます。</string>
+    <string name="setup_details">詳細</string>
+    <string name="setup_hide_details">閉じる</string>
+    <string name="setup_retry">再試行</string>
+    <string name="setup_back_options">選択に戻る</string>
+    <string name="setup_status_preparing">ランタイムの準備中…</string>
+    <string name="setup_status_starting">SillyTavern のセットアップ開始中…</string>
+    <string name="setup_status_restoring">バックアップデータを復元中…</string>
+
+    <!-- Content Descriptions for Accessibility -->
+    <string name="cd_menu">メニュー</string>
+    <string name="cd_dashboard">ダッシュボード</string>
+    <string name="cd_reload">リロード</string>
+    <string name="cd_settings">設定</string>
+    <string name="cd_close">閉じる</string>
+    <string name="cd_toggle_pwd">パスワードの表示切り替え</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_export_success">バックアップを書き出しました</string>
+    <string name="toast_export_failed">エクスポート失敗: %1$s</string>
+    <string name="toast_invalid_backup">無効なバックアップファイル: %1$s</string>
+    <string name="toast_restore_success">%1$d 個のファイルを復元しました</string>
+    <string name="toast_restore_failed">復元失敗: %1$s</string>
+    <string name="toast_payload_reset">SillyTavern ファイルをリセットしました</string>
+    <string name="toast_save_settings_failed">設定の保存に失敗しました: %1$s</string>
+    <string name="toast_save_engine_failed">エンジン設定の保存に失敗しました: %1$s</string>
+</resources>

@@ -33,10 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import app.stmobile.R
 import app.stmobile.sillytavern.BackupManager
 
 /**
@@ -60,14 +62,14 @@ fun ExportBackupDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export Backup") },
+        title = { Text(stringResource(R.string.dialog_export_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Archive all characters, chats, settings, and config.yaml into a ZIP file.",
+                    text = stringResource(R.string.dialog_export_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFFD8DEE6),
                 )
@@ -84,7 +86,7 @@ fun ExportBackupDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Encrypt with password (AES-256)",
+                        text = stringResource(R.string.dialog_export_encrypt),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFFD8DEE6),
                     )
@@ -94,14 +96,14 @@ fun ExportBackupDialog(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.dialog_export_password)) },
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
                                     imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = "Toggle password visibility",
+                                    contentDescription = stringResource(R.string.cd_toggle_pwd),
                                 )
                             }
                         },
@@ -111,7 +113,7 @@ fun ExportBackupDialog(
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        label = { Text("Confirm Password") },
+                        label = { Text(stringResource(R.string.dialog_export_confirm_password)) },
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         isError = encryptChecked && confirmPassword.isNotBlank() && password != confirmPassword,
@@ -120,7 +122,7 @@ fun ExportBackupDialog(
 
                     if (encryptChecked && confirmPassword.isNotBlank() && password != confirmPassword) {
                         Text(
-                            text = "Passwords do not match",
+                            text = stringResource(R.string.dialog_export_mismatch),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -136,12 +138,12 @@ fun ExportBackupDialog(
                 },
                 enabled = passwordsMatch,
             ) {
-                Text("Export")
+                Text(stringResource(R.string.btn_export))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.btn_cancel))
             }
         },
     )
@@ -161,14 +163,14 @@ fun ImportPasswordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Encrypted Backup") },
+        title = { Text(stringResource(R.string.dialog_import_pwd_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "This archive is protected with AES-256 encryption. Enter the password to unlock:",
+                    text = stringResource(R.string.dialog_import_pwd_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFFD8DEE6),
                 )
@@ -176,14 +178,14 @@ fun ImportPasswordDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Archive Password") },
+                    label = { Text(stringResource(R.string.dialog_import_pwd_label)) },
                     singleLine = true,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
                                 imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Toggle password visibility",
+                                contentDescription = stringResource(R.string.cd_toggle_pwd),
                             )
                         }
                     },
@@ -204,12 +206,12 @@ fun ImportPasswordDialog(
                 onClick = { onConfirm(password) },
                 enabled = password.isNotBlank(),
             ) {
-                Text("Unlock")
+                Text(stringResource(R.string.btn_unlock))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.btn_cancel))
             }
         },
     )
@@ -228,7 +230,7 @@ fun ImportStrategyDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restore Backup") },
+        title = { Text(stringResource(R.string.dialog_restore_title)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -247,25 +249,25 @@ fun ImportStrategyDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = "Archive Details",
+                            text = stringResource(R.string.dialog_restore_archive_details),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF7EC8A9),
                         )
-                        val stVer = info.manifest?.stVersion ?: "Legacy / External"
+                        val stVer = info.manifest?.stVersion ?: stringResource(R.string.restore_legacy_external)
                         Text(
-                            text = "SillyTavern Version: $stVer",
+                            text = stringResource(R.string.dialog_restore_st_version, stVer),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFFD8DEE6),
                         )
                         Text(
-                            text = "Files to restore: ${info.fileCount}",
+                            text = stringResource(R.string.dialog_restore_files_count, info.fileCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF8A94A3),
                         )
                         info.manifest?.createdAt?.let { created ->
                             Text(
-                                text = "Created: ${created.take(19).replace('T', ' ')}",
+                                text = stringResource(R.string.dialog_restore_created, created.take(19).replace('T', ' ')),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF8A94A3),
                             )
@@ -275,7 +277,7 @@ fun ImportStrategyDialog(
 
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Select Restore Strategy:",
+                    text = stringResource(R.string.dialog_restore_strategy_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = Color(0xFFD8DEE6),
                 )
@@ -294,12 +296,12 @@ fun ImportStrategyDialog(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Clean Restore (Replace)",
+                            text = stringResource(R.string.dialog_restore_clean_title),
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFD8DEE6),
                         )
                         Text(
-                            text = "Atomically replaces user data. Removes stale/orphaned files.",
+                            text = stringResource(R.string.dialog_restore_clean_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF8A94A3),
                         )
@@ -320,12 +322,12 @@ fun ImportStrategyDialog(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Merge",
+                            text = stringResource(R.string.dialog_restore_merge_title),
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFFD8DEE6),
                         )
                         Text(
-                            text = "Overwrites conflicting files, keeping local files not in archive.",
+                            text = stringResource(R.string.dialog_restore_merge_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF8A94A3),
                         )
@@ -335,12 +337,12 @@ fun ImportStrategyDialog(
         },
         confirmButton = {
             Button(onClick = { onConfirm(selectedStrategy) }) {
-                Text("Restore")
+                Text(stringResource(R.string.btn_restore))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.btn_cancel))
             }
         },
     )

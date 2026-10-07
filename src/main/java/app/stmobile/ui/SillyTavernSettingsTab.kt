@@ -33,10 +33,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.LocaleManagerCompat
+import app.stmobile.R
 import app.stmobile.Utils
+import app.stmobile.models.AppConfig
+import app.stmobile.models.StLocales
 import app.stmobile.models.StUserSettings
+import java.util.Locale
 import kotlin.math.round
 import kotlin.math.roundToInt
 
@@ -48,16 +54,18 @@ fun SillyTavernSettingsTab(
     onExportLogs: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val appConfig = remember(context) { AppConfig(context) }
     val userSettings = remember { StUserSettings.load(context) }
 
     fun persistSettings() {
         runCatching {
             userSettings.save()
         }.onFailure { e ->
-            Utils.toast(context, "Failed to save settings: ${e.message}")
+            Utils.toast(context, context.getString(R.string.toast_save_settings_failed, e.message ?: ""))
         }
     }
 
+    var uiLanguage by remember { mutableStateOf(userSettings.uiLanguage) }
     var autoLoadChat by remember { mutableStateOf(userSettings.autoLoadChat) }
     var autoConnect by remember { mutableStateOf(userSettings.autoConnect) }
     var compactInputArea by remember { mutableStateOf(userSettings.compactInputArea) }
@@ -66,6 +74,17 @@ fun SillyTavernSettingsTab(
     var reducedMotion by remember { mutableStateOf(userSettings.reducedMotion) }
     var fontScale by remember { mutableFloatStateOf(userSettings.fontScale) }
     var showSendOnEnterDialog by rememberSaveable { mutableStateOf(false) }
+    var showLanguageDialog by rememberSaveable { mutableStateOf(false) }
+
+    val autoSync = appConfig.autoSyncLanguage
+    val currentLocales = LocaleManagerCompat.getApplicationLocales(context)
+    val currentAppLocale = if (!currentLocales.isEmpty) currentLocales[0] ?: Locale.getDefault() else Locale.getDefault()
+    val effectiveStLocaleCode = StLocales.getEffectiveLocale(uiLanguage, autoSync, currentAppLocale)
+    val effectiveStLocale = StLocales.findLocale(effectiveStLocaleCode)
+    val effectiveStDisplayName = effectiveStLocale?.let { "${it.nativeName} (${it.englishName})" } ?: effectiveStLocaleCode
+
+    val currentAppStCode = StLocales.resolveSystemLocale(currentAppLocale)
+    val currentAppStName = StLocales.findLocale(currentAppStCode)?.nativeName ?: currentAppStCode
 
     Column(
         modifier = modifier
@@ -75,19 +94,61 @@ fun SillyTavernSettingsTab(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // --- 1. User Settings (Phase N) ---
+        // --- 1. User Settings (Phase N + Phase O) ---
         Text(
-            text = "User Settings",
+            text = stringResource(R.string.st_settings_user_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFD8DEE6),
         )
 
         Text(
-            text = "Preferences synchronized directly with SillyTavern's settings.json. Changes take effect on page reload (via the quick toolbar 🔄 button) or server restart.",
+            text = stringResource(R.string.st_settings_user_desc),
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF8A94A3),
         )
+
+        // UI Language (Phase O)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !autoSync) { showLanguageDialog = true },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.st_settings_ui_language), color = Color(0xFFD8DEE6))
+                Text(
+                    text = if (autoSync) {
+                        stringResource(R.string.st_settings_lang_synced, effectiveStDisplayName)
+                    } else {
+                        effectiveStDisplayName
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (autoSync) Color(0xFF8A94A3) else Color(0xFF7EC8A9),
+                )
+            }
+            OutlinedButton(
+                onClick = { showLanguageDialog = true },
+                enabled = !autoSync,
+            ) {
+                Text(stringResource(R.string.btn_change))
+            }
+        }
+
+        // Manual Sync to App Language button (only available in independent mode when languages differ)
+        if (!autoSync && effectiveStLocaleCode != currentAppStCode) {
+            OutlinedButton(
+                onClick = {
+                    uiLanguage = currentAppStCode
+                    userSettings.uiLanguage = currentAppStCode
+                    persistSettings()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_sync_app_language, currentAppStName))
+            }
+        }
 
         // Workflow & Resume
         Row(
@@ -96,9 +157,9 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Auto load last chat", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_auto_load_chat), color = Color(0xFFD8DEE6))
                 Text(
-                    "Resume active character and chat history upon opening without searching the character drawer",
+                    stringResource(R.string.st_settings_auto_load_chat_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -119,9 +180,9 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Auto connect API", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_auto_connect), color = Color(0xFFD8DEE6))
                 Text(
-                    "Automatically establish backend connections on startup",
+                    stringResource(R.string.st_settings_auto_connect_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -143,9 +204,9 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Compact input area", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_compact_input), color = Color(0xFFD8DEE6))
                 Text(
-                    "Single-row message input to retain chat history visibility when the virtual keyboard is open",
+                    stringResource(R.string.st_settings_compact_input_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -168,19 +229,19 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Send on Enter", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_send_on_enter), color = Color(0xFFD8DEE6))
                 Text(
                     when (sendOnEnter) {
-                        StUserSettings.SEND_ON_ENTER_DISABLED -> "Disabled (Enter inserts newline)"
-                        StUserSettings.SEND_ON_ENTER_ENABLED -> "Enabled (Enter always sends)"
-                        else -> "Automatic (PC sends, mobile newline)"
+                        StUserSettings.SEND_ON_ENTER_DISABLED -> stringResource(R.string.st_settings_send_disabled)
+                        StUserSettings.SEND_ON_ENTER_ENABLED -> stringResource(R.string.st_settings_send_enabled)
+                        else -> stringResource(R.string.st_settings_send_auto)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF7EC8A9),
                 )
             }
             OutlinedButton(onClick = { showSendOnEnterDialog = true }) {
-                Text("Change")
+                Text(stringResource(R.string.btn_change))
             }
         }
 
@@ -191,9 +252,9 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Fast UI mode", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_fast_ui), color = Color(0xFFD8DEE6))
                 Text(
-                    "Disable GPU-heavy blur effects and filters for smoother scrolling and battery savings",
+                    stringResource(R.string.st_settings_fast_ui_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -214,9 +275,9 @@ fun SillyTavernSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("Reduced motion", color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.st_settings_reduced_motion), color = Color(0xFFD8DEE6))
                 Text(
-                    "Disable interface animations and transitions for snappier navigation",
+                    stringResource(R.string.st_settings_reduced_motion_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
@@ -233,7 +294,7 @@ fun SillyTavernSettingsTab(
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "Font scaling: ${(fontScale * 100).roundToInt()}%",
+                text = stringResource(R.string.st_settings_font_scale, (fontScale * 100).roundToInt()),
                 color = Color(0xFFD8DEE6),
             )
             Slider(
@@ -250,7 +311,7 @@ fun SillyTavernSettingsTab(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                text = "Adjust text readability across varying device display DPIs (50% – 150%).",
+                text = stringResource(R.string.st_settings_font_scale_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF8A94A3),
             )
@@ -260,14 +321,14 @@ fun SillyTavernSettingsTab(
 
         // --- 2. Data & Backups ---
         Text(
-            text = "Data & Backups",
+            text = stringResource(R.string.st_settings_backups_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFD8DEE6),
         )
 
         Text(
-            text = "Export your characters, chats, and configurations to an archive (with optional AES-256 password encryption), or restore an existing backup.",
+            text = stringResource(R.string.st_settings_backups_desc),
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF8A94A3),
         )
@@ -276,28 +337,28 @@ fun SillyTavernSettingsTab(
             onClick = onExportBackup,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Export Backup")
+            Text(stringResource(R.string.btn_export_backup))
         }
 
         OutlinedButton(
             onClick = onImportBackup,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Restore Backup")
+            Text(stringResource(R.string.btn_restore_backup))
         }
 
         Spacer(Modifier.height(8.dp))
 
         // --- 3. Diagnostics & Logs ---
         Text(
-            text = "Diagnostics & Logs",
+            text = stringResource(R.string.st_settings_logs_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFD8DEE6),
         )
 
         Text(
-            text = "Share or export the application log file for troubleshooting and debugging server issues.",
+            text = stringResource(R.string.st_settings_logs_desc),
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFF8A94A3),
         )
@@ -306,19 +367,68 @@ fun SillyTavernSettingsTab(
             onClick = onExportLogs,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Export Logs")
+            Text(stringResource(R.string.btn_export_logs))
         }
+    }
+
+    // Dialog: UI Language Selection
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text(stringResource(R.string.st_settings_ui_language)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    StLocales.SUPPORTED_LOCALES.forEach { loc ->
+                        val isSelected = effectiveStLocaleCode.equals(loc.code, ignoreCase = true)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    uiLanguage = loc.code
+                                    userSettings.uiLanguage = loc.code
+                                    persistSettings()
+                                    showLanguageDialog = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    uiLanguage = loc.code
+                                    userSettings.uiLanguage = loc.code
+                                    persistSettings()
+                                    showLanguageDialog = false
+                                },
+                            )
+                            Column(modifier = Modifier.padding(start = 8.dp)) {
+                                Text(loc.nativeName, color = Color(0xFFD8DEE6), fontWeight = FontWeight.SemiBold)
+                                Text(loc.englishName, style = MaterialTheme.typography.bodySmall, color = Color(0xFF8A94A3))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text(stringResource(R.string.btn_close))
+                }
+            },
+        )
     }
 
     if (showSendOnEnterDialog) {
         val options = listOf(
-            Triple(StUserSettings.SEND_ON_ENTER_AUTO, "Automatic (PC)", "Enter sends on physical keyboard; newline on virtual keyboard"),
-            Triple(StUserSettings.SEND_ON_ENTER_DISABLED, "Disabled", "Enter always inserts a new line"),
-            Triple(StUserSettings.SEND_ON_ENTER_ENABLED, "Enabled", "Enter always sends message"),
+            Triple(StUserSettings.SEND_ON_ENTER_AUTO, stringResource(R.string.dialog_send_auto_title), stringResource(R.string.dialog_send_auto_desc)),
+            Triple(StUserSettings.SEND_ON_ENTER_DISABLED, stringResource(R.string.dialog_send_disabled_title), stringResource(R.string.dialog_send_disabled_desc)),
+            Triple(StUserSettings.SEND_ON_ENTER_ENABLED, stringResource(R.string.dialog_send_enabled_title), stringResource(R.string.dialog_send_enabled_desc)),
         )
         AlertDialog(
             onDismissRequest = { showSendOnEnterDialog = false },
-            title = { Text("Send on Enter") },
+            title = { Text(stringResource(R.string.dialog_send_on_enter_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     options.forEach { (value, title, desc) ->
@@ -353,7 +463,7 @@ fun SillyTavernSettingsTab(
             },
             confirmButton = {
                 TextButton(onClick = { showSendOnEnterDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.btn_close))
                 }
             },
         )

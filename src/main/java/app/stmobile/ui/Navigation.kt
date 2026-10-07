@@ -15,6 +15,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import app.stmobile.R
 import app.stmobile.models.NodeState
 
 enum class ActiveScreen { SETUP, DASHBOARD, SETTINGS, WEBVIEW }
@@ -191,8 +193,8 @@ fun BottomNavDock(
         NavigationBarItem(
             selected = currentScreen == ActiveScreen.DASHBOARD,
             onClick = { onSelectScreen(ActiveScreen.DASHBOARD) },
-            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-            label = { Text("Dashboard") },
+            icon = { Icon(Icons.Default.Dashboard, contentDescription = stringResource(R.string.nav_dashboard)) },
+            label = { Text(stringResource(R.string.nav_dashboard)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFF7EC8A9),
                 selectedTextColor = Color(0xFF7EC8A9),
@@ -204,8 +206,8 @@ fun BottomNavDock(
         NavigationBarItem(
             selected = currentScreen == ActiveScreen.SETTINGS,
             onClick = { onSelectScreen(ActiveScreen.SETTINGS) },
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-            label = { Text("Settings") },
+            icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.nav_settings)) },
+            label = { Text(stringResource(R.string.nav_settings)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFF7EC8A9),
                 selectedTextColor = Color(0xFF7EC8A9),

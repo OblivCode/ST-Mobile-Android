@@ -46,9 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.stmobile.R
 import app.stmobile.sillytavern.BackupManager
 import app.stmobile.sillytavern.PayloadManager
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +70,7 @@ fun SetupScreen(
     val scope = rememberCoroutineScope()
 
     var setupStep by remember { mutableStateOf(SetupStep.WELCOME) }
-    var statusText by remember { mutableStateOf("Preparing runtime…") }
+    var statusText by remember { mutableStateOf(context.getString(R.string.setup_status_preparing)) }
     var progress by remember { mutableFloatStateOf(0f) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showDetails by remember { mutableStateOf(false) }
@@ -84,7 +86,7 @@ fun SetupScreen(
         setupStep = SetupStep.EXTRACTING
         progress = 0f
         logBuffer.clear()
-        logBuffer.add("Starting SillyTavern setup…")
+        logBuffer.add(context.getString(R.string.setup_status_starting))
 
         scope.launch(Dispatchers.IO) {
             try {
@@ -118,7 +120,7 @@ fun SetupScreen(
         passwordError = null
         setupStep = SetupStep.RESTORING
         progress = 0f
-        statusText = "Restoring backup data…"
+        statusText = context.getString(R.string.setup_status_restoring)
         logBuffer.clear()
         logBuffer.add("Importing user backup…")
 
@@ -217,14 +219,14 @@ fun SetupScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        text = "Welcome to ST Mobile",
+                        text = stringResource(R.string.setup_welcome_title),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFD8DEE6),
                     )
 
                     Text(
-                        text = "Run SillyTavern locally on Android with no external dependencies. Choose how to set up your environment:",
+                        text = stringResource(R.string.setup_welcome_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF8A94A3),
                     )
@@ -251,14 +253,14 @@ fun SetupScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Fresh Installation",
+                                    text = stringResource(R.string.setup_fresh_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFD8DEE6),
                                 )
                             }
                             Text(
-                                text = "Unpacks the bundled SillyTavern runtime and seeds default configurations.",
+                                text = stringResource(R.string.setup_fresh_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF8A94A3),
                             )
@@ -267,7 +269,7 @@ fun SetupScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
                             ) {
-                                Text("Start Setup")
+                                Text(stringResource(R.string.setup_start_setup))
                             }
                         }
                     }
@@ -292,14 +294,14 @@ fun SetupScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Restore Existing SillyTavern Backup",
+                                    text = stringResource(R.string.setup_restore_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFD8DEE6),
                                 )
                             }
                             Text(
-                                text = "Select a standard SillyTavern ZIP archive (full PC install, data folder, or web backup). Only user data and settings are extracted automatically.",
+                                text = stringResource(R.string.setup_restore_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFF8A94A3),
                             )
@@ -308,7 +310,7 @@ fun SetupScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(8.dp),
                             ) {
-                                Text("Restore Existing SillyTavern Backup")
+                                Text(stringResource(R.string.setup_restore_title))
                             }
                         }
                     }
@@ -345,7 +347,7 @@ fun SetupScreen(
                     Spacer(Modifier.height(24.dp))
 
                     OutlinedButton(onClick = { showDetails = !showDetails }) {
-                        Text(if (showDetails) "Hide Details" else "Details")
+                        Text(if (showDetails) stringResource(R.string.setup_hide_details) else stringResource(R.string.setup_details))
                     }
 
                     AnimatedVisibility(
@@ -363,9 +365,9 @@ fun SetupScreen(
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(12.dp)
-                                    .verticalScroll(rememberScrollState()),
+                                .fillMaxSize()
+                                .padding(12.dp)
+                                .verticalScroll(rememberScrollState()),
                             ) {
                                 logBuffer.forEach { line ->
                                     Text(
@@ -394,13 +396,13 @@ fun SetupScreen(
                     Spacer(Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(onClick = { runExtraction() }) {
-                            Text("Retry Setup")
+                            Text(stringResource(R.string.setup_retry))
                         }
                         OutlinedButton(onClick = {
                             errorMessage = null
                             setupStep = SetupStep.WELCOME
                         }) {
-                            Text("Back to Options")
+                            Text(stringResource(R.string.setup_back_options))
                         }
                     }
                 }

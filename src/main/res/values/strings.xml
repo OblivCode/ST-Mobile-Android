@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">ST Mobile</string>
+    <string name="fgs_special_use_subtype">Runs the local SillyTavern Node.js server</string>
+    <string name="notification_channel_name">ST Mobile server</string>
+    <string name="notification_action_stop">Stop</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_change">Change</string>
+    <string name="btn_export">Export</string>
+    <string name="btn_unlock">Unlock</string>
+    <string name="btn_restore">Restore</string>
+    <string name="btn_reset">Reset</string>
+    <string name="locale_system_default">System Default</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_port">Port: %1$d</string>
+    <string name="dashboard_pid">PID: %1$d</string>
+    <string name="dashboard_btn_start">Start Server</string>
+    <string name="dashboard_btn_stop">Stop Server</string>
+    <string name="dashboard_btn_open">Open SillyTavern</string>
+    <string name="status_idle">Idle</string>
+    <string name="status_running">Running</string>
+    <string name="status_starting">Starting…</string>
+    <string name="status_stopping">Stopping…</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_error">Error</string>
+
+    <!-- Settings Screen Tabs -->
+    <string name="tab_app">App</string>
+    <string name="tab_sillytavern">SillyTavern</string>
+    <string name="tab_node_engine">Node Engine</string>
+
+    <!-- App Settings Tab -->
+    <string name="settings_auto_start">Auto-start server on app launch</string>
+    <string name="settings_auto_launch">Auto-launch SillyTavern</string>
+    <string name="settings_auto_launch_desc">Automatically switch to the SillyTavern interface whenever the server becomes running</string>
+    <string name="settings_auto_port_fallback">Auto fallback port if occupied</string>
+    <string name="settings_quick_toolbar">WebView menu quick toolbar</string>
+    <string name="settings_quick_toolbar_desc">Show a dock with Dashboard, Reload, and Settings shortcuts instead of immediately returning to Dashboard</string>
+    <string name="settings_bg_timeout">Background idle timeout (minutes, 0 to disable)</string>
+    <string name="settings_battery_exemption">Request Battery Optimization Exemption</string>
+    <string name="settings_reset_payload">Reset SillyTavern Payload</string>
+    <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>
+    <string name="settings_auto_sync_lang_desc">Keep SillyTavern interface language synchronized with the app shell</string>
+    <string name="settings_app_language">App Shell Language</string>
+    <string name="settings_app_language_desc">Configure the native interface display language</string>
+    <string name="btn_match_st_language">Match SillyTavern Language (%1$s)</string>
+    <string name="btn_open_system_locale">System Language Settings</string>
+
+    <!-- Reset Payload Dialog -->
+    <string name="dialog_reset_payload_title">Reset Payload</string>
+    <string name="dialog_reset_payload_msg">This will reinstall the bundled SillyTavern application code. User data (characters, chats) will be preserved.</string>
+
+    <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_user_title">User Settings</string>
+    <string name="st_settings_user_desc">Preferences synchronized directly with SillyTavern\'s settings.json. Changes take effect on page reload (via the quick toolbar 🔄 button) or server restart.</string>
+    <string name="st_settings_ui_language">UI Language</string>
+    <string name="st_settings_ui_language_desc">Interface language for SillyTavern web client. Supports 17 bundled locale packs.</string>
+    <string name="st_settings_lang_synced">Auto-synced with App (%1$s)</string>
+    <string name="btn_sync_app_language">Sync with App Language (%1$s)</string>
+    <string name="st_settings_auto_load_chat">Auto load last chat</string>
+    <string name="st_settings_auto_load_chat_desc">Resume active character and chat history upon opening without searching the character drawer</string>
+    <string name="st_settings_auto_connect">Auto connect API</string>
+    <string name="st_settings_auto_connect_desc">Automatically establish backend connections on startup</string>
+    <string name="st_settings_compact_input">Compact input area</string>
+    <string name="st_settings_compact_input_desc">Single-row message input to retain chat history visibility when the virtual keyboard is open</string>
+    <string name="st_settings_send_on_enter">Send on Enter</string>
+    <string name="st_settings_send_auto">Automatic (PC sends, mobile newline)</string>
+    <string name="st_settings_send_disabled">Disabled (Enter inserts newline)</string>
+    <string name="st_settings_send_enabled">Enabled (Enter always sends)</string>
+
+    <!-- SillyTavern Settings Tab - Send on Enter Dialog -->
+    <string name="dialog_send_on_enter_title">Send on Enter</string>
+    <string name="dialog_send_auto_title">Automatic (PC)</string>
+    <string name="dialog_send_auto_desc">Enter sends on physical keyboard; newline on virtual keyboard</string>
+    <string name="dialog_send_disabled_title">Disabled</string>
+    <string name="dialog_send_disabled_desc">Enter always inserts a new line</string>
+    <string name="dialog_send_enabled_title">Enabled</string>
+    <string name="dialog_send_enabled_desc">Enter always sends message</string>
+
+    <!-- SillyTavern Settings Tab - Performance & Display -->
+    <string name="st_settings_fast_ui">Fast UI mode</string>
+    <string name="st_settings_fast_ui_desc">Disable GPU-heavy blur effects and filters for smoother scrolling and battery savings</string>
+    <string name="st_settings_reduced_motion">Reduced motion</string>
+    <string name="st_settings_reduced_motion_desc">Disable interface animations and transitions for snappier navigation</string>
+    <string name="st_settings_font_scale">Font scaling: %1$d%%</string>
+    <string name="st_settings_font_scale_desc" formatted="false">Adjust text readability across varying device display DPIs (50% – 150%).</string>
+
+    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
+    <string name="st_settings_backups_title">Data &amp; Backups</string>
+    <string name="st_settings_backups_desc">Export your characters, chats, and configurations to an archive (with optional AES-256 password encryption), or restore an existing backup.</string>
+    <string name="btn_export_backup">Export Backup</string>
+    <string name="btn_restore_backup">Restore Backup</string>
+    <string name="st_settings_logs_title">Diagnostics &amp; Logs</string>
+    <string name="st_settings_logs_desc">Share or export the application log file for troubleshooting and debugging server issues.</string>
+    <string name="btn_export_logs">Export Logs</string>
+
+    <!-- Node Engine Settings Tab -->
+    <string name="engine_max_heap">V8 Maximum Heap Size: %1$d MB</string>
+    <string name="engine_max_heap_desc">Allocates V8 maximum old space size (--max-old-space-size). Changes take effect on next server start.</string>
+
+    <!-- Backup Dialogs - Export -->
+    <string name="dialog_export_title">Export Backup</string>
+    <string name="dialog_export_desc">Archive all characters, chats, settings, and config.yaml into a ZIP file.</string>
+    <string name="dialog_export_encrypt">Encrypt with password (AES-256)</string>
+    <string name="dialog_export_password">Password</string>
+    <string name="dialog_export_confirm_password">Confirm Password</string>
+    <string name="dialog_export_mismatch">Passwords do not match</string>
+
+    <!-- Backup Dialogs - Import Password -->
+    <string name="dialog_import_pwd_title">Encrypted Backup</string>
+    <string name="dialog_import_pwd_desc">This archive is protected with AES-256 encryption. Enter the password to unlock:</string>
+    <string name="dialog_import_pwd_label">Archive Password</string>
+    <string name="error_incorrect_password">Incorrect password</string>
+
+    <!-- Backup Dialogs - Import Strategy -->
+    <string name="dialog_restore_title">Restore Backup</string>
+    <string name="dialog_restore_archive_details">Archive Details</string>
+    <string name="dialog_restore_st_version">SillyTavern Version: %1$s</string>
+    <string name="restore_legacy_external">Legacy / External</string>
+    <string name="dialog_restore_files_count">Files to restore: %1$d</string>
+    <string name="dialog_restore_created">Created: %1$s</string>
+    <string name="dialog_restore_strategy_title">Select Restore Strategy:</string>
+    <string name="dialog_restore_clean_title">Clean Restore (Replace)</string>
+    <string name="dialog_restore_clean_desc">Atomically replaces user data. Removes stale/orphaned files.</string>
+    <string name="dialog_restore_merge_title">Merge</string>
+    <string name="dialog_restore_merge_desc">Overwrites conflicting files, keeping local files not in archive.</string>
+
+    <!-- Setup Screen (Onboarding) -->
+    <string name="setup_welcome_title">Welcome to ST Mobile</string>
+    <string name="setup_welcome_subtitle">Run SillyTavern locally on Android with no external dependencies. Choose how to set up your environment:</string>
+    <string name="setup_fresh_title">Fresh Installation</string>
+    <string name="setup_fresh_desc">Unpacks the bundled SillyTavern runtime and seeds default configurations.</string>
+    <string name="setup_start_setup">Start Setup</string>
+    <string name="setup_restore_title">Restore Existing SillyTavern Backup</string>
+    <string name="setup_restore_desc">Select a standard SillyTavern ZIP archive (full PC install, data folder, or web backup). Only user data and settings are extracted automatically.</string>
+    <string name="setup_details">Details</string>
+    <string name="setup_hide_details">Hide Details</string>
+    <string name="setup_retry">Retry Setup</string>
+    <string name="setup_back_options">Back to Options</string>
+    <string name="setup_status_preparing">Preparing runtime…</string>
+    <string name="setup_status_starting">Starting SillyTavern setup…</string>
+    <string name="setup_status_restoring">Restoring backup data…</string>
+
+    <!-- Content Descriptions for Accessibility -->
+    <string name="cd_menu">Menu</string>
+    <string name="cd_dashboard">Dashboard</string>
+    <string name="cd_reload">Reload</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_toggle_pwd">Toggle password visibility</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_export_success">Backup exported</string>
+    <string name="toast_export_failed">Export failed: %1$s</string>
+    <string name="toast_invalid_backup">Invalid backup: %1$s</string>
+    <string name="toast_restore_success">Restored %1$d files</string>
+    <string name="toast_restore_failed">Restore failed: %1$s</string>
+    <string name="toast_payload_reset">SillyTavern payload reset</string>
+    <string name="toast_save_settings_failed">Failed to save settings: %1$s</string>
+    <string name="toast_save_engine_failed">Failed to save engine config: %1$s</string>
+</resources>

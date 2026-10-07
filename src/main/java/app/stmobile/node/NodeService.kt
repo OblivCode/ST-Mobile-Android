@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import app.stmobile.AppPaths
 import app.stmobile.MainActivity
+import app.stmobile.R
 import app.stmobile.StApplication
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
@@ -285,18 +286,18 @@ class NodeService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("ST Mobile")
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setOngoing(status.isActive)
             .setOnlyAlertOnce(true)
             .setContentIntent(open)
-            .addAction(Notification.Action.Builder(null, "Stop", stop).build())
+            .addAction(Notification.Action.Builder(null, getString(R.string.notification_action_stop), stop).build())
             .build()
     }
 
     private fun createChannel() {
-        val channel = NotificationChannel(CHANNEL_ID, "ST Mobile server", NotificationManager.IMPORTANCE_LOW)
+        val channel = NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_LOW)
         channel.setShowBadge(false)
         channel.enableVibration(false)
         channel.setSound(null, null)

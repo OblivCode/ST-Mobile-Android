@@ -2,7 +2,7 @@ package app.stmobile
 
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,7 +35,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
  * and SAF backup contracts (Phase D, Phase F).
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavigationController
 
@@ -51,8 +51,8 @@ class MainActivity : ComponentActivity() {
             pendingExportPassword = null
             lifecycleScope.launch(Dispatchers.IO) {
                 BackupManager(this@MainActivity).export(uri, password) {}
-                    .onFailure { Utils.toast(this@MainActivity, "Export failed: ${it.message}") }
-                    .onSuccess { Utils.toast(this@MainActivity, "Backup exported") }
+                    .onFailure { Utils.toast(this@MainActivity, getString(R.string.toast_export_failed, it.message)) }
+                    .onSuccess { Utils.toast(this@MainActivity, getString(R.string.toast_export_success)) }
             }
         } else {
             pendingExportPassword = null
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 val info = BackupManager(this@MainActivity).inspect(uri)
                 withContext(Dispatchers.Main) {
                     if (!info.isValid) {
-                        Utils.toast(this@MainActivity, "Invalid backup: ${info.errorMessage}")
+                        Utils.toast(this@MainActivity, getString(R.string.toast_invalid_backup, info.errorMessage ?: ""))
                     } else {
                         pendingImportUri = uri
                         pendingImportPassword = null
@@ -155,7 +155,7 @@ class MainActivity : ComponentActivity() {
                                 val info = BackupManager(this@MainActivity).inspect(uri, enteredPassword)
                                 withContext(Dispatchers.Main) {
                                     if (!info.isUnlocked) {
-                                        importPasswordError.value = info.errorMessage ?: "Incorrect password"
+                                        importPasswordError.value = info.errorMessage ?: getString(R.string.error_incorrect_password)
                                     } else {
                                         showImportPasswordDialog.value = false
                                         importPasswordError.value = null
@@ -207,9 +207,9 @@ class MainActivity : ComponentActivity() {
             }
 
             BackupManager(this@MainActivity).import(uri, password, strategy) {}
-                .onFailure { Utils.toast(this@MainActivity, "Restore failed: ${it.message}") }
+                .onFailure { Utils.toast(this@MainActivity, getString(R.string.toast_restore_failed, it.message)) }
                 .onSuccess { count ->
-                    Utils.toast(this@MainActivity, "Restored $count files")
+                    Utils.toast(this@MainActivity, getString(R.string.toast_restore_success, count))
                     if (wasActive) {
                         NodeService.start(this@MainActivity)
                     }
@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
             PayloadManager(this@MainActivity).resetPayload()
             withContext(Dispatchers.Main) {
                 navController.navigateTo(ActiveScreen.SETUP)
-                Utils.toast(this@MainActivity, "SillyTavern payload reset")
+                Utils.toast(this@MainActivity, getString(R.string.toast_payload_reset))
             }
         }
     }

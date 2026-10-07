@@ -17,7 +17,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import app.stmobile.R
 import app.stmobile.models.AppConfig
 
 @Composable
@@ -32,7 +34,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val appConfig = remember { AppConfig(context) }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val tabTitles = listOf("App", "SillyTavern", "Node Engine")
+    val tabTitles = listOf(
+        stringResource(R.string.tab_app),
+        stringResource(R.string.tab_sillytavern),
+        stringResource(R.string.tab_node_engine),
+    )
 
     Column(
         modifier = modifier
