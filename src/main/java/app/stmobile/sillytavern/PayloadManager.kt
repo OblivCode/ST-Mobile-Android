@@ -31,12 +31,16 @@ class PayloadManager(
     private val paths: AppPaths,
     private val prefs: SharedPreferences,
     private val assetOpener: (String) -> InputStream,
+    private val isSlim: Boolean = false,
+    private val defaultPayloadUrl: String = "",
 ) {
 
     constructor(context: Context) : this(
         paths = AppPaths(context),
         prefs = context.getSharedPreferences("payload", Context.MODE_PRIVATE),
         assetOpener = { name -> context.assets.open(name) },
+        isSlim = app.stmobile.BuildConfig.FLAVOR == "slim",
+        defaultPayloadUrl = app.stmobile.BuildConfig.DEFAULT_PAYLOAD_URL,
     )
 
     data class Manifest(
@@ -45,6 +49,8 @@ class PayloadManager(
         val nodeVersion: String?,
         val bundle: String,
         val bundleSha256: String?,
+        val tarSha256: String? = null,
+        val tarBundle: String? = null,
     )
 
     data class Layout(
@@ -82,6 +88,8 @@ class PayloadManager(
             nodeVersion = json.optString("node_version").ifBlank { null },
             bundle = json.getString("bundle"),
             bundleSha256 = json.optString("bundle_sha256").ifBlank { null },
+            tarSha256 = json.optString("tar_sha256").ifBlank { null },
+            tarBundle = json.optString("tar_bundle").ifBlank { null },
         )
     }
 
@@ -96,12 +104,36 @@ class PayloadManager(
         return installed != manifest.payloadVersion
     }
 
-    /** Returns default asset payload source wrapping bundled assets. */
-    fun defaultPayloadSource(): PayloadSource = AssetPayloadSource(
-        assetName = runCatching { readManifest().bundle }.getOrDefault("st_bundle.tar"),
-        manifestProvider = { readManifest() },
-        assetOpener = assetOpener,
-    )
+    /** Returns true if asset with given name exists and can be opened. */
+    fun hasAssetBundle(assetName: String = "st_bundle.tar"): Boolean = runCatching {
+        assetOpener(assetName).use { }
+        true
+    }.getOrDefault(false)
+
+    /** Returns default payload source tailored to the build flavor (remote for slim, bundled asset for full). */
+    fun defaultPayloadSource(): PayloadSource {
+        val manifest = runCatching { readManifest() }.getOrNull()
+        val targetAssetName = manifest?.tarBundle ?: "st_bundle.tar"
+        return if (isSlim || !hasAssetBundle(targetAssetName)) {
+            val url = defaultPayloadUrl.ifBlank {
+                manifest?.let { "https://github.com/OblivCode/ST-Mobile-Android/releases/latest/download/${it.bundle}" }
+                    ?: "https://github.com/OblivCode/ST-Mobile-Android/releases/latest/download/st_bundle.tar.gz"
+            }
+            val version = manifest?.payloadVersion ?: "remote-latest"
+            RemotePayloadSource(
+                url = url,
+                versionStamp = version,
+                expectedSha256 = manifest?.bundleSha256,
+                sourceDescription = "GitHub Releases ($version)",
+            )
+        } else {
+            AssetPayloadSource(
+                assetName = targetAssetName,
+                manifestProvider = { readManifest() },
+                assetOpener = assetOpener,
+            )
+        }
+    }
 
     /**
      * Fast-path: returns the runtime layout if already extracted.

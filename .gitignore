@@ -14,6 +14,9 @@ keystore.properties
 # Generated payload + runtime (produced by ci/ scripts; never commit)
 src/main/assets/st_bundle.tar
 src/main/assets/st_bundle.tar.gz
+src/full/assets/st_bundle.tar
+src/full/assets/st_bundle.tar.gz
+build/outputs/payload/
 src/main/assets/payload_manifest.json
 src/main/jniLibs/*/libnode.so
 src/main/jniLibs/*/libc++_shared.so

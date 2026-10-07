@@ -124,8 +124,9 @@ fun UpdatesScreen(
                         color = Color(0xFFD8DEE6),
                     )
 
+                    val flavorName = app.stmobile.BuildConfig.FLAVOR.replaceFirstChar { it.uppercase() }
                     Text(
-                        text = stringResource(R.string.updates_build_flavor, primaryAbi),
+                        text = stringResource(R.string.updates_build_flavor, "$flavorName ($primaryAbi)"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF8A94A3),
                     )

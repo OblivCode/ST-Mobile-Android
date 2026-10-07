@@ -50,7 +50,7 @@ class AssetPayloadSource(
         get() = manifest.payloadVersion
 
     override val expectedSha256: String?
-        get() = manifest.bundleSha256
+        get() = manifest.tarSha256 ?: manifest.bundleSha256
 
     override val sourceDescription: String
         get() = "Asset ($assetName)"

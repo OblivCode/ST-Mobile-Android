@@ -771,4 +771,206 @@ class PayloadManagerTest {
         assertTrue("Stream must abort on cancellation", threw)
         stream.close()
     }
+
+    @Test
+    fun testReadManifestWithDualChecksums() {
+        val json = """
+            {
+              "payload_version": "st-1.19.0-7e8663cd",
+              "st_version": "1.19.0",
+              "node_version": "v24.20.0",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "gz-sha-1234",
+              "tar_bundle": "st_bundle.tar",
+              "tar_sha256": "tar-sha-5678"
+            }
+        """.trimIndent()
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p1"), tempFolder.newFolder("c1"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { ByteArrayInputStream(json.toByteArray()) },
+        )
+        val manifest = manager.readManifest()
+        assertEquals("st-1.19.0-7e8663cd", manifest.payloadVersion)
+        assertEquals("1.19.0", manifest.stVersion)
+        assertEquals("st_bundle.tar.gz", manifest.bundle)
+        assertEquals("gz-sha-1234", manifest.bundleSha256)
+        assertEquals("st_bundle.tar", manifest.tarBundle)
+        assertEquals("tar-sha-5678", manifest.tarSha256)
+    }
+
+    @Test
+    fun testReadManifestLegacySingleChecksumFallback() {
+        val json = """
+            {
+              "payload_version": "v1.0.0",
+              "bundle": "st_bundle.tar",
+              "bundle_sha256": "legacy-sha-1111"
+            }
+        """.trimIndent()
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p2"), tempFolder.newFolder("c2"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { ByteArrayInputStream(json.toByteArray()) },
+        )
+        val manifest = manager.readManifest()
+        assertEquals("v1.0.0", manifest.payloadVersion)
+        assertEquals("legacy-sha-1111", manifest.bundleSha256)
+        assertEquals(null, manifest.tarSha256)
+        assertEquals(null, manifest.tarBundle)
+    }
+
+    @Test
+    fun testDefaultPayloadSourceFullFlavorWithAsset() {
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('hi');".toByteArray()))
+        val tarSha = sha256(tarBytes)
+        val json = """
+            {
+              "payload_version": "v1.0.0",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "remote-gz-sha",
+              "tar_bundle": "st_bundle.tar",
+              "tar_sha256": "$tarSha"
+            }
+        """.trimIndent()
+        val assets = mapOf(
+            "payload_manifest.json" to json.toByteArray(),
+            "st_bundle.tar" to tarBytes,
+        )
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p3"), tempFolder.newFolder("c3"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { name -> assets[name]?.let { ByteArrayInputStream(it) } ?: throw IOException("Not found: $name") },
+            isSlim = false,
+        )
+        val source = manager.defaultPayloadSource()
+        assertTrue("Full flavor with asset must yield AssetPayloadSource", source is AssetPayloadSource)
+        assertEquals(tarSha, source.expectedSha256)
+        assertEquals("v1.0.0", source.versionStamp)
+    }
+
+    @Test
+    fun testDefaultPayloadSourceSlimFlavor() {
+        val json = """
+            {
+              "payload_version": "st-1.19.0-7e8663cd",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "expected-gz-sha",
+              "tar_bundle": "st_bundle.tar",
+              "tar_sha256": "tar-sha"
+            }
+        """.trimIndent()
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p4"), tempFolder.newFolder("c4"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { ByteArrayInputStream(json.toByteArray()) },
+            isSlim = true,
+            defaultPayloadUrl = "https://example.com/custom/st_bundle.tar.gz",
+        )
+        val source = manager.defaultPayloadSource()
+        assertTrue("Slim flavor must yield RemotePayloadSource", source is RemotePayloadSource)
+        val remoteSource = source as RemotePayloadSource
+        assertEquals("https://example.com/custom/st_bundle.tar.gz", remoteSource.url)
+        assertEquals("expected-gz-sha", remoteSource.expectedSha256)
+        assertEquals("st-1.19.0-7e8663cd", remoteSource.versionStamp)
+    }
+
+    @Test
+    fun testDefaultPayloadSourceAssetAbsentFallback() {
+        val json = """
+            {
+              "payload_version": "v2.0.0",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "remote-gz-sha"
+            }
+        """.trimIndent()
+        val manager = PayloadManager(
+            paths = AppPaths(tempFolder.newFolder("p5"), tempFolder.newFolder("c5"), "lib"),
+            prefs = FakeSharedPreferences(),
+            assetOpener = { name ->
+                if (name == "payload_manifest.json") ByteArrayInputStream(json.toByteArray())
+                else throw IOException("Asset not found: $name")
+            },
+            isSlim = false,
+            defaultPayloadUrl = "https://example.com/fallback/st_bundle.tar.gz",
+        )
+        val source = manager.defaultPayloadSource()
+        assertTrue("Missing asset in full flavor must fallback to RemotePayloadSource", source is RemotePayloadSource)
+        assertEquals("https://example.com/fallback/st_bundle.tar.gz", (source as RemotePayloadSource).url)
+    }
+
+    @Test
+    fun testExtractFullAssetDualChecksumValidation() {
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('Dual');".toByteArray()))
+        val tarSha = sha256(tarBytes)
+        val json = """
+            {
+              "payload_version": "v-dual-1",
+              "bundle": "st_bundle.tar.gz",
+              "bundle_sha256": "some-gz-sha-that-differs",
+              "tar_bundle": "st_bundle.tar",
+              "tar_sha256": "$tarSha"
+            }
+        """.trimIndent()
+        val filesDir = tempFolder.newFolder("p6")
+        val cacheDir = tempFolder.newFolder("c6")
+        val paths = AppPaths(filesDir, cacheDir, "lib")
+        val prefs = FakeSharedPreferences()
+        val assets = mapOf(
+            "payload_manifest.json" to json.toByteArray(),
+            "st_bundle.tar" to tarBytes,
+            "default_config.yaml" to "port: 8000\n".toByteArray(),
+        )
+        val manager = PayloadManager(
+            paths = paths,
+            prefs = prefs,
+            assetOpener = { name -> assets[name]?.let { ByteArrayInputStream(it) } ?: throw IOException("Not found: $name") },
+            isSlim = false,
+        )
+        val layout = manager.extract(manager.defaultPayloadSource()) {}
+        assertTrue(layout.stEntry.exists())
+        assertEquals("console.log('Dual');", layout.stEntry.readText())
+        assertEquals("v-dual-1", prefs.getString("installed_payload_version", null))
+    }
+
+    @Test
+    fun testExtractRemoteDualChecksumValidation() {
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('GzipStream');".toByteArray()))
+        val gzBaos = ByteArrayOutputStream()
+        GZIPOutputStream(gzBaos).use { it.write(tarBytes) }
+        val gzBytes = gzBaos.toByteArray()
+        val gzSha = sha256(gzBytes)
+
+        val filesDir = tempFolder.newFolder("p7")
+        val cacheDir = tempFolder.newFolder("c7")
+        val paths = AppPaths(filesDir, cacheDir, "lib")
+        val prefs = FakeSharedPreferences()
+        val assets = mapOf(
+            "default_config.yaml" to "port: 8000\n".toByteArray(),
+        )
+        val manager = PayloadManager(
+            paths = paths,
+            prefs = prefs,
+            assetOpener = { name -> assets[name]?.let { ByteArrayInputStream(it) } ?: throw IOException("Not found: $name") },
+            isSlim = true,
+        )
+
+        val fakeConn = FakeHttpURLConnection(
+            url = URL("https://example.com/st_bundle.tar.gz"),
+            responseCode = 200,
+            responseData = gzBytes,
+        )
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/st_bundle.tar.gz",
+            versionStamp = "v-remote-gz",
+            expectedSha256 = gzSha,
+            urlOpener = { fakeConn },
+        )
+
+        val layout = manager.extract(remoteSource) {}
+        assertTrue(layout.stEntry.exists())
+        assertEquals("console.log('GzipStream');", layout.stEntry.readText())
+        assertEquals("v-remote-gz", prefs.getString("installed_payload_version", null))
+    }
 }

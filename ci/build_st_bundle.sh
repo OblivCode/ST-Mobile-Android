@@ -39,22 +39,39 @@ tar -C "$SRC" -cf - \
   --exclude=./.github --exclude=./.vscode --exclude=./docker --exclude=./colab . \
   | tar -C "$STAGE/st" -xf -
 
-ASSETS="$ROOT/src/main/assets"
-mkdir -p "$ASSETS"
-rm -f "$ASSETS/st_bundle.tar" "$ASSETS/st_bundle.tar.gz"
-tar -C "$STAGE" -cf "$ASSETS/st_bundle.tar" st
+MAIN_ASSETS="$ROOT/src/main/assets"
+FULL_ASSETS="$ROOT/src/full/assets"
+PAYLOAD_OUT="$ROOT/build/outputs/payload"
 
-SHA="$(sha256sum "$ASSETS/st_bundle.tar" | cut -d' ' -f1)"
-cat > "$ASSETS/payload_manifest.json" <<EOF
+mkdir -p "$MAIN_ASSETS" "$FULL_ASSETS" "$PAYLOAD_OUT"
+rm -f "$MAIN_ASSETS/st_bundle.tar"*
+rm -f "$FULL_ASSETS/st_bundle.tar"*
+rm -f "$PAYLOAD_OUT/st_bundle.tar"*
+
+echo "Creating uncompressed TAR bundle for full flavor assets…"
+tar -C "$STAGE" -cf "$FULL_ASSETS/st_bundle.tar" st
+TAR_SHA="$(sha256sum "$FULL_ASSETS/st_bundle.tar" | cut -d' ' -f1)"
+
+echo "Creating compressed GZIP release bundle for slim flavor / OTA distribution…"
+gzip -9 -n -c "$FULL_ASSETS/st_bundle.tar" > "$PAYLOAD_OUT/st_bundle.tar.gz"
+GZ_SHA="$(sha256sum "$PAYLOAD_OUT/st_bundle.tar.gz" | cut -d' ' -f1)"
+
+cat > "$MAIN_ASSETS/payload_manifest.json" <<EOF
 {
   "payload_version": "st-${ST_TAG}-${ST_COMMIT:0:8}",
   "st_version": "${ST_TAG}",
   "st_commit": "${ST_COMMIT}",
   "node_version": "${NODE_VERSION}",
   "node_runtime": "FongMi/nodejs-mobile ${NODE_VERSION}-android.2",
-  "bundle": "st_bundle.tar",
-  "bundle_sha256": "${SHA}"
+  "bundle": "st_bundle.tar.gz",
+  "bundle_sha256": "${GZ_SHA}",
+  "tar_bundle": "st_bundle.tar",
+  "tar_sha256": "${TAR_SHA}"
 }
 EOF
 
-echo "ST bundle ready: ${ST_TAG} (${ST_COMMIT:0:8}), sha256=${SHA}"
+cp -f "$MAIN_ASSETS/payload_manifest.json" "$PAYLOAD_OUT/payload_manifest.json"
+
+echo "ST bundle ready: ${ST_TAG} (${ST_COMMIT:0:8})"
+echo "  Full APK asset: $FULL_ASSETS/st_bundle.tar (sha256=${TAR_SHA})"
+echo "  Release bundle: $PAYLOAD_OUT/st_bundle.tar.gz (sha256=${GZ_SHA})"

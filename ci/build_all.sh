@@ -16,11 +16,18 @@ python3 ci/check_elf_align.py \
   src/main/jniLibs/arm64-v8a/libnode.so \
   src/main/jniLibs/arm64-v8a/libc++_shared.so 2>/dev/null || true
 
-./gradlew assembleDebug
+./gradlew assembleSlimDebug assembleFullDebug
 
 python3 ci/check_elf_align.py \
   src/main/jniLibs/arm64-v8a/libnode.so \
   src/main/jniLibs/arm64-v8a/libc++_shared.so \
   src/main/jniLibs/arm64-v8a/libstnode.so 2>/dev/null || true
 
-echo "APK: build/outputs/apk/debug/st-mobile-debug.apk"
+echo "Verifying built APK artifacts…"
+bash ci/check_apk.sh \
+  build/outputs/apk/slim/debug/st-mobile-slim-debug.apk \
+  build/outputs/apk/full/debug/st-mobile-full-debug.apk
+
+echo "Build complete:"
+echo "  Slim APK: build/outputs/apk/slim/debug/st-mobile-slim-debug.apk"
+echo "  Full APK: build/outputs/apk/full/debug/st-mobile-full-debug.apk"

@@ -88,6 +88,21 @@ android {
         }
     }
 
+    flavorDimensions += listOf("packaging")
+
+    productFlavors {
+        create("slim") {
+            dimension = "packaging"
+            val payloadUrl = envOrProp("PAYLOAD_URL", "REMOTE_PAYLOAD_URL")
+                ?: "https://github.com/OblivCode/ST-Mobile-Android/releases/latest/download/st_bundle.tar.gz"
+            buildConfigField("String", "DEFAULT_PAYLOAD_URL", "\"$payloadUrl\"")
+        }
+        create("full") {
+            dimension = "packaging"
+            buildConfigField("String", "DEFAULT_PAYLOAD_URL", "\"\"")
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -135,6 +150,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -167,4 +183,22 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+}
+
+tasks.register("verifyAssetSegregation") {
+    description = "Asserts that st_bundle.tar is not present in src/main/assets/ to prevent leakage into slim flavor"
+    doLast {
+        val mainBundle = file("src/main/assets/st_bundle.tar")
+        val mainBundleGz = file("src/main/assets/st_bundle.tar.gz")
+        if (mainBundle.exists() || mainBundleGz.exists()) {
+            throw GradleException(
+                "st_bundle.tar must NOT exist in src/main/assets/ (it would leak into the slim flavor). " +
+                    "Place it in src/full/assets/st_bundle.tar instead."
+            )
+        }
+    }
+}
+
+tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
+    dependsOn("verifyAssetSegregation")
 }
