@@ -50,6 +50,7 @@ import app.stmobile.sillytavern.PayloadManager
 fun UpdatesScreen(
     isInstalled: Boolean,
     onResetPayload: () -> Unit,
+    onImportArchive: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -172,9 +173,7 @@ fun UpdatesScreen(
 
                 // Import custom archive (.zip)
                 OutlinedButton(
-                    onClick = {
-                        Utils.toast(context, context.getString(R.string.updates_phase_l4_notice))
-                    },
+                    onClick = onImportArchive,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 ) {

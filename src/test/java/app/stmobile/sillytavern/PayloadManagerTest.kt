@@ -16,7 +16,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.MessageDigest
+import java.util.concurrent.CancellationException
+import java.util.zip.GZIPOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class PayloadManagerTest {
 
@@ -373,5 +379,396 @@ class PayloadManagerTest {
         assertFalse("Staging directory must be cleaned up on cancellation", tmpNew.exists())
         assertFalse("Installed version must not be recorded", prefs.contains("installed_payload_version"))
         assertFalse("App must not be considered installed", manager.isInstalled())
+    }
+
+    private fun createTarGzBytes(entries: Map<String, ByteArray>): ByteArray {
+        val tarBytes = createTarBytes(entries)
+        val baos = ByteArrayOutputStream()
+        GZIPOutputStream(baos).use { gz ->
+            gz.write(tarBytes)
+        }
+        return baos.toByteArray()
+    }
+
+    private fun createZipBytes(entries: Map<String, ByteArray>): ByteArray {
+        val baos = ByteArrayOutputStream()
+        ZipOutputStream(baos).use { zos ->
+            for ((name, data) in entries) {
+                val entry = ZipEntry(name)
+                zos.putNextEntry(entry)
+                zos.write(data)
+                zos.closeEntry()
+            }
+        }
+        return baos.toByteArray()
+    }
+
+    private class FakeHttpURLConnection(
+        url: URL,
+        private val responseCode: Int,
+        private val responseMessage: String = "OK",
+        private val responseHeaders: Map<String, String> = emptyMap(),
+        private val responseData: ByteArray = ByteArray(0),
+    ) : HttpURLConnection(url) {
+        var isDisconnected = false
+        override fun connect() {}
+        override fun disconnect() { isDisconnected = true }
+        override fun usingProxy() = false
+        override fun getResponseCode() = responseCode
+        override fun getResponseMessage() = responseMessage
+        override fun getHeaderField(name: String): String? = responseHeaders.entries
+            .firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
+        override fun getContentLength(): Int = responseData.size
+        override fun getContentLengthLong(): Long = responseData.size.toLong()
+        override fun getInputStream(): InputStream = ByteArrayInputStream(responseData)
+    }
+
+    @Test
+    fun testAssetPayloadSourceExtraction() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tar = createTarBytes(mapOf("st/server.js" to "console.log('ASSET');".toByteArray()))
+        val tarSha = sha256(tar)
+        val manifest = PayloadManager.Manifest("v1.0.0", "1.12.0", "20.10.0", "st_bundle.tar", tarSha)
+        val source = AssetPayloadSource(
+            assetName = "st_bundle.tar",
+            manifestProvider = { manifest },
+            assetOpener = { name ->
+                if (name == "st_bundle.tar") {
+                    ByteArrayInputStream(tar)
+                } else throw IOException("Not found: $name")
+            }
+        )
+
+        var progressReported = false
+        manager.extract(source) { progressReported = true }
+
+        assertTrue(progressReported)
+        assertTrue(paths.stEntry.exists())
+        assertEquals("console.log('ASSET');", paths.stEntry.readText())
+        assertEquals("v1.0.0", prefs.getString("installed_payload_version", null))
+        assertTrue(manager.isInstalled())
+    }
+
+    @Test
+    fun testRemotePayloadSourceDirectStreaming() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('REMOTE');".toByteArray()))
+        val tarSha = sha256(tarBytes)
+
+        val fakeConn = FakeHttpURLConnection(
+            url = URL("https://example.com/st_bundle.tar"),
+            responseCode = 200,
+            responseMessage = "OK",
+            responseData = tarBytes,
+        )
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/st_bundle.tar",
+            versionStamp = "v1.19.0-remote",
+            expectedSha256 = tarSha,
+            urlOpener = { fakeConn },
+        )
+
+        var byteProgressSeen = false
+        manager.extract(remoteSource) { p ->
+            if (p.bytesProcessed > 0L) byteProgressSeen = true
+        }
+
+        assertTrue("Progress should report streamed bytes", byteProgressSeen)
+        assertTrue(paths.stEntry.exists())
+        assertEquals("console.log('REMOTE');", paths.stEntry.readText())
+        assertEquals("v1.19.0-remote", prefs.getString("installed_payload_version", null))
+        assertTrue(manager.isInstalled())
+    }
+
+    @Test
+    fun testRemotePayloadSourceChecksumMismatchRollback() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('REMOTE');".toByteArray()))
+
+        val fakeConn = FakeHttpURLConnection(
+            url = URL("https://example.com/st_bundle.tar"),
+            responseCode = 200,
+            responseData = tarBytes,
+        )
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/st_bundle.tar",
+            versionStamp = "v1.19.0-remote",
+            expectedSha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+            urlOpener = { fakeConn },
+        )
+
+        var threw = false
+        try {
+            manager.extract(remoteSource) {}
+        } catch (e: IllegalStateException) {
+            threw = true
+            assertTrue(e.message?.contains("checksum mismatch") == true)
+        }
+
+        assertTrue(threw)
+        assertFalse(File(paths.tmpDir, "st_new").exists())
+        assertFalse(prefs.contains("installed_payload_version"))
+        assertFalse(manager.isInstalled())
+    }
+
+    @Test
+    fun testRemotePayloadSourceCancellationAbortsAndCleansUp() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('REMOTE');".toByteArray()))
+
+        val fakeConn = FakeHttpURLConnection(
+            url = URL("https://example.com/st_bundle.tar"),
+            responseCode = 200,
+            responseData = tarBytes,
+        )
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/st_bundle.tar",
+            versionStamp = "v1.19.0-remote",
+            expectedSha256 = sha256(tarBytes),
+            urlOpener = { fakeConn },
+        )
+
+        var threw = false
+        try {
+            manager.extract(remoteSource, isCancelled = { true }) {}
+        } catch (e: CancellationException) {
+            threw = true
+        }
+
+        assertTrue("Cancellation should throw CancellationException", threw)
+        assertFalse(File(paths.tmpDir, "st_new").exists())
+        assertFalse(manager.isInstalled())
+    }
+
+    @Test
+    fun testRemotePayloadSourceHttpRedirectHandling() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tarBytes = createTarBytes(mapOf("st/server.js" to "console.log('REDIRECT');".toByteArray()))
+
+        var openerCount = 0
+        val urlOpener: (String) -> HttpURLConnection = { urlStr ->
+            openerCount++
+            if (urlStr == "https://example.com/initial.tar") {
+                FakeHttpURLConnection(
+                    url = URL(urlStr),
+                    responseCode = 302,
+                    responseHeaders = mapOf("Location" to "https://example.com/final.tar"),
+                )
+            } else {
+                FakeHttpURLConnection(
+                    url = URL(urlStr),
+                    responseCode = 200,
+                    responseData = tarBytes,
+                )
+            }
+        }
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/initial.tar",
+            versionStamp = "v1.19.0-redirect",
+            expectedSha256 = sha256(tarBytes),
+            urlOpener = urlOpener,
+        )
+
+        manager.extract(remoteSource) {}
+        assertEquals(2, openerCount)
+        assertTrue(paths.stEntry.exists())
+        assertEquals("console.log('REDIRECT');", paths.stEntry.readText())
+        assertEquals("v1.19.0-redirect", prefs.getString("installed_payload_version", null))
+    }
+
+    @Test
+    fun testRemotePayloadSourceHttpErrorThrows() {
+        val (manager, paths, _) = createTestSetup()
+        val fakeConn = FakeHttpURLConnection(
+            url = URL("https://example.com/404.tar"),
+            responseCode = 404,
+            responseMessage = "Not Found",
+        )
+
+        val remoteSource = RemotePayloadSource(
+            url = "https://example.com/404.tar",
+            versionStamp = "v1.19.0",
+            urlOpener = { fakeConn },
+        )
+
+        var threw = false
+        try {
+            manager.extract(remoteSource) {}
+        } catch (e: IOException) {
+            threw = true
+            assertTrue(e.message?.contains("HTTP 404") == true)
+        }
+
+        assertTrue(threw)
+        assertFalse(File(paths.tmpDir, "st_new").exists())
+    }
+
+    @Test
+    fun testLocalArchivePayloadSourceTarGz() {
+        val (manager, paths, prefs) = createTestSetup()
+        val tarGzBytes = createTarGzBytes(mapOf("st/server.js" to "console.log('TARGZ');".toByteArray()))
+        val expectedSha = sha256(tarGzBytes)
+
+        val localSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(tarGzBytes) },
+            versionStamp = "v1.19.0-targz",
+            expectedSha256 = expectedSha,
+            archiveName = "sillytavern.tar.gz",
+        )
+
+        manager.extract(localSource) {}
+        assertTrue(paths.stEntry.exists())
+        assertEquals("console.log('TARGZ');", paths.stEntry.readText())
+        assertEquals("v1.19.0-targz", prefs.getString("installed_payload_version", null))
+        assertTrue(manager.isInstalled())
+    }
+
+    @Test
+    fun testLocalArchivePayloadSourceZipWithEofDrain() {
+        val (manager, paths, prefs) = createTestSetup()
+        val zipBytes = createZipBytes(mapOf("st/server.js" to "console.log('ZIP_DRAIN');".toByteArray()))
+        val expectedSha = sha256(zipBytes)
+
+        val localSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(zipBytes) },
+            versionStamp = "v1.19.0-zip",
+            expectedSha256 = expectedSha,
+            archiveName = "sillytavern.zip",
+        )
+
+        manager.extract(localSource) {}
+        assertTrue("server.js must be extracted from zip", paths.stEntry.exists())
+        assertEquals("console.log('ZIP_DRAIN');", paths.stEntry.readText())
+        assertEquals("v1.19.0-zip", prefs.getString("installed_payload_version", null))
+        assertTrue("Payload should be installed after valid zip extraction with EOF drain", manager.isInstalled())
+    }
+
+    @Test
+    fun testLocalArchiveZipSlipBlocked() {
+        val (manager, paths, _) = createTestSetup()
+        val evilZip = createZipBytes(mapOf("../../evil.txt" to "evil".toByteArray()))
+
+        val localSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(evilZip) },
+            versionStamp = "evil",
+            archiveName = "evil.zip",
+        )
+
+        var threw = false
+        try {
+            manager.extract(localSource) {}
+        } catch (e: IllegalStateException) {
+            threw = true
+            assertTrue(e.message?.contains("Unsafe archive entry") == true)
+        }
+
+        assertTrue("ZipSlip entry in zip archive must throw", threw)
+        assertFalse(File(paths.tmpDir, "st_new").exists())
+    }
+
+    @Test
+    fun testRootDirectoryNormalization() {
+        val (manager, paths, prefs) = createTestSetup()
+        // Archive with single root directory "SillyTavern-1.19.0/" instead of "st/"
+        val zipBytes = createZipBytes(
+            mapOf(
+                "SillyTavern-1.19.0/server.js" to "console.log('NORMALIZED');".toByteArray(),
+                "SillyTavern-1.19.0/package.json" to "{\"version\":\"1.19.0\"}".toByteArray(),
+            )
+        )
+
+        val localSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(zipBytes) },
+            versionStamp = "v1.19.0-gh",
+            archiveName = "SillyTavern-1.19.0.zip",
+        )
+
+        manager.extract(localSource) {}
+        assertTrue("server.js must be normalized to root of stDir", paths.stEntry.exists())
+        assertEquals("console.log('NORMALIZED');", paths.stEntry.readText())
+        assertTrue("package.json must also be promoted", File(paths.stDir, "package.json").exists())
+    }
+
+    @Test
+    fun testAtomicRollbackWhenSwapFails() {
+        val (manager, paths, prefs) = createTestSetup()
+        // 1. Initial valid installation
+        manager.extract {}
+        paths.stEntry.writeText("WORKING_VERSION")
+
+        // 2. Corrupt archive with no server.js
+        val badZip = createZipBytes(mapOf("readme.txt" to "no server.js".toByteArray()))
+        val badSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(badZip) },
+            versionStamp = "bad-payload",
+            archiveName = "bad.zip",
+        )
+
+        var threw = false
+        try {
+            manager.extract(badSource) {}
+        } catch (e: IllegalStateException) {
+            threw = true
+            assertTrue(e.message?.contains("server.js not found") == true)
+        }
+
+        assertTrue("Bad archive missing server.js must throw", threw)
+        // Verify original working installation was restored cleanly by rollback!
+        assertTrue("Original server.js must survive rollback", paths.stEntry.exists())
+        assertEquals("WORKING_VERSION", paths.stEntry.readText())
+    }
+
+    @Test
+    fun testIsInstalledSurvivesCustomVersion() {
+        val (manager, paths, prefs) = createTestSetup(payloadVersion = "v1.0.0")
+        val customZip = createZipBytes(mapOf("st/server.js" to "console.log('CUSTOM');".toByteArray()))
+        val customSource = LocalArchivePayloadSource(
+            streamOpener = { ByteArrayInputStream(customZip) },
+            versionStamp = "custom-ota-2.0",
+            archiveName = "custom.zip",
+        )
+
+        manager.extract(customSource) {}
+        assertTrue("Must be considered installed even when version differs from asset manifest", manager.isInstalled())
+        assertEquals("custom-ota-2.0", prefs.getString("installed_payload_version", null))
+    }
+
+    @Test
+    fun testProgressReportingInputStreamEmaSpeedAndCancellation() {
+        val data = ByteArray(1024) { it.toByte() }
+        var reportedBytes = 0L
+        var reportedSpeed = 0L
+        var isCancelledFlag = false
+
+        val stream = ProgressReportingInputStream(
+            delegate = ByteArrayInputStream(data),
+            totalBytes = 1024L,
+            isCancelled = { isCancelledFlag },
+            onProgress = { bytes, _, speed ->
+                reportedBytes = bytes
+                reportedSpeed = speed
+            },
+            throttleIntervalMs = 0L,
+        )
+
+        val buf = ByteArray(512)
+        val read1 = stream.read(buf)
+        assertEquals(512, read1)
+        assertEquals(512L, reportedBytes)
+
+        isCancelledFlag = true
+        var threw = false
+        try {
+            stream.read(buf)
+        } catch (e: CancellationException) {
+            threw = true
+            assertEquals("Payload extraction cancelled", e.message)
+        }
+        assertTrue("Stream must abort on cancellation", threw)
+        stream.close()
     }
 }

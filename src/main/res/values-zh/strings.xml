@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">导入自定义归档 (.zip)</string>
     <string name="updates_btn_repair">重新安装 / 修复组件</string>
     <string name="updates_phase_l4_notice">OTA 在线更新检查将在 Phase L.4 中启用。</string>
+    <string name="toast_import_archive_failed">导入归档失败：%1$s</string>
+    <string name="toast_import_archive_success">SillyTavern 归档安装成功</string>
+    <string name="dashboard_downloading_payload">正在下载 SillyTavern…</string>
 </resources>

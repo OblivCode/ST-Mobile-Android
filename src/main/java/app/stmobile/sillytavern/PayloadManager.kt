@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import app.stmobile.AppPaths
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
 import org.json.JSONObject
 import java.io.BufferedInputStream
 import java.io.File
@@ -18,11 +20,12 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.security.DigestInputStream
 import java.security.MessageDigest
+import java.util.concurrent.CancellationException
 import java.util.zip.GZIPInputStream
 
 /**
- * Owns the bundled SillyTavern payload: first-run extraction, payload
- * versioning, config seeding, and the config/data symlinks.
+ * Owns the SillyTavern payload lifecycle: pluggable source extraction, versioning,
+ * SHA-256 integrity validation, config seeding, and atomic staging/rollback safety.
  */
 class PayloadManager(
     private val paths: AppPaths,
@@ -41,7 +44,7 @@ class PayloadManager(
         val stVersion: String?,
         val nodeVersion: String?,
         val bundle: String,
-        val bundleSha256: String?
+        val bundleSha256: String?,
     )
 
     data class Layout(
@@ -53,7 +56,7 @@ class PayloadManager(
         val logsDir: File,
         val nodeTmpDir: File,
         val nativeLibDir: String,
-        val payloadUpdated: Boolean
+        val payloadUpdated: Boolean,
     )
 
     data class ExtractProgress(
@@ -61,9 +64,12 @@ class PayloadManager(
         val filesProcessed: Int = 0,
         val totalEstimate: Int = 11000,
         val currentFile: String? = null,
+        val bytesProcessed: Long = 0L,
+        val totalBytes: Long = 0L,
+        val speedBytesPerSec: Long = 0L,
         val isCompleted: Boolean = false,
         val isError: Boolean = false,
-        val errorMessage: String? = null
+        val errorMessage: String? = null,
     )
 
     fun readManifest(): Manifest {
@@ -75,19 +81,27 @@ class PayloadManager(
             stVersion = json.optString("st_version").ifBlank { null },
             nodeVersion = json.optString("node_version").ifBlank { null },
             bundle = json.getString("bundle"),
-            bundleSha256 = json.optString("bundle_sha256").ifBlank { null }
+            bundleSha256 = json.optString("bundle_sha256").ifBlank { null },
         )
     }
 
+    /** Returns true if SillyTavern payload has already been extracted and recorded. */
+    fun isInstalled(): Boolean = paths.stEntry.exists() && prefs.getString(KEY_INSTALLED, null) != null
+
     /** Returns true if first-run extraction or payload update is required. */
     fun isExtractionNeeded(): Boolean {
-        val manifest = readManifest()
+        if (!isInstalled()) return true
+        val manifest = runCatching { readManifest() }.getOrNull() ?: return false
         val installed = prefs.getString(KEY_INSTALLED, null)
-        return installed != manifest.payloadVersion || !paths.stEntry.exists()
+        return installed != manifest.payloadVersion
     }
 
-    /** Returns true if SillyTavern payload has already been extracted. */
-    fun isInstalled(): Boolean = !isExtractionNeeded()
+    /** Returns default asset payload source wrapping bundled assets. */
+    fun defaultPayloadSource(): PayloadSource = AssetPayloadSource(
+        assetName = runCatching { readManifest().bundle }.getOrDefault("st_bundle.tar"),
+        manifestProvider = { readManifest() },
+        assetOpener = assetOpener,
+    )
 
     /**
      * Fast-path: returns the runtime layout if already extracted.
@@ -99,7 +113,7 @@ class PayloadManager(
         paths.logsDir.mkdirs()
         paths.nodeTmpDir.mkdirs()
 
-        if (isExtractionNeeded()) {
+        if (!isInstalled()) {
             throw IllegalStateException("SillyTavern payload not extracted. Run setup first.")
         }
 
@@ -121,30 +135,22 @@ class PayloadManager(
             logsDir = paths.logsDir,
             nodeTmpDir = paths.nodeTmpDir,
             nativeLibDir = paths.nativeLibDir,
-            payloadUpdated = false
+            payloadUpdated = false,
         )
     }
 
     /**
-     * Extracts and validates the bundled payload with throttled progress reporting.
+     * Extracts and validates the payload from [source] with granular progress reporting,
+     * SHA-256 verification, and atomic swap promotion with rollback safety.
      */
     fun extract(
+        source: PayloadSource = defaultPayloadSource(),
         isCancelled: () -> Boolean = { false },
         onProgress: (ExtractProgress) -> Unit,
     ): Layout {
-        val manifest = readManifest()
         onProgress(ExtractProgress(stage = "Preparing extraction…", totalEstimate = 11000))
 
-        extractBundle(manifest.bundle, manifest.bundleSha256, isCancelled) { files, file ->
-            onProgress(
-                ExtractProgress(
-                    stage = "Unpacking SillyTavern…",
-                    filesProcessed = files,
-                    totalEstimate = 11000,
-                    currentFile = file
-                )
-            )
-        }
+        extractFromSource(source, isCancelled, onProgress)
 
         paths.configDir.mkdirs()
         paths.dataDir.mkdirs()
@@ -161,7 +167,7 @@ class PayloadManager(
         ensureSymlink(paths.stConfigLink, paths.configFile)
         ensureSymlink(paths.stDataLink, paths.dataDir)
 
-        prefs.edit().putString(KEY_INSTALLED, manifest.payloadVersion).apply()
+        prefs.edit().putString(KEY_INSTALLED, source.versionStamp).apply()
         onProgress(ExtractProgress(stage = "Setup complete", filesProcessed = 11000, isCompleted = true))
 
         return Layout(
@@ -173,37 +179,102 @@ class PayloadManager(
             logsDir = paths.logsDir,
             nodeTmpDir = paths.nodeTmpDir,
             nativeLibDir = paths.nativeLibDir,
-            payloadUpdated = true
+            payloadUpdated = true,
         )
     }
 
-    private fun extractBundle(
-        assetName: String,
-        expectedSha256: String?,
-        isCancelled: () -> Boolean = { false },
-        onFileProgress: (Int, String) -> Unit,
+    private fun extractFromSource(
+        source: PayloadSource,
+        isCancelled: () -> Boolean,
+        onProgress: (ExtractProgress) -> Unit,
     ) {
         val tmpNew = File(paths.tmpDir, "st_new")
         if (tmpNew.exists()) safeDeleteRecursively(tmpNew)
         tmpNew.mkdirs()
 
         try {
-            // Digest raw asset bytes to verify SHA-256 recorded in manifest
             val digest = MessageDigest.getInstance("SHA-256")
-            assetOpener(assetName).use { raw ->
+            var lastReportTime = System.currentTimeMillis()
+            var currentBytes = 0L
+            var totalBytes = -1L
+            var currentSpeed = 0L
+
+            val rawStream = source.openStream(isCancelled) { bytesRead, total, speed ->
+                currentBytes = bytesRead
+                totalBytes = total
+                currentSpeed = speed
+                val now = System.currentTimeMillis()
+                if (now - lastReportTime >= 100 || (total > 0 && bytesRead >= total)) {
+                    lastReportTime = now
+                    onProgress(
+                        ExtractProgress(
+                            stage = "Downloading SillyTavern…",
+                            bytesProcessed = currentBytes,
+                            totalBytes = totalBytes,
+                            speedBytesPerSec = currentSpeed,
+                        )
+                    )
+                }
+            }
+
+            rawStream.use { raw ->
                 val digestIn = DigestInputStream(raw, digest)
                 val buffered = BufferedInputStream(digestIn, 1 shl 16)
-                val source = if (assetName.endsWith(".gz")) GZIPInputStream(buffered, 1 shl 16) else buffered
-                source.use { input ->
-                    TarArchiveInputStream(input).use { tar ->
-                        var files = 0
-                        var lastReportTime = System.currentTimeMillis()
+
+                // Peek up to 8 bytes to detect archive format safely without displacement
+                buffered.mark(8)
+                val headerBytes = ByteArray(8)
+                val headerRead = buffered.read(headerBytes, 0, 8)
+                buffered.reset()
+
+                val isGzip = headerRead >= 2 && headerBytes[0] == 0x1F.toByte() && headerBytes[1] == 0x8B.toByte()
+                val isZip = headerRead >= 4 && headerBytes[0] == 0x50.toByte() && headerBytes[1] == 0x4B.toByte() &&
+                    ((headerBytes[2] == 0x03.toByte() && headerBytes[3] == 0x04.toByte()) ||
+                        (headerBytes[2] == 0x05.toByte() && headerBytes[3] == 0x06.toByte()))
+
+                var files = 0
+
+                if (isZip) {
+                    ZipArchiveInputStream(NonClosingInputStream(buffered)).use { zip ->
                         while (true) {
-                            if (isCancelled()) {
-                                throw java.util.concurrent.CancellationException("Payload extraction cancelled")
+                            if (isCancelled()) throw CancellationException("Payload extraction cancelled")
+                            val entry = zip.nextEntry as? ZipArchiveEntry ?: break
+                            val name = entry.name.replace('\\', '/').removePrefix("st/").removePrefix("./").trimStart('/')
+                            if (name.isBlank()) continue
+                            val target = safeResolve(tmpNew, name)
+                            if (entry.isDirectory) {
+                                target.mkdirs()
+                            } else {
+                                target.parentFile?.mkdirs()
+                                FileOutputStream(target).use { out -> zip.copyTo(out) }
+                                if ((entry.unixMode and 0b001_000_000) != 0) target.setExecutable(true, true)
+                                files++
+                                val now = System.currentTimeMillis()
+                                if (files % 100 == 0 || now - lastReportTime >= 100) {
+                                    lastReportTime = now
+                                    onProgress(
+                                        ExtractProgress(
+                                            stage = "Unpacking SillyTavern…",
+                                            filesProcessed = files,
+                                            totalEstimate = 11000,
+                                            currentFile = name,
+                                            bytesProcessed = currentBytes,
+                                            totalBytes = totalBytes,
+                                            speedBytesPerSec = currentSpeed,
+                                        )
+                                    )
+                                }
                             }
+                        }
+                    }
+                } else {
+                    val rawTarStream = NonClosingInputStream(buffered)
+                    val decompressed = if (isGzip) GZIPInputStream(rawTarStream, 1 shl 16) else rawTarStream
+                    TarArchiveInputStream(decompressed).use { tar ->
+                        while (true) {
+                            if (isCancelled()) throw CancellationException("Payload extraction cancelled")
                             val entry: TarArchiveEntry = tar.nextEntry ?: break
-                            val name = entry.name.removePrefix("st/")
+                            val name = entry.name.replace('\\', '/').removePrefix("st/").removePrefix("./").trimStart('/')
                             if (name.isBlank()) continue
                             val target = safeResolve(tmpNew, name)
                             if (entry.isDirectory) {
@@ -214,45 +285,131 @@ class PayloadManager(
                                 if ((entry.mode and 0b001_000_000) != 0) target.setExecutable(true, true)
                                 files++
                                 val now = System.currentTimeMillis()
-                                // Throttle progress to at most once per 100 files or every 100ms
                                 if (files % 100 == 0 || now - lastReportTime >= 100) {
                                     lastReportTime = now
-                                    onFileProgress(files, name)
+                                    onProgress(
+                                        ExtractProgress(
+                                            stage = "Unpacking SillyTavern…",
+                                            filesProcessed = files,
+                                            totalEstimate = 11000,
+                                            currentFile = name,
+                                            bytesProcessed = currentBytes,
+                                            totalBytes = totalBytes,
+                                            speedBytesPerSec = currentSpeed,
+                                        )
+                                    )
                                 }
                             }
                         }
-                        onFileProgress(files, "Unpack complete")
                     }
+                }
+
+                onProgress(
+                    ExtractProgress(
+                        stage = "Unpack complete",
+                        filesProcessed = files,
+                        totalEstimate = 11000,
+                        bytesProcessed = currentBytes,
+                        totalBytes = totalBytes,
+                        speedBytesPerSec = currentSpeed,
+                    )
+                )
+
+                // Explicitly drain any remaining bytes (central directory for ZIP, padding for TAR)
+                // to guarantee the SHA-256 digest covers 100% of the raw stream.
+                val drainBuffer = ByteArray(8192)
+                while (buffered.read(drainBuffer) != -1) {
+                    if (isCancelled()) throw CancellationException("Payload extraction cancelled")
                 }
             }
 
+            // Verify checksum
             val actualSha = digest.digest().joinToString("") { "%02x".format(it) }
-            if (expectedSha256 != null && !actualSha.equals(expectedSha256, ignoreCase = true)) {
+            if (source.expectedSha256 != null && !actualSha.equals(source.expectedSha256, ignoreCase = true)) {
                 throw IllegalStateException(
-                    "SillyTavern payload checksum mismatch (expected $expectedSha256, got $actualSha)"
+                    "SillyTavern payload checksum mismatch (expected ${source.expectedSha256}, got $actualSha)"
                 )
             }
 
-            // Replace st/ via a temp swap so a failure never leaves a half tree.
-            val stDir = paths.stDir
-            val old = File(paths.tmpDir, "st_old")
-            if (old.exists()) safeDeleteRecursively(old)
-            if (stDir.exists() && !stDir.renameTo(old)) safeDeleteRecursively(stDir)
-            if (!tmpNew.renameTo(stDir)) {
-                tmpNew.copyRecursively(stDir, overwrite = true)
-                safeDeleteRecursively(tmpNew)
-            }
-            if (old.exists()) safeDeleteRecursively(old)
+            // Normalize payload structure (promotes single root directory like SillyTavern-1.19.0/ if present)
+            normalizePayloadTree(tmpNew)
+
+            // Atomic promotion: swap st/ safely using st_old, restoring if swap fails midway
+            promoteStagingTree(tmpNew)
         } catch (t: Throwable) {
             safeDeleteRecursively(tmpNew)
             throw t
         }
     }
 
+    /**
+     * Promotes contents of single root folder if server.js is nested (e.g. SillyTavern-1.19.0/server.js).
+     * Asserts server.js exists at the root of stagingDir.
+     */
+    private fun normalizePayloadTree(stagingDir: File) {
+        if (File(stagingDir, "server.js").exists()) return
+
+        val subdirs = stagingDir.listFiles { f -> f.isDirectory } ?: emptyArray()
+        val candidate = subdirs.firstOrNull { File(it, "server.js").exists() }
+        if (candidate != null) {
+            val children = candidate.listFiles() ?: emptyArray()
+            for (child in children) {
+                val dest = File(stagingDir, child.name)
+                if (!child.renameTo(dest)) {
+                    child.copyRecursively(dest, overwrite = true)
+                    safeDeleteRecursively(child)
+                }
+            }
+            safeDeleteRecursively(candidate)
+        }
+
+        if (!File(stagingDir, "server.js").exists()) {
+            throw IllegalStateException("Invalid SillyTavern payload: server.js not found in archive")
+        }
+    }
+
+    /**
+     * Atomically promotes [stagingDir] to `paths.stDir`.
+     * If an existing `st/` tree exists, moves it to `st_old`.
+     * In case promotion fails, rolls back `st_old` to `st/`.
+     */
+    private fun promoteStagingTree(stagingDir: File) {
+        val stDir = paths.stDir
+        val old = File(paths.tmpDir, "st_old")
+        if (old.exists()) safeDeleteRecursively(old)
+
+        var movedOld = false
+        if (stDir.exists()) {
+            if (!stDir.renameTo(old)) {
+                throw IOException("Failed to move existing payload to temporary backup")
+            }
+            movedOld = true
+        }
+
+        var promoted = false
+        try {
+            if (stagingDir.renameTo(stDir)) {
+                promoted = true
+            } else {
+                stagingDir.copyRecursively(stDir, overwrite = true)
+                safeDeleteRecursively(stagingDir)
+                promoted = true
+            }
+        } finally {
+            if (!promoted && movedOld && old.exists()) {
+                // Rollback: restore old stDir
+                safeDeleteRecursively(stDir)
+                old.renameTo(stDir)
+            }
+        }
+
+        if (old.exists()) safeDeleteRecursively(old)
+    }
+
     private fun safeResolve(root: File, name: String): File {
         val target = File(root, name)
         val rootPath = root.canonicalPath + File.separator
-        if (!target.canonicalPath.startsWith(rootPath)) {
+        if (!target.canonicalPath.startsWith(rootPath) && target.canonicalPath != root.canonicalPath) {
             throw IllegalStateException("Unsafe archive entry: $name")
         }
         return target
@@ -269,7 +426,7 @@ class PayloadManager(
             target.parentFile?.mkdirs()
             Files.createSymbolicLink(link.toPath(), target.toPath())
         } catch (_: Exception) {
-            // Symlinks unsupported: the process flags already point at the real paths.
+            // Symlinks unsupported: process flags already point at the real paths.
         }
     }
 
@@ -281,6 +438,12 @@ class PayloadManager(
     fun resetPayload(): Boolean {
         prefs.edit().remove(KEY_INSTALLED).commit()
         return safeDeleteRecursively(paths.stDir)
+    }
+
+    private class NonClosingInputStream(delegate: InputStream) : java.io.FilterInputStream(delegate) {
+        override fun close() {
+            // Keep delegate stream open for subsequent EOF draining
+        }
     }
 
     companion object {
@@ -298,6 +461,7 @@ class PayloadManager(
                         Files.deleteIfExists(file)
                         return FileVisitResult.CONTINUE
                     }
+
                     override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
                         Files.deleteIfExists(dir)
                         return FileVisitResult.CONTINUE
@@ -305,7 +469,7 @@ class PayloadManager(
                 })
                 true
             } catch (_: Exception) {
-                root.deleteRecursively()
+                false
             }
         }
     }

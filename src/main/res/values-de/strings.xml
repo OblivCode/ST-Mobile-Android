@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">Benutzerdefiniertes Archiv (.zip) importieren</string>
     <string name="updates_btn_repair">Payload neu installieren / reparieren</string>
     <string name="updates_phase_l4_notice">Die OTA-Update-Prüfung wird in Phase L.4 aktiviert.</string>
+    <string name="toast_import_archive_failed">Archiv konnte nicht importiert werden: %1$s</string>
+    <string name="toast_import_archive_success">SillyTavern-Archiv erfolgreich installiert</string>
+    <string name="dashboard_downloading_payload">SillyTavern wird heruntergeladen…</string>
 </resources>

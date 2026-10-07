@@ -29,6 +29,7 @@ fun MainScreen(
     onExportLogs: () -> Unit,
     onPromptBattery: () -> Unit,
     onResetPayload: () -> Unit,
+    onImportArchive: () -> Unit = {},
 ) {
     // Intercept hardware Back to cancel installation if active
     BackHandler(enabled = isInstalling) {
@@ -84,6 +85,7 @@ fun MainScreen(
                 ActiveScreen.UPDATES -> UpdatesScreen(
                     isInstalled = isInstalled,
                     onResetPayload = onResetPayload,
+                    onImportArchive = onImportArchive,
                 )
                 ActiveScreen.BACKUPS -> BackupsScreen(
                     onExportBackup = onExportBackup,

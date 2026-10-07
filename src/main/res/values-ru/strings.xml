@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">Импортировать архив (.zip)</string>
     <string name="updates_btn_repair">Переустановить / Восстановить файлы</string>
     <string name="updates_phase_l4_notice">Проверка обновлений по воздуху (OTA) станет доступна в Фазе L.4.</string>
+    <string name="toast_import_archive_failed">Не удалось импортировать архив: %1$s</string>
+    <string name="toast_import_archive_success">Архив SillyTavern успешно установлен</string>
+    <string name="dashboard_downloading_payload">Загрузка SillyTavern…</string>
 </resources>

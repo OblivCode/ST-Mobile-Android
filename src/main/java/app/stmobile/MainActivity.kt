@@ -18,7 +18,9 @@ import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeState
 import app.stmobile.node.NodeService
 import app.stmobile.sillytavern.BackupManager
+import app.stmobile.sillytavern.LocalArchivePayloadSource
 import app.stmobile.sillytavern.PayloadManager
+import app.stmobile.sillytavern.PayloadSource
 import app.stmobile.ui.ActiveScreen
 import app.stmobile.ui.ExportBackupDialog
 import app.stmobile.ui.ImportPasswordDialog
@@ -91,6 +93,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val payloadArchiveLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+                if (wasActive) {
+                    NodeService.stop(this@MainActivity)
+                    withTimeoutOrNull(3000) {
+                        NodeService.status.first { it.state == NodeState.STOPPED }
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    navController.navigateTo(ActiveScreen.DASHBOARD)
+                    installPayload(LocalArchivePayloadSource(uri, contentResolver))
+                }
+            }
+        }
+    }
+
     private val showExportDialog = mutableStateOf(false)
     private val showImportPasswordDialog = mutableStateOf(false)
     private val importPasswordError = mutableStateOf<String?>(null)
@@ -135,6 +155,7 @@ class MainActivity : AppCompatActivity() {
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
                     onResetPayload = { resetPayload() },
+                    onImportArchive = { payloadArchiveLauncher.launch(arrayOf("application/zip", "application/x-tar", "application/gzip", "*/*")) },
                 )
 
                 // Dialog: Export with optional AES-256 password
@@ -199,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun installPayload() {
+    private fun installPayload(source: PayloadSource? = null) {
         if (isInstalling) return
         isInstalling = true
         installErrorMessage = null
@@ -207,8 +228,10 @@ class MainActivity : AppCompatActivity() {
 
         installJob = lifecycleScope.launch(Dispatchers.IO) {
             val payloadManager = PayloadManager(this@MainActivity)
+            val effectiveSource = source ?: payloadManager.defaultPayloadSource()
             try {
                 payloadManager.extract(
+                    source = effectiveSource,
                     isCancelled = { !coroutineContext.isActive },
                     onProgress = { p ->
                         lifecycleScope.launch(Dispatchers.Main) {
@@ -220,6 +243,9 @@ class MainActivity : AppCompatActivity() {
                     isInstalled = true
                     isInstalling = false
                     installProgress = null
+                    if (source != null) {
+                        Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_success))
+                    }
                     val appConfig = AppConfig(this@MainActivity)
                     if (appConfig.autoStartOnAppOpen) {
                         NodeService.start(this@MainActivity)
@@ -234,6 +260,9 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     isInstalling = false
                     installErrorMessage = t.message ?: "Extraction failed"
+                    if (source != null) {
+                        Utils.toast(this@MainActivity, getString(R.string.toast_import_archive_failed, t.message ?: ""))
+                    }
                 }
             }
         }

@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">Import Custom Archive (.zip)</string>
     <string name="updates_btn_repair">Reinstall / Repair Payload</string>
     <string name="updates_phase_l4_notice">OTA update checking will be enabled in Phase L.4.</string>
+    <string name="toast_import_archive_failed">Failed to import archive: %1$s</string>
+    <string name="toast_import_archive_success">SillyTavern archive installed successfully</string>
+    <string name="dashboard_downloading_payload">Downloading SillyTavern…</string>
 </resources>

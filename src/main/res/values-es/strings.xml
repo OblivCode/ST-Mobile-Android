@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">Importar archivo personalizado (.zip)</string>
     <string name="updates_btn_repair">Reinstalar / Reparar carga útil</string>
     <string name="updates_phase_l4_notice">La comprobación de actualizaciones OTA se habilitará en la Fase L.4.</string>
+    <string name="toast_import_archive_failed">Error al importar el archivo: %1$s</string>
+    <string name="toast_import_archive_success">Archivo de SillyTavern instalado con éxito</string>
+    <string name="dashboard_downloading_payload">Descargando SillyTavern…</string>
 </resources>

@@ -62,7 +62,10 @@ fun DashboardScreen(
             when {
                 // 1. In-place installation progress
                 isInstalling -> {
-                    val pct = if ((installProgress?.totalEstimate ?: 0) > 0 && (installProgress?.filesProcessed ?: 0) > 0) {
+                    val hasBytes = (installProgress?.totalBytes ?: 0L) > 0L && (installProgress?.bytesProcessed ?: 0L) > 0L
+                    val pct = if (hasBytes) {
+                        (installProgress!!.bytesProcessed.toFloat() / installProgress.totalBytes.toFloat()).coerceIn(0f, 1f)
+                    } else if ((installProgress?.totalEstimate ?: 0) > 0 && (installProgress?.filesProcessed ?: 0) > 0) {
                         (installProgress!!.filesProcessed.toFloat() / installProgress.totalEstimate.toFloat()).coerceIn(0f, 1f)
                     } else 0f
 
@@ -103,11 +106,25 @@ fun DashboardScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
-                                    Text(
-                                        text = "${installProgress!!.filesProcessed} / ${installProgress.totalEstimate} files",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF8A94A3),
-                                    )
+                                    if (hasBytes) {
+                                        val currentMb = installProgress!!.bytesProcessed.toDouble() / (1024.0 * 1024.0)
+                                        val totalMb = installProgress.totalBytes.toDouble() / (1024.0 * 1024.0)
+                                        val speedText = if (installProgress.speedBytesPerSec > 0) {
+                                            val speedMb = installProgress.speedBytesPerSec.toDouble() / (1024.0 * 1024.0)
+                                            " (%.1f MB/s)".format(speedMb)
+                                        } else ""
+                                        Text(
+                                            text = "%.1f MB / %.1f MB%s".format(currentMb, totalMb, speedText),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF8A94A3),
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "${installProgress!!.filesProcessed} / ${installProgress.totalEstimate} files",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF8A94A3),
+                                        )
+                                    }
                                     Text(
                                         text = "${(pct * 100).toInt()}%",
                                         style = MaterialTheme.typography.bodySmall,

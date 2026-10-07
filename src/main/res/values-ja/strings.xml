@@ -200,4 +200,7 @@
     <string name="updates_btn_import_archive">カスタムアーカイブ (.zip) をインポート</string>
     <string name="updates_btn_repair">ペイロードを再インストール / 修復</string>
     <string name="updates_phase_l4_notice">OTAアップデートの確認はフェーズL.4で有効になります。</string>
+    <string name="toast_import_archive_failed">アーカイブのインポートに失敗しました: %1$s</string>
+    <string name="toast_import_archive_success">SillyTavern アーカイブが正常にインストールされました</string>
+    <string name="dashboard_downloading_payload">SillyTavern をダウンロード中…</string>
 </resources>
