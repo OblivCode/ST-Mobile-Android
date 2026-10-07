@@ -86,6 +86,9 @@ class PayloadManager(
         return installed != manifest.payloadVersion || !paths.stEntry.exists()
     }
 
+    /** Returns true if SillyTavern payload has already been extracted. */
+    fun isInstalled(): Boolean = !isExtractionNeeded()
+
     /**
      * Fast-path: returns the runtime layout if already extracted.
      * Ensures all required scratch and storage directories exist.
@@ -125,11 +128,14 @@ class PayloadManager(
     /**
      * Extracts and validates the bundled payload with throttled progress reporting.
      */
-    fun extract(onProgress: (ExtractProgress) -> Unit): Layout {
+    fun extract(
+        isCancelled: () -> Boolean = { false },
+        onProgress: (ExtractProgress) -> Unit,
+    ): Layout {
         val manifest = readManifest()
         onProgress(ExtractProgress(stage = "Preparing extraction…", totalEstimate = 11000))
 
-        extractBundle(manifest.bundle, manifest.bundleSha256) { files, file ->
+        extractBundle(manifest.bundle, manifest.bundleSha256, isCancelled) { files, file ->
             onProgress(
                 ExtractProgress(
                     stage = "Unpacking SillyTavern…",
@@ -174,7 +180,8 @@ class PayloadManager(
     private fun extractBundle(
         assetName: String,
         expectedSha256: String?,
-        onFileProgress: (Int, String) -> Unit
+        isCancelled: () -> Boolean = { false },
+        onFileProgress: (Int, String) -> Unit,
     ) {
         val tmpNew = File(paths.tmpDir, "st_new")
         if (tmpNew.exists()) safeDeleteRecursively(tmpNew)
@@ -192,6 +199,9 @@ class PayloadManager(
                         var files = 0
                         var lastReportTime = System.currentTimeMillis()
                         while (true) {
+                            if (isCancelled()) {
+                                throw java.util.concurrent.CancellationException("Payload extraction cancelled")
+                            }
                             val entry: TarArchiveEntry = tar.nextEntry ?: break
                             val name = entry.name.removePrefix("st/")
                             if (name.isBlank()) continue

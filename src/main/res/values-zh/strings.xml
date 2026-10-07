@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">SillyTavern 核心文件已重置</string>
     <string name="toast_save_settings_failed">保存设置失败：%1$s</string>
     <string name="toast_save_engine_failed">保存引擎配置失败：%1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">更新</string>
+    <string name="nav_backups">备份</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">未安装</string>
+    <string name="dashboard_msg_not_installed">启动前需先安装 SillyTavern 核心文件。</string>
+    <string name="dashboard_status_installing">正在安装 SillyTavern…</string>
+    <string name="dashboard_btn_install">安装 SillyTavern</string>
+    <string name="dashboard_msg_stopped">服务已停止。</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">备份与恢复</string>
+    <string name="backups_export_title">导出备份</string>
+    <string name="backups_export_desc">将所有角色、聊天记录、设置和配置归档为 ZIP 文件（支持可选的 AES-256 加密）。</string>
+    <string name="backups_restore_title">恢复备份</string>
+    <string name="backups_restore_desc">从现有的 SillyTavern 备份 ZIP 归档恢复用户数据与聊天。</string>
+    <string name="backups_safety_title">数据安全</string>
+    <string name="backups_safety_desc">用户数据与核心运行时文件独立存储。重新安装或更新将完整保留您的备份与角色。</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">更新</string>
+    <string name="updates_current_installation">当前安装信息</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">构建特性: %1$s</string>
+    <string name="updates_node_engine">Node 引擎: %1$s</string>
+    <string name="updates_channel">通道: %1$s</string>
+    <string name="updates_channel_release">稳定发布 (已固定)</string>
+    <string name="updates_status">状态: %1$s</string>
+    <string name="updates_status_up_to_date">已是最新版本</string>
+    <string name="updates_btn_check">检查更新</string>
+    <string name="updates_btn_import_archive">导入自定义归档 (.zip)</string>
+    <string name="updates_btn_repair">重新安装 / 修复组件</string>
+    <string name="updates_phase_l4_notice">OTA 在线更新检查将在 Phase L.4 中启用。</string>
 </resources>

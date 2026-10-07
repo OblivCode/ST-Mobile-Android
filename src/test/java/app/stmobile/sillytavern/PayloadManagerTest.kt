@@ -346,4 +346,32 @@ class PayloadManagerTest {
         assertFalse("Version stamp must be cleared from prefs", prefs.contains("installed_payload_version"))
         assertTrue("Extraction must be needed after reset", manager.isExtractionNeeded())
     }
+
+    @Test
+    fun testIsInstalledHelper() {
+        val (manager, _, _) = createTestSetup()
+        assertFalse("Should not be installed initially", manager.isInstalled())
+        manager.extract {}
+        assertTrue("Should be installed after extraction", manager.isInstalled())
+        manager.resetPayload()
+        assertFalse("Should not be installed after reset", manager.isInstalled())
+    }
+
+    @Test
+    fun testExtractionCancellationCleansUpStaging() {
+        val (manager, paths, prefs) = createTestSetup()
+        var threw = false
+        try {
+            manager.extract(isCancelled = { true }) {}
+        } catch (e: java.util.concurrent.CancellationException) {
+            threw = true
+            assertEquals("Payload extraction cancelled", e.message)
+        }
+
+        assertTrue("Cancellation exception must be thrown", threw)
+        val tmpNew = File(paths.tmpDir, "st_new")
+        assertFalse("Staging directory must be cleaned up on cancellation", tmpNew.exists())
+        assertFalse("Installed version must not be recorded", prefs.contains("installed_payload_version"))
+        assertFalse("App must not be considered installed", manager.isInstalled())
+    }
 }

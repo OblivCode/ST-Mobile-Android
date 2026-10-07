@@ -1,5 +1,6 @@
 package app.stmobile.ui
 
+import android.os.Bundle
 import app.stmobile.models.NodeState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,9 +12,11 @@ class NavigationTest {
     @Test
     fun testActiveScreenEnumValues() {
         val screens = ActiveScreen.values().map { it.name }
-        assertEquals(4, screens.size)
-        assertTrue(screens.contains("SETUP"))
+        assertEquals(5, screens.size)
+        assertFalse(screens.contains("SETUP"))
         assertTrue(screens.contains("DASHBOARD"))
+        assertTrue(screens.contains("UPDATES"))
+        assertTrue(screens.contains("BACKUPS"))
         assertTrue(screens.contains("SETTINGS"))
         assertTrue(screens.contains("WEBVIEW"))
     }
@@ -69,23 +72,19 @@ class NavigationTest {
     }
 
     @Test
-    fun testComputeNextScreen_preservesSettingsOnRunning() {
-        val next = computeNextScreen(
-            currentScreen = ActiveScreen.SETTINGS,
-            nodeState = NodeState.RUNNING,
-            autoLaunchWebViewOnStart = true,
+    fun testComputeNextScreen_preservesSecondaryScreensOnRunning() {
+        assertEquals(
+            ActiveScreen.SETTINGS,
+            computeNextScreen(ActiveScreen.SETTINGS, NodeState.RUNNING, autoLaunchWebViewOnStart = true)
         )
-        assertEquals(ActiveScreen.SETTINGS, next)
-    }
-
-    @Test
-    fun testComputeNextScreen_preservesSetupOnRunning() {
-        val next = computeNextScreen(
-            currentScreen = ActiveScreen.SETUP,
-            nodeState = NodeState.RUNNING,
-            autoLaunchWebViewOnStart = true,
+        assertEquals(
+            ActiveScreen.UPDATES,
+            computeNextScreen(ActiveScreen.UPDATES, NodeState.RUNNING, autoLaunchWebViewOnStart = true)
         )
-        assertEquals(ActiveScreen.SETUP, next)
+        assertEquals(
+            ActiveScreen.BACKUPS,
+            computeNextScreen(ActiveScreen.BACKUPS, NodeState.RUNNING, autoLaunchWebViewOnStart = true)
+        )
     }
 
     @Test
@@ -111,55 +110,67 @@ class NavigationTest {
     // --- NavigationController Unit Tests ---
 
     @Test
-    fun testNavController_quickToolbarDashboardThenBackReturnsToWebView() {
-        val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
-        nav.navigateTo(ActiveScreen.DASHBOARD)
-
-        assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
-        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
-        assertTrue(nav.canGoBack(NodeState.RUNNING))
-
-        nav.handleBack(NodeState.RUNNING)
-        assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
-        assertTrue(nav.stack.isEmpty())
+    fun testNavController_emptyStackFallbackFromSecondaryScreensReturnsToDashboard() {
+        for (screen in listOf(ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS)) {
+            val nav = NavigationController(initialScreen = screen)
+            assertTrue(nav.canGoBack(NodeState.STOPPED))
+            nav.handleBack(NodeState.STOPPED)
+            assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        }
     }
 
     @Test
-    fun testNavController_quickToolbarSettingsThenBackReturnsToWebView() {
-        val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
-        nav.navigateTo(ActiveScreen.SETTINGS)
+    fun testNavController_quickToolbarReturnsToWebView() {
+        for (screen in listOf(ActiveScreen.DASHBOARD, ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS)) {
+            val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
+            nav.navigateTo(screen)
 
-        assertEquals(ActiveScreen.SETTINGS, nav.currentScreen)
-        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
-        assertTrue(nav.canGoBack(NodeState.RUNNING))
+            assertEquals(screen, nav.currentScreen)
+            assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
+            assertTrue(nav.canGoBack(NodeState.RUNNING))
 
-        nav.handleBack(NodeState.RUNNING)
-        assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
-        assertTrue(nav.stack.isEmpty())
+            nav.handleBack(NodeState.RUNNING)
+            assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
+            assertTrue(nav.stack.isEmpty())
+        }
     }
 
     @Test
-    fun testNavController_fullBackStackMultiHop() {
+    fun testNavController_fourTabNavigationAndUnwind() {
         val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
         nav.navigateTo(ActiveScreen.DASHBOARD)
+        nav.navigateTo(ActiveScreen.UPDATES)
+        nav.navigateTo(ActiveScreen.BACKUPS)
         nav.navigateTo(ActiveScreen.SETTINGS)
 
         assertEquals(ActiveScreen.SETTINGS, nav.currentScreen)
-        assertEquals(listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD), nav.stack)
+        assertEquals(
+            listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD, ActiveScreen.UPDATES, ActiveScreen.BACKUPS),
+            nav.stack,
+        )
 
-        // First Back: pops to Dashboard
+        // 1. Back pops to BACKUPS
+        assertTrue(nav.canGoBack(NodeState.RUNNING))
+        nav.handleBack(NodeState.RUNNING)
+        assertEquals(ActiveScreen.BACKUPS, nav.currentScreen)
+
+        // 2. Back pops to UPDATES
+        assertTrue(nav.canGoBack(NodeState.RUNNING))
+        nav.handleBack(NodeState.RUNNING)
+        assertEquals(ActiveScreen.UPDATES, nav.currentScreen)
+
+        // 3. Back pops to DASHBOARD
         assertTrue(nav.canGoBack(NodeState.RUNNING))
         nav.handleBack(NodeState.RUNNING)
         assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
-        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
 
-        // Second Back: pops to WebView
+        // 4. Back pops to WEBVIEW
         assertTrue(nav.canGoBack(NodeState.RUNNING))
         nav.handleBack(NodeState.RUNNING)
         assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
         assertTrue(nav.stack.isEmpty())
 
-        // At root WebView: canGoBack is false (native WebView/moveTaskToBack handles root back)
+        // At root WEBVIEW: canGoBack is false
         assertFalse(nav.canGoBack(NodeState.RUNNING))
     }
 
@@ -167,18 +178,18 @@ class NavigationTest {
     fun testNavController_tabToggleDeduplication() {
         val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
         nav.navigateTo(ActiveScreen.DASHBOARD)
+        nav.navigateTo(ActiveScreen.UPDATES)
         nav.navigateTo(ActiveScreen.SETTINGS)
-        // User clicks Dashboard bottom nav tab again
-        nav.navigateTo(ActiveScreen.DASHBOARD)
+        // User clicks Updates bottom nav tab again
+        nav.navigateTo(ActiveScreen.UPDATES)
 
-        assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        assertEquals(ActiveScreen.UPDATES, nav.currentScreen)
         // Stack unwinds to the prior occurrence instead of appending duplicates
-        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
+        assertEquals(listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD), nav.stack)
 
-        // Back directly returns to WebView
+        // Back directly returns to Dashboard
         nav.handleBack(NodeState.RUNNING)
-        assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
-        assertTrue(nav.stack.isEmpty())
+        assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
     }
 
     @Test
@@ -209,14 +220,14 @@ class NavigationTest {
     fun testNavController_snapshotSaveAndRestore() {
         val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
         nav.navigateTo(ActiveScreen.DASHBOARD)
-        nav.navigateTo(ActiveScreen.SETTINGS)
+        nav.navigateTo(ActiveScreen.BACKUPS)
 
         val snapshot = nav.toSnapshot()
-        assertEquals(ActiveScreen.SETTINGS, snapshot.currentScreen)
+        assertEquals(ActiveScreen.BACKUPS, snapshot.currentScreen)
         assertEquals(listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD), snapshot.backStack)
 
         val restored = NavigationController.fromSnapshot(snapshot)
-        assertEquals(ActiveScreen.SETTINGS, restored.currentScreen)
+        assertEquals(ActiveScreen.BACKUPS, restored.currentScreen)
         assertEquals(listOf(ActiveScreen.WEBVIEW, restored.stack.lastOrNull()).filterNotNull(), restored.stack)
     }
 

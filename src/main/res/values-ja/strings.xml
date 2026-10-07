@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">SillyTavern ファイルをリセットしました</string>
     <string name="toast_save_settings_failed">設定の保存に失敗しました: %1$s</string>
     <string name="toast_save_engine_failed">エンジン設定の保存に失敗しました: %1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">アップデート</string>
+    <string name="nav_backups">バックアップ</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">未インストール</string>
+    <string name="dashboard_msg_not_installed">起動する前にSillyTavernのコアファイルをインストールする必要があります。</string>
+    <string name="dashboard_status_installing">SillyTavernをインストール中…</string>
+    <string name="dashboard_btn_install">SillyTavernをインストール</string>
+    <string name="dashboard_msg_stopped">サーバーは停止しています。</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">バックアップと復元</string>
+    <string name="backups_export_title">バックアップをエクスポート</string>
+    <string name="backups_export_desc">すべてのキャラクター、チャット、設定、構成をZIPファイルにアーカイブします（オプションでAES-256暗号化）。</string>
+    <string name="backups_restore_title">バックアップを復元</string>
+    <string name="backups_restore_desc">既存のSillyTavernバックアップZIPアーカイブからユーザーデータとチャットを復元します。</string>
+    <string name="backups_safety_title">データの安全性</string>
+    <string name="backups_safety_desc">ユーザーデータはコアランタイムファイルとは独立して保存されます。再インストールまたは更新しても、バックアップとキャラクターは保持されます。</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">アップデート</string>
+    <string name="updates_current_installation">現在のインストール情報</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">ビルドフレーバー: %1$s</string>
+    <string name="updates_node_engine">Nodeエンジン: %1$s</string>
+    <string name="updates_channel">チャンネル: %1$s</string>
+    <string name="updates_channel_release">リリース (固定)</string>
+    <string name="updates_status">ステータス: %1$s</string>
+    <string name="updates_status_up_to_date">最新です</string>
+    <string name="updates_btn_check">アップデートを確認</string>
+    <string name="updates_btn_import_archive">カスタムアーカイブ (.zip) をインポート</string>
+    <string name="updates_btn_repair">ペイロードを再インストール / 修復</string>
+    <string name="updates_phase_l4_notice">OTAアップデートの確認はフェーズL.4で有効になります。</string>
 </resources>

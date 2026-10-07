@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">SillyTavern-Dateien zurückgesetzt</string>
     <string name="toast_save_settings_failed">Einstellungen konnten nicht gespeichert werden: %1$s</string>
     <string name="toast_save_engine_failed">Engine-Konfiguration konnte nicht gespeichert werden: %1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">Updates</string>
+    <string name="nav_backups">Backups</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">Nicht installiert</string>
+    <string name="dashboard_msg_not_installed">Die SillyTavern-Kerndateien müssen vor dem Start installiert werden.</string>
+    <string name="dashboard_status_installing">SillyTavern wird installiert…</string>
+    <string name="dashboard_btn_install">SillyTavern installieren</string>
+    <string name="dashboard_msg_stopped">Server ist gestoppt.</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">Backups &amp; Wiederherstellung</string>
+    <string name="backups_export_title">Backup exportieren</string>
+    <string name="backups_export_desc">Alle Charaktere, Chats, Einstellungen und Konfigurationen in einer ZIP-Datei archivieren (mit optionaler AES-256-Verschlüsselung).</string>
+    <string name="backups_restore_title">Backup wiederherstellen</string>
+    <string name="backups_restore_desc">Benutzerdaten und Chats aus einem bestehenden SillyTavern-ZIP-Archiv wiederherstellen.</string>
+    <string name="backups_safety_title">Datensicherheit</string>
+    <string name="backups_safety_desc">Benutzerdaten werden unabhängig von den Kernlaufzeitdateien gespeichert. Eine Neuinstallation oder Aktualisierung behält Ihre Backups und Charaktere bei.</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">Updates</string>
+    <string name="updates_current_installation">AKTUELLE INSTALLATION</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">Build-Variante: %1$s</string>
+    <string name="updates_node_engine">Node-Engine: %1$s</string>
+    <string name="updates_channel">Kanal: %1$s</string>
+    <string name="updates_channel_release">Release (Fixiert)</string>
+    <string name="updates_status">Status: %1$s</string>
+    <string name="updates_status_up_to_date">Auf dem neuesten Stand</string>
+    <string name="updates_btn_check">Nach Updates suchen</string>
+    <string name="updates_btn_import_archive">Benutzerdefiniertes Archiv (.zip) importieren</string>
+    <string name="updates_btn_repair">Payload neu installieren / reparieren</string>
+    <string name="updates_phase_l4_notice">Die OTA-Update-Prüfung wird in Phase L.4 aktiviert.</string>
 </resources>

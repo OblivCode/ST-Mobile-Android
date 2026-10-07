@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,45 +26,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.stmobile.R
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
+import app.stmobile.sillytavern.PayloadManager
 
 @Composable
 fun DashboardScreen(
     status: NodeStatus,
+    isInstalled: Boolean,
+    isInstalling: Boolean,
+    installProgress: PayloadManager.ExtractProgress?,
+    installErrorMessage: String?,
+    onInstallPayload: () -> Unit,
+    onCancelInstall: () -> Unit,
     onStartServer: () -> Unit,
     onStopServer: () -> Unit,
     onOpenSillyTavern: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
-    val isRunning = status.state == NodeState.RUNNING
-    val isStarting = status.state == NodeState.STARTING
-    val isStopped = status.state == NodeState.STOPPED
-    val isError = status.state == NodeState.ERROR
-
-    val canStart = isStopped || isError
-    val canStop = isRunning || isStarting
-    val canOpen = isRunning
-
-    val stateColor = when (status.state) {
-        NodeState.RUNNING -> Color(0xFF7EC8A9)
-        NodeState.STARTING -> Color(0xFFE5C07B)
-        NodeState.STOPPING -> Color(0xFFD19A66)
-        NodeState.STOPPED -> Color(0xFF8A94A3)
-        NodeState.ERROR -> Color(0xFFE06C75)
-    }
-
-    val stateLabel = when (status.state) {
-        NodeState.RUNNING -> stringResource(R.string.status_running)
-        NodeState.STARTING -> stringResource(R.string.status_starting)
-        NodeState.STOPPING -> stringResource(R.string.status_stopping)
-        NodeState.STOPPED -> stringResource(R.string.status_stopped)
-        NodeState.ERROR -> stringResource(R.string.status_error)
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -76,98 +59,287 @@ fun DashboardScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Server Status Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                ) {
-                    Row(
+            when {
+                // 1. In-place installation progress
+                isInstalling -> {
+                    val pct = if ((installProgress?.totalEstimate ?: 0) > 0 && (installProgress?.filesProcessed ?: 0) > 0) {
+                        (installProgress!!.filesProcessed.toFloat() / installProgress.totalEstimate.toFloat()).coerceIn(0f, 1f)
+                    } else 0f
+
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
                     ) {
-                        Text(
-                            text = stateLabel,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = stateColor,
-                        )
-                        if (status.port > 0) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             Text(
-                                text = stringResource(R.string.dashboard_port, status.port),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF8A94A3),
+                                text = stringResource(R.string.dashboard_status_installing),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE5C07B),
                             )
+
+                            Text(
+                                text = installProgress?.stage ?: stringResource(R.string.dashboard_status_installing),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFD8DEE6),
+                            )
+
+                            Spacer(Modifier.height(4.dp))
+
+                            if (pct > 0f) {
+                                LinearProgressIndicator(
+                                    progress = { pct },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp),
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text = "${installProgress!!.filesProcessed} / ${installProgress.totalEstimate} files",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                    Text(
+                                        text = "${(pct * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                }
+                            } else {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp),
+                                )
+                            }
+
+                            installProgress?.currentFile?.let { currentFile ->
+                                Text(
+                                    text = currentFile,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF6B7685),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
-
-                    Text(
-                        text = status.message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFD8DEE6),
-                    )
-
-                    if (status.pid != null) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.dashboard_pid, status.pid),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
-                        )
+                    // Single Action: Cancel installation
+                    Button(
+                        onClick = onCancelInstall,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4A2525),
+                            contentColor = Color(0xFFFFB4AB),
+                        ),
+                    ) {
+                        Text(stringResource(R.string.btn_cancel))
                     }
                 }
-            }
 
-            // Action Buttons
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Button(
-                    onClick = onStartServer,
-                    enabled = canStart,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Text(stringResource(R.string.dashboard_btn_start))
+                // 2. Not installed state
+                !isInstalled -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.status_not_installed),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF8A94A3),
+                            )
+
+                            Text(
+                                text = stringResource(R.string.dashboard_msg_not_installed),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFD8DEE6),
+                            )
+
+                            if (installErrorMessage != null) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = installErrorMessage,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFE06C75),
+                                )
+                            }
+                        }
+                    }
+
+                    // Single Action: Install SillyTavern
+                    Button(
+                        onClick = onInstallPayload,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.dashboard_btn_install))
+                    }
                 }
 
-                Button(
-                    onClick = onStopServer,
-                    enabled = canStop,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A2525),
-                        contentColor = Color(0xFFFFB4AB),
-                        disabledContainerColor = Color(0xFF2A2020),
-                        disabledContentColor = Color(0xFF6B5858),
-                    ),
-                ) {
-                    Text(stringResource(R.string.dashboard_btn_stop))
-                }
+                // 3. Installed state with server lifecycle
+                else -> {
+                    val stateColor = when (status.state) {
+                        NodeState.RUNNING -> Color(0xFF7EC8A9)
+                        NodeState.STARTING -> Color(0xFFE5C07B)
+                        NodeState.STOPPING -> Color(0xFFD19A66)
+                        NodeState.STOPPED -> Color(0xFF8A94A3)
+                        NodeState.ERROR -> Color(0xFFE06C75)
+                    }
 
-                Button(
-                    onClick = onOpenSillyTavern,
-                    enabled = canOpen,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E5A44),
-                        contentColor = Color(0xFFB5EAD0),
-                        disabledContainerColor = Color(0xFF1E2F26),
-                        disabledContentColor = Color(0xFF4D6657),
-                    ),
-                ) {
-                    Text(stringResource(R.string.dashboard_btn_open))
+                    val stateLabel = when (status.state) {
+                        NodeState.RUNNING -> stringResource(R.string.status_running)
+                        NodeState.STARTING -> stringResource(R.string.status_starting)
+                        NodeState.STOPPING -> stringResource(R.string.status_stopping)
+                        NodeState.STOPPED -> stringResource(R.string.status_stopped)
+                        NodeState.ERROR -> stringResource(R.string.status_error)
+                    }
+
+                    // Server Status Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stateLabel,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = stateColor,
+                                )
+                                if (status.port > 0) {
+                                    Text(
+                                        text = stringResource(R.string.dashboard_port, status.port),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF8A94A3),
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                text = status.message.ifBlank {
+                                    if (status.state == NodeState.STOPPED) stringResource(R.string.dashboard_msg_stopped) else ""
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFD8DEE6),
+                            )
+
+                            if (status.pid != null) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.dashboard_pid, status.pid),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF8A94A3),
+                                )
+                            }
+                        }
+                    }
+
+                    // Dynamic Single / Contextual Actions (No disabled dummy buttons)
+                    when (status.state) {
+                        NodeState.STOPPED -> {
+                            Button(
+                                onClick = onStartServer,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text(stringResource(R.string.dashboard_btn_start))
+                            }
+                        }
+
+                        NodeState.STARTING -> {
+                            Button(
+                                onClick = {},
+                                enabled = false,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text(stringResource(R.string.status_starting))
+                            }
+                        }
+
+                        NodeState.STOPPING -> {
+                            Button(
+                                onClick = {},
+                                enabled = false,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text(stringResource(R.string.status_stopping))
+                            }
+                        }
+
+                        NodeState.RUNNING -> {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Button(
+                                    onClick = onOpenSillyTavern,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2E5A44),
+                                        contentColor = Color(0xFFB5EAD0),
+                                    ),
+                                ) {
+                                    Text(stringResource(R.string.dashboard_btn_open))
+                                }
+
+                                Button(
+                                    onClick = onStopServer,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF4A2525),
+                                        contentColor = Color(0xFFFFB4AB),
+                                    ),
+                                ) {
+                                    Text(stringResource(R.string.dashboard_btn_stop))
+                                }
+                            }
+                        }
+
+                        NodeState.ERROR -> {
+                            Button(
+                                onClick = onStartServer,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text(stringResource(R.string.dashboard_btn_start))
+                            }
+                        }
+                    }
                 }
             }
         }

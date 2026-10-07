@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">Компоненты SillyTavern сброшены</string>
     <string name="toast_save_settings_failed">Не удалось сохранить настройки: %1$s</string>
     <string name="toast_save_engine_failed">Не удалось сохранить параметры движка: %1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">Обновления</string>
+    <string name="nav_backups">Резервные копии</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">Не установлено</string>
+    <string name="dashboard_msg_not_installed">Основные файлы SillyTavern должны быть установлены перед запуском.</string>
+    <string name="dashboard_status_installing">Установка SillyTavern…</string>
+    <string name="dashboard_btn_install">Установить SillyTavern</string>
+    <string name="dashboard_msg_stopped">Сервер остановлен.</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">Резервное копирование и восстановление</string>
+    <string name="backups_export_title">Экспорт резервной копии</string>
+    <string name="backups_export_desc">Архивировать всех персонажей, чаты, настройки и конфигурации в ZIP-файл (с опциональным шифрованием AES-256).</string>
+    <string name="backups_restore_title">Восстановить резервную копию</string>
+    <string name="backups_restore_desc">Восстановить пользовательские данные и чаты из существующего ZIP-архива резервной копии SillyTavern.</string>
+    <string name="backups_safety_title">Безопасность данных</string>
+    <string name="backups_safety_desc">Пользовательские данные хранятся отдельно от файлов ядра среды выполнения. Переустановка или обновление сохранят ваши копии и персонажей.</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">Обновления</string>
+    <string name="updates_current_installation">ТЕКУЩАЯ УСТАНОВКА</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">Вариант сборки: %1$s</string>
+    <string name="updates_node_engine">Движок Node: %1$s</string>
+    <string name="updates_channel">Канал: %1$s</string>
+    <string name="updates_channel_release">Релиз (закреплен)</string>
+    <string name="updates_status">Статус: %1$s</string>
+    <string name="updates_status_up_to_date">Актуальная версия</string>
+    <string name="updates_btn_check">Проверить обновления</string>
+    <string name="updates_btn_import_archive">Импортировать архив (.zip)</string>
+    <string name="updates_btn_repair">Переустановить / Восстановить файлы</string>
+    <string name="updates_phase_l4_notice">Проверка обновлений по воздуху (OTA) станет доступна в Фазе L.4.</string>
 </resources>

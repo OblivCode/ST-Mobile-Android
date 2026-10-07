@@ -25,19 +25,29 @@ import app.stmobile.ui.ImportPasswordDialog
 import app.stmobile.ui.ImportStrategyDialog
 import app.stmobile.ui.MainScreen
 import app.stmobile.ui.NavigationController
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
- * and SAF backup contracts (Phase D, Phase F).
+ * and SAF backup contracts (Phase D, Phase F, Phase L.1).
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavigationController
+
+    // Installation state for dynamic dashboard flow (Phase L.1)
+    private var isInstalled by mutableStateOf(false)
+    private var isInstalling by mutableStateOf(false)
+    private var installProgress by mutableStateOf<PayloadManager.ExtractProgress?>(null)
+    private var installErrorMessage by mutableStateOf<String?>(null)
+    private var installJob: Job? = null
 
     // Pending state for export and import across SAF contracts
     private var pendingExportPassword by mutableStateOf<String?>(null)
@@ -90,17 +100,14 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val appConfig = AppConfig(this)
-        val needsExtraction = PayloadManager(this).isExtractionNeeded()
-        val defaultScreen = if (needsExtraction) ActiveScreen.SETUP else ActiveScreen.DASHBOARD
-        navController = NavigationController.fromBundle(savedInstanceState, defaultScreen)
-        if (needsExtraction) {
-            navController.navigateTo(ActiveScreen.SETUP)
-        }
+        val payloadManager = PayloadManager(this)
+        isInstalled = payloadManager.isInstalled()
+        navController = NavigationController.fromBundle(savedInstanceState, ActiveScreen.DASHBOARD)
 
         Utils.requestNotificationPermission(this)
 
         // Auto-resumes the server on-demand if auto-start is enabled OR if the OS killed the app process while running
-        if (!needsExtraction && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
+        if (isInstalled && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
             NodeService.start(this)
         }
 
@@ -115,6 +122,12 @@ class MainActivity : AppCompatActivity() {
                 MainScreen(
                     navController = navController,
                     status = nodeStatus,
+                    isInstalled = isInstalled,
+                    isInstalling = isInstalling,
+                    installProgress = installProgress,
+                    installErrorMessage = installErrorMessage,
+                    onInstallPayload = { installPayload() },
+                    onCancelInstall = { cancelInstall() },
                     onStartServer = { NodeService.start(this@MainActivity) },
                     onStopServer = { NodeService.stop(this@MainActivity) },
                     onExportBackup = { showExportDialog.value = true },
@@ -122,10 +135,6 @@ class MainActivity : AppCompatActivity() {
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
                     onResetPayload = { resetPayload() },
-                    onSetupComplete = {
-                        navController.navigateTo(ActiveScreen.DASHBOARD)
-                        if (appConfig.autoStartOnAppOpen) NodeService.start(this@MainActivity)
-                    },
                 )
 
                 // Dialog: Export with optional AES-256 password
@@ -190,6 +199,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun installPayload() {
+        if (isInstalling) return
+        isInstalling = true
+        installErrorMessage = null
+        installProgress = null
+
+        installJob = lifecycleScope.launch(Dispatchers.IO) {
+            val payloadManager = PayloadManager(this@MainActivity)
+            try {
+                payloadManager.extract(
+                    isCancelled = { !coroutineContext.isActive },
+                    onProgress = { p ->
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            installProgress = p
+                        }
+                    },
+                )
+                withContext(Dispatchers.Main) {
+                    isInstalled = true
+                    isInstalling = false
+                    installProgress = null
+                    val appConfig = AppConfig(this@MainActivity)
+                    if (appConfig.autoStartOnAppOpen) {
+                        NodeService.start(this@MainActivity)
+                    }
+                }
+            } catch (_: CancellationException) {
+                withContext(Dispatchers.Main) {
+                    isInstalling = false
+                    installProgress = null
+                }
+            } catch (t: Throwable) {
+                withContext(Dispatchers.Main) {
+                    isInstalling = false
+                    installErrorMessage = t.message ?: "Extraction failed"
+                }
+            }
+        }
+    }
+
+    private fun cancelInstall() {
+        installJob?.cancel()
+        installJob = null
+        isInstalling = false
+        installProgress = null
+    }
+
     private fun executeRestore(strategy: BackupManager.Strategy) {
         val uri = pendingImportUri ?: return
         val password = pendingImportPassword
@@ -212,6 +268,10 @@ class MainActivity : AppCompatActivity() {
                     Utils.toast(this@MainActivity, getString(R.string.toast_restore_success, count))
                     if (wasActive) {
                         NodeService.start(this@MainActivity)
+                    } else if (!isInstalled) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            navController.navigateTo(ActiveScreen.DASHBOARD)
+                        }
                     }
                 }
         }
@@ -219,13 +279,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun resetPayload() {
         lifecycleScope.launch(Dispatchers.IO) {
-            NodeService.stop(this@MainActivity)
-            withTimeoutOrNull(3000) {
-                NodeService.status.first { it.state == NodeState.STOPPED }
+            val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            if (wasActive) {
+                NodeService.stop(this@MainActivity)
+                withTimeoutOrNull(3000) {
+                    NodeService.status.first { it.state == NodeState.STOPPED }
+                }
             }
             PayloadManager(this@MainActivity).resetPayload()
             withContext(Dispatchers.Main) {
-                navController.navigateTo(ActiveScreen.SETUP)
+                isInstalled = false
+                installErrorMessage = null
+                installProgress = null
+                navController.navigateTo(ActiveScreen.DASHBOARD)
                 Utils.toast(this@MainActivity, getString(R.string.toast_payload_reset))
             }
         }

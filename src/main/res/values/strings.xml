@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">SillyTavern payload reset</string>
     <string name="toast_save_settings_failed">Failed to save settings: %1$s</string>
     <string name="toast_save_engine_failed">Failed to save engine config: %1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">Updates</string>
+    <string name="nav_backups">Backups</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">Not Installed</string>
+    <string name="dashboard_msg_not_installed">SillyTavern core files need to be installed before starting.</string>
+    <string name="dashboard_status_installing">Installing SillyTavern…</string>
+    <string name="dashboard_btn_install">Install SillyTavern</string>
+    <string name="dashboard_msg_stopped">Server is stopped.</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">Backups &amp; Restore</string>
+    <string name="backups_export_title">Export Backup</string>
+    <string name="backups_export_desc">Archive all characters, chats, settings, and configurations into a ZIP file (with optional AES-256 encryption).</string>
+    <string name="backups_restore_title">Restore Backup</string>
+    <string name="backups_restore_desc">Restore user data and chats from an existing SillyTavern backup ZIP archive.</string>
+    <string name="backups_safety_title">Data Safety</string>
+    <string name="backups_safety_desc">User data is stored independently from core runtime files. Reinstalling or updating will preserve your backups and characters.</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">Updates</string>
+    <string name="updates_current_installation">CURRENT INSTALLATION</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">Build Flavor: %1$s</string>
+    <string name="updates_node_engine">Node Engine: %1$s</string>
+    <string name="updates_channel">Channel: %1$s</string>
+    <string name="updates_channel_release">Release (Pinned)</string>
+    <string name="updates_status">Status: %1$s</string>
+    <string name="updates_status_up_to_date">Up to date</string>
+    <string name="updates_btn_check">Check for Updates</string>
+    <string name="updates_btn_import_archive">Import Custom Archive (.zip)</string>
+    <string name="updates_btn_repair">Reinstall / Repair Payload</string>
+    <string name="updates_phase_l4_notice">OTA update checking will be enabled in Phase L.4.</string>
 </resources>

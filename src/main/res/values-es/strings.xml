@@ -165,4 +165,39 @@
     <string name="toast_payload_reset">Archivos de SillyTavern restablecidos</string>
     <string name="toast_save_settings_failed">Error al guardar ajustes: %1$s</string>
     <string name="toast_save_engine_failed">Error al guardar configuración del motor: %1$s</string>
+
+    <!-- Navigation (Phase L.1) -->
+    <string name="nav_updates">Actualizaciones</string>
+    <string name="nav_backups">Copias de seguridad</string>
+
+    <!-- Dashboard Screen (Phase L.1) -->
+    <string name="status_not_installed">No instalado</string>
+    <string name="dashboard_msg_not_installed">Los archivos principales de SillyTavern deben instalarse antes de comenzar.</string>
+    <string name="dashboard_status_installing">Instalando SillyTavern…</string>
+    <string name="dashboard_btn_install">Instalar SillyTavern</string>
+    <string name="dashboard_msg_stopped">El servidor está detenido.</string>
+
+    <!-- Backups Screen (Phase L.1) -->
+    <string name="backups_title">Copias de seguridad y restauración</string>
+    <string name="backups_export_title">Exportar copia de seguridad</string>
+    <string name="backups_export_desc">Archiva todos los personajes, chats, ajustes y configuraciones en un archivo ZIP (con cifrado AES-256 opcional).</string>
+    <string name="backups_restore_title">Restaurar copia de seguridad</string>
+    <string name="backups_restore_desc">Restaura los datos de usuario y chats desde un archivo ZIP de copia de seguridad de SillyTavern existente.</string>
+    <string name="backups_safety_title">Seguridad de los datos</string>
+    <string name="backups_safety_desc">Los datos del usuario se almacenan de forma independiente de los archivos principales del entorno. La reinstalación o actualización preservará sus copias de seguridad y personajes.</string>
+
+    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <string name="updates_title">Actualizaciones</string>
+    <string name="updates_current_installation">INSTALACIÓN ACTUAL</string>
+    <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
+    <string name="updates_build_flavor">Variante de compilación: %1$s</string>
+    <string name="updates_node_engine">Motor Node: %1$s</string>
+    <string name="updates_channel">Canal: %1$s</string>
+    <string name="updates_channel_release">Versión (Fijada)</string>
+    <string name="updates_status">Estado: %1$s</string>
+    <string name="updates_status_up_to_date">Actualizado</string>
+    <string name="updates_btn_check">Buscar actualizaciones</string>
+    <string name="updates_btn_import_archive">Importar archivo personalizado (.zip)</string>
+    <string name="updates_btn_repair">Reinstalar / Reparar carga útil</string>
+    <string name="updates_phase_l4_notice">La comprobación de actualizaciones OTA se habilitará en la Fase L.4.</string>
 </resources>

@@ -2,7 +2,9 @@ package app.stmobile.ui
 
 import android.os.Bundle
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -19,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import app.stmobile.R
 import app.stmobile.models.NodeState
 
-enum class ActiveScreen { SETUP, DASHBOARD, SETTINGS, WEBVIEW }
+enum class ActiveScreen { DASHBOARD, UPDATES, BACKUPS, SETTINGS, WEBVIEW }
 
 /**
  * Pure screen routing decision logic based on NodeService status.
@@ -46,7 +48,7 @@ fun computeBackScreen(
     previousScreen: ActiveScreen?,
     nodeState: NodeState,
 ): ActiveScreen {
-    if (currentScreen == ActiveScreen.SETTINGS) {
+    if (currentScreen in setOf(ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS)) {
         if (previousScreen == ActiveScreen.WEBVIEW && nodeState == NodeState.RUNNING) {
             return ActiveScreen.WEBVIEW
         }
@@ -61,7 +63,7 @@ data class NavigationSnapshot(
 )
 
 class NavigationController(
-    initialScreen: ActiveScreen = ActiveScreen.SETUP,
+    initialScreen: ActiveScreen = ActiveScreen.DASHBOARD,
     initialStack: List<ActiveScreen> = emptyList(),
 ) {
     var currentScreen by mutableStateOf(initialScreen)
@@ -77,7 +79,7 @@ class NavigationController(
 
     fun canGoBack(nodeState: NodeState): Boolean {
         return when (currentScreen) {
-            ActiveScreen.SETTINGS -> true
+            ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS -> true
             ActiveScreen.DASHBOARD -> backStack.contains(ActiveScreen.WEBVIEW) && nodeState == NodeState.RUNNING
             else -> false
         }
@@ -94,12 +96,6 @@ class NavigationController(
         if (target == ActiveScreen.WEBVIEW) {
             backStack.clear()
             currentScreen = ActiveScreen.WEBVIEW
-            return
-        }
-
-        if (currentScreen == ActiveScreen.SETUP) {
-            backStack.clear()
-            currentScreen = target
             return
         }
 
@@ -123,7 +119,7 @@ class NavigationController(
             currentScreen = candidate
             return
         }
-        if (currentScreen == ActiveScreen.SETTINGS) {
+        if (currentScreen in setOf(ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS)) {
             currentScreen = ActiveScreen.DASHBOARD
         }
     }
@@ -185,36 +181,51 @@ class NavigationController(
 fun BottomNavDock(
     currentScreen: ActiveScreen,
     onSelectScreen: (ActiveScreen) -> Unit,
+    enabled: Boolean = true,
 ) {
     NavigationBar(
         containerColor = Color(0xFF1A2228),
         contentColor = Color(0xFF7EC8A9),
     ) {
+        val navItemColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = Color(0xFF7EC8A9),
+            selectedTextColor = Color(0xFF7EC8A9),
+            unselectedIconColor = Color(0xFF8A94A3),
+            unselectedTextColor = Color(0xFF8A94A3),
+            indicatorColor = Color(0xFF23303A),
+        )
+
         NavigationBarItem(
             selected = currentScreen == ActiveScreen.DASHBOARD,
-            onClick = { onSelectScreen(ActiveScreen.DASHBOARD) },
+            onClick = { if (enabled) onSelectScreen(ActiveScreen.DASHBOARD) },
             icon = { Icon(Icons.Default.Dashboard, contentDescription = stringResource(R.string.nav_dashboard)) },
             label = { Text(stringResource(R.string.nav_dashboard)) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF7EC8A9),
-                selectedTextColor = Color(0xFF7EC8A9),
-                unselectedIconColor = Color(0xFF8A94A3),
-                unselectedTextColor = Color(0xFF8A94A3),
-                indicatorColor = Color(0xFF23303A),
-            ),
+            colors = navItemColors,
+            enabled = enabled,
+        )
+        NavigationBarItem(
+            selected = currentScreen == ActiveScreen.UPDATES,
+            onClick = { if (enabled) onSelectScreen(ActiveScreen.UPDATES) },
+            icon = { Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.nav_updates)) },
+            label = { Text(stringResource(R.string.nav_updates)) },
+            colors = navItemColors,
+            enabled = enabled,
+        )
+        NavigationBarItem(
+            selected = currentScreen == ActiveScreen.BACKUPS,
+            onClick = { if (enabled) onSelectScreen(ActiveScreen.BACKUPS) },
+            icon = { Icon(Icons.Default.Backup, contentDescription = stringResource(R.string.nav_backups)) },
+            label = { Text(stringResource(R.string.nav_backups)) },
+            colors = navItemColors,
+            enabled = enabled,
         )
         NavigationBarItem(
             selected = currentScreen == ActiveScreen.SETTINGS,
-            onClick = { onSelectScreen(ActiveScreen.SETTINGS) },
+            onClick = { if (enabled) onSelectScreen(ActiveScreen.SETTINGS) },
             icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.nav_settings)) },
             label = { Text(stringResource(R.string.nav_settings)) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF7EC8A9),
-                selectedTextColor = Color(0xFF7EC8A9),
-                unselectedIconColor = Color(0xFF8A94A3),
-                unselectedTextColor = Color(0xFF8A94A3),
-                indicatorColor = Color(0xFF23303A),
-            ),
+            colors = navItemColors,
+            enabled = enabled,
         )
     }
 }
