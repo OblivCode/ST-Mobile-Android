@@ -16,15 +16,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeState
-import app.stmobile.node.NodeService
-import app.stmobile.sillytavern.BackupManager
-import app.stmobile.sillytavern.LocalArchivePayloadSource
-import app.stmobile.sillytavern.PayloadManager
-import app.stmobile.sillytavern.PayloadSource
-import app.stmobile.sillytavern.RemotePayloadSource
-import app.stmobile.sillytavern.UpdateChecker
-import app.stmobile.sillytavern.UpdateCheckResult
-import app.stmobile.sillytavern.UpdateInfo
+import app.stmobile.backup.BackupManager
+import app.stmobile.payload.LocalArchivePayloadSource
+import app.stmobile.payload.PayloadManager
+import app.stmobile.payload.PayloadSource
+import app.stmobile.payload.RemotePayloadSource
+import app.stmobile.payload.UpdateChecker
+import app.stmobile.payload.UpdateCheckResult
+import app.stmobile.payload.UpdateInfo
+import app.stmobile.service.ServerLifecycleManager
 import app.stmobile.ui.ActiveScreen
 import app.stmobile.ui.ExportBackupDialog
 import app.stmobile.ui.ImportPasswordDialog
@@ -49,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavigationController
 
     // Installation and payload inspection state (Phase L.1, Phase L.4)
-    private var isInstalled by mutableStateOf(false)
     private var installedInfo by mutableStateOf(PayloadManager.InstalledInfo(isInstalled = false))
     private var isInstalling by mutableStateOf(false)
     private var installProgress by mutableStateOf<PayloadManager.ExtractProgress?>(null)
@@ -119,19 +118,18 @@ class MainActivity : AppCompatActivity() {
         val appConfig = AppConfig(this)
         val payloadManager = PayloadManager(this)
         installedInfo = payloadManager.getInstalledInfo()
-        isInstalled = installedInfo.isInstalled
         navController = NavigationController.fromBundle(savedInstanceState, ActiveScreen.DASHBOARD)
 
         Utils.requestNotificationPermission(this)
 
         // Auto-resumes the server on-demand if auto-start is enabled OR if the OS killed the app process while running
-        if (isInstalled && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
-            NodeService.start(this)
+        if (installedInfo.isInstalled && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
+            ServerLifecycleManager.start(this)
         }
 
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                val nodeStatus by NodeService.status.collectAsState()
+                val nodeStatus by ServerLifecycleManager.status.collectAsState()
 
                 LaunchedEffect(nodeStatus.state) {
                     navController.onNodeStateChanged(nodeStatus.state, appConfig.autoLaunchWebViewOnStart)
@@ -140,7 +138,7 @@ class MainActivity : AppCompatActivity() {
                 MainScreen(
                     navController = navController,
                     status = nodeStatus,
-                    isInstalled = isInstalled,
+                    isInstalled = installedInfo.isInstalled,
                     installedInfo = installedInfo,
                     isInstalling = isInstalling,
                     installProgress = installProgress,
@@ -149,8 +147,8 @@ class MainActivity : AppCompatActivity() {
                     updateCheckResult = updateCheckResult,
                     onInstallPayload = { installPayload() },
                     onCancelInstall = { cancelInstall() },
-                    onStartServer = { NodeService.start(this@MainActivity) },
-                    onStopServer = { NodeService.stop(this@MainActivity) },
+                    onStartServer = { ServerLifecycleManager.start(this@MainActivity) },
+                    onStopServer = { ServerLifecycleManager.stop(this@MainActivity) },
                     onExportBackup = { showExportDialog.value = true },
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
@@ -234,11 +232,11 @@ class MainActivity : AppCompatActivity() {
         installProgress = null
 
         installJob = lifecycleScope.launch(Dispatchers.IO) {
-            val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            val wasActive = ServerLifecycleManager.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
-                NodeService.stop(this@MainActivity)
+                ServerLifecycleManager.stop(this@MainActivity)
                 withTimeoutOrNull(5000) {
-                    NodeService.status.first { it.state == NodeState.STOPPED }
+                    ServerLifecycleManager.status.first { it.state == NodeState.STOPPED }
                 }
             }
             val payloadManager = PayloadManager(this@MainActivity)
@@ -254,7 +252,6 @@ class MainActivity : AppCompatActivity() {
                     },
                 )
                 withContext(Dispatchers.Main) {
-                    isInstalled = true
                     installedInfo = payloadManager.getInstalledInfo()
                     isInstalling = false
                     installProgress = null
@@ -272,7 +269,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     val appConfig = AppConfig(this@MainActivity)
                     if (wasActive || appConfig.autoStartOnAppOpen) {
-                        NodeService.start(this@MainActivity)
+                        ServerLifecycleManager.start(this@MainActivity)
                     }
                 }
             } catch (_: CancellationException) {
@@ -344,11 +341,11 @@ class MainActivity : AppCompatActivity() {
         pendingArchiveInfo = null
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            val wasActive = ServerLifecycleManager.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
-                NodeService.stop(this@MainActivity)
+                ServerLifecycleManager.stop(this@MainActivity)
                 withTimeoutOrNull(5000) {
-                    NodeService.status.first { it.state == NodeState.STOPPED }
+                    ServerLifecycleManager.status.first { it.state == NodeState.STOPPED }
                 }
             }
 
@@ -357,34 +354,13 @@ class MainActivity : AppCompatActivity() {
                 .onSuccess { count ->
                     Utils.toast(this@MainActivity, getString(R.string.toast_restore_success, count))
                     if (wasActive) {
-                        NodeService.start(this@MainActivity)
-                    } else if (!isInstalled) {
+                        ServerLifecycleManager.start(this@MainActivity)
+                    } else if (!installedInfo.isInstalled) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             navController.navigateTo(ActiveScreen.DASHBOARD)
                         }
                     }
                 }
-        }
-    }
-
-    private fun resetPayload() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val wasActive = NodeService.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
-            if (wasActive) {
-                NodeService.stop(this@MainActivity)
-                withTimeoutOrNull(5000) {
-                    NodeService.status.first { it.state == NodeState.STOPPED }
-                }
-            }
-            PayloadManager(this@MainActivity).resetPayload()
-            withContext(Dispatchers.Main) {
-                isInstalled = false
-                installedInfo = PayloadManager.InstalledInfo(isInstalled = false)
-                installErrorMessage = null
-                installProgress = null
-                navController.navigateTo(ActiveScreen.DASHBOARD)
-                Utils.toast(this@MainActivity, getString(R.string.toast_repair_success))
-            }
         }
     }
 

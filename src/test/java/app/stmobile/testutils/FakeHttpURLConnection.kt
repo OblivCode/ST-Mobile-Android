@@ -46,13 +46,13 @@ class FakeHttpURLConnection(
     }
 
     override fun getInputStream(): InputStream {
-        if (responseCode !in 200..299) {
+        if (responseCode >= 400) {
             throw IOException("HTTP $responseCode $responseMessage")
         }
         return ByteArrayInputStream(responseData)
     }
 
     override fun getErrorStream(): InputStream? {
-        return if (responseCode !in 200..299) ByteArrayInputStream(responseData) else null
+        return if (responseCode >= 400) ByteArrayInputStream(responseData) else null
     }
 }

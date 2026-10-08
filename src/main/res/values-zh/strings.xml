@@ -11,7 +11,6 @@
     <string name="btn_export">导出</string>
     <string name="btn_unlock">解锁</string>
     <string name="btn_restore">恢复</string>
-    <string name="btn_reset">重置</string>
     <string name="locale_system_default">系统默认</string>
 
     <!-- Navigation -->
@@ -24,7 +23,6 @@
     <string name="dashboard_btn_start">启动服务</string>
     <string name="dashboard_btn_stop">停止服务</string>
     <string name="dashboard_btn_open">打开 SillyTavern</string>
-    <string name="status_idle">空闲</string>
     <string name="status_running">运行中</string>
     <string name="status_starting">启动中…</string>
     <string name="status_stopping">停止中…</string>
@@ -48,19 +46,13 @@
     <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>
     <string name="settings_auto_sync_lang_desc">使 SillyTavern 界面语言与原生应用语言保持同步</string>
     <string name="settings_app_language">应用界面语言</string>
-    <string name="settings_app_language_desc">配置原生应用界面的显示语言</string>
     <string name="btn_match_st_language">匹配 SillyTavern 语言 (%1$s)</string>
     <string name="btn_open_system_locale">系统语言设置</string>
-
-    <!-- Reset Payload Dialog -->
-    <string name="dialog_reset_payload_title">重置核心文件</string>
-    <string name="dialog_reset_payload_msg">这将重新安装内置的 SillyTavern 应用程序代码。用户数据（角色、聊天记录）将保留。</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
     <string name="st_settings_user_title">用户偏好设置</string>
     <string name="st_settings_user_desc">设置直接同步至 SillyTavern 的 settings.json。刷新页面（通过悬浮菜单 🔄 按钮）或重启服务后生效。</string>
     <string name="st_settings_ui_language">界面语言</string>
-    <string name="st_settings_ui_language_desc">SillyTavern Web 界面的显示语言。支持17种内置语言包。</string>
     <string name="st_settings_lang_synced">已与应用同步 (%1$s)</string>
     <string name="btn_sync_app_language">同步为应用语言 (%1$s)</string>
     <string name="st_settings_auto_load_chat">自动加载最后对话</string>
@@ -131,22 +123,6 @@
     <string name="dialog_restore_merge_title">合并恢复 (Merge)</string>
     <string name="dialog_restore_merge_desc">仅覆盖冲突文件，保留归档中不存在的本地文件。</string>
 
-    <!-- Setup Screen (Onboarding) -->
-    <string name="setup_welcome_title">欢迎使用 ST Mobile</string>
-    <string name="setup_welcome_subtitle">在 Android 本地零依赖运行 SillyTavern。请选择初始化环境的方式：</string>
-    <string name="setup_fresh_title">全新安装</string>
-    <string name="setup_fresh_desc">解压内置 SillyTavern 运行时并生成默认初始配置。</string>
-    <string name="setup_start_setup">开始安装</string>
-    <string name="setup_restore_title">从现有备份恢复</string>
-    <string name="setup_restore_desc">选择标准 SillyTavern ZIP 归档（电脑完整安装包、data 文件夹或网页导出备份）。仅恢复用户数据与设置。</string>
-    <string name="setup_details">详细信息</string>
-    <string name="setup_hide_details">隐藏信息</string>
-    <string name="setup_retry">重试安装</string>
-    <string name="setup_back_options">返回选项</string>
-    <string name="setup_status_preparing">正在准备运行时…</string>
-    <string name="setup_status_starting">正在初始化 SillyTavern…</string>
-    <string name="setup_status_restoring">正在恢复备份数据…</string>
-
     <!-- Content Descriptions for Accessibility -->
     <string name="cd_menu">菜单</string>
     <string name="cd_dashboard">仪表盘</string>
@@ -161,7 +137,6 @@
     <string name="toast_invalid_backup">无效的备份文件：%1$s</string>
     <string name="toast_restore_success">已成功恢复 %1$d 个文件</string>
     <string name="toast_restore_failed">恢复失败：%1$s</string>
-    <string name="toast_payload_reset">SillyTavern 核心文件已重置</string>
     <string name="toast_save_settings_failed">保存设置失败：%1$s</string>
     <string name="toast_save_engine_failed">保存引擎配置失败：%1$s</string>
 
@@ -217,5 +192,4 @@
     <string name="updates_custom_archive">自定义归档</string>
     <string name="toast_import_archive_failed">导入归档失败：%1$s</string>
     <string name="toast_import_archive_success">SillyTavern 归档安装成功</string>
-    <string name="dashboard_downloading_payload">正在下载 SillyTavern…</string>
 </resources>

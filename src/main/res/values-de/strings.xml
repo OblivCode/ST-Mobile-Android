@@ -11,7 +11,6 @@
     <string name="btn_export">Exportieren</string>
     <string name="btn_unlock">Entsperren</string>
     <string name="btn_restore">Wiederherstellen</string>
-    <string name="btn_reset">Zurücksetzen</string>
     <string name="locale_system_default">Systemstandard</string>
 
     <!-- Navigation -->
@@ -24,7 +23,6 @@
     <string name="dashboard_btn_start">Server starten</string>
     <string name="dashboard_btn_stop">Server stoppen</string>
     <string name="dashboard_btn_open">SillyTavern öffnen</string>
-    <string name="status_idle">Inaktiv</string>
     <string name="status_running">Läuft</string>
     <string name="status_starting">Startet…</string>
     <string name="status_stopping">Stoppt…</string>
@@ -48,19 +46,13 @@
     <string name="settings_auto_sync_lang">SillyTavern-Sprache automatisch mit App synchronisieren</string>
     <string name="settings_auto_sync_lang_desc">Hält die Sprache der SillyTavern-Benutzeroberfläche mit der App synchron</string>
     <string name="settings_app_language">App-Sprache</string>
-    <string name="settings_app_language_desc">Sprache der nativen Benutzeroberfläche anpassen</string>
     <string name="btn_match_st_language">SillyTavern-Sprache übernehmen (%1$s)</string>
     <string name="btn_open_system_locale">Systemspracheinstellungen</string>
-
-    <!-- Reset Payload Dialog -->
-    <string name="dialog_reset_payload_title">Dateien zurücksetzen</string>
-    <string name="dialog_reset_payload_msg">Installiert den integrierten SillyTavern-Code neu. Benutzerdaten (Charaktere, Chats) bleiben erhalten.</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
     <string name="st_settings_user_title">Benutzereinstellungen</string>
     <string name="st_settings_user_desc">Direkt mit der settings.json von SillyTavern synchronisiert. Änderungen werden nach Neuladen (🔄) oder Serverneustart wirksam.</string>
     <string name="st_settings_ui_language">Oberflächensprache</string>
-    <string name="st_settings_ui_language_desc">Sprache für den SillyTavern Web-Client. Unterstützt 17 integrierte Sprachpakete.</string>
     <string name="st_settings_lang_synced">Mit App synchronisiert (%1$s)</string>
     <string name="btn_sync_app_language">Mit App-Sprache abgleichen (%1$s)</string>
     <string name="st_settings_auto_load_chat">Letzten Chat automatisch laden</string>
@@ -131,22 +123,6 @@
     <string name="dialog_restore_merge_title">Zusammenführen (Merge)</string>
     <string name="dialog_restore_merge_desc">Überschreibt kollidierende Dateien und behält lokale Dateien außerhalb des Archivs bei.</string>
 
-    <!-- Setup Screen (Onboarding) -->
-    <string name="setup_welcome_title">Willkommen bei ST Mobile</string>
-    <string name="setup_welcome_subtitle">Führen Sie SillyTavern lokal auf Android ohne externe Abhängigkeiten aus. Wählen Sie Ihre Einrichtungsmethode:</string>
-    <string name="setup_fresh_title">Neuinstallation</string>
-    <string name="setup_fresh_desc">Entpackt die integrierte SillyTavern-Laufzeitumgebung und erstellt Standardkonfigurationen.</string>
-    <string name="setup_start_setup">Installation starten</string>
-    <string name="setup_restore_title">Aus vorhandenem Backup wiederherstellen</string>
-    <string name="setup_restore_desc">Wählen Sie ein Standard-SillyTavern-ZIP-Archiv (PC-Installation, data-Ordner oder Web-Backup). Es werden nur Daten und Einstellungen wiederhergestellt.</string>
-    <string name="setup_details">Details</string>
-    <string name="setup_hide_details">Ausblenden</string>
-    <string name="setup_retry">Installation wiederholen</string>
-    <string name="setup_back_options">Zurück zu den Optionen</string>
-    <string name="setup_status_preparing">Laufzeitumgebung wird vorbereitet…</string>
-    <string name="setup_status_starting">SillyTavern-Einrichtung wird gestartet…</string>
-    <string name="setup_status_restoring">Backup-Daten werden wiederhergestellt…</string>
-
     <!-- Content Descriptions for Accessibility -->
     <string name="cd_menu">Menü</string>
     <string name="cd_dashboard">Dashboard</string>
@@ -161,7 +137,6 @@
     <string name="toast_invalid_backup">Ungültiges Backup: %1$s</string>
     <string name="toast_restore_success">%1$d Dateien wiederhergestellt</string>
     <string name="toast_restore_failed">Wiederherstellung fehlgeschlagen: %1$s</string>
-    <string name="toast_payload_reset">SillyTavern-Dateien zurückgesetzt</string>
     <string name="toast_save_settings_failed">Einstellungen konnten nicht gespeichert werden: %1$s</string>
     <string name="toast_save_engine_failed">Engine-Konfiguration konnte nicht gespeichert werden: %1$s</string>
 
@@ -217,5 +192,4 @@
     <string name="updates_custom_archive">Benutzerdefiniertes Archiv</string>
     <string name="toast_import_archive_failed">Archiv konnte nicht importiert werden: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern-Archiv erfolgreich installiert</string>
-    <string name="dashboard_downloading_payload">SillyTavern wird heruntergeladen…</string>
 </resources>

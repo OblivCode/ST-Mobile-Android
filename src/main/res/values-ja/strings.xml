@@ -11,7 +11,6 @@
     <string name="btn_export">エクスポート</string>
     <string name="btn_unlock">ロック解除</string>
     <string name="btn_restore">復元</string>
-    <string name="btn_reset">リセット</string>
     <string name="locale_system_default">システムデフォルト</string>
 
     <!-- Navigation -->
@@ -24,7 +23,6 @@
     <string name="dashboard_btn_start">サーバー起動</string>
     <string name="dashboard_btn_stop">サーバー停止</string>
     <string name="dashboard_btn_open">SillyTavern を開く</string>
-    <string name="status_idle">待機中</string>
     <string name="status_running">実行中</string>
     <string name="status_starting">起動中…</string>
     <string name="status_stopping">停止中…</string>
@@ -48,19 +46,13 @@
     <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>
     <string name="settings_auto_sync_lang_desc">SillyTavern のインターフェース言語をアプリ言語と同期させます</string>
     <string name="settings_app_language">アプリ言語</string>
-    <string name="settings_app_language_desc">ネイティブアプリ画面の表示言語を設定</string>
     <string name="btn_match_st_language">SillyTavern の言語に合わせる (%1$s)</string>
     <string name="btn_open_system_locale">システム言語設定を開く</string>
-
-    <!-- Reset Payload Dialog -->
-    <string name="dialog_reset_payload_title">ファイルのリセット</string>
-    <string name="dialog_reset_payload_msg">内蔵された SillyTavern アプリケーションコードを再インストールします。ユーザーデータ（キャラクター、チャット）は保持されます。</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
     <string name="st_settings_user_title">ユーザー設定</string>
     <string name="st_settings_user_desc">SillyTavern の settings.json と直接同期されます。ページ再読み込み（🔄 ボタン）またはサーバー再起動後に反映されます。</string>
     <string name="st_settings_ui_language">UI 言語</string>
-    <string name="st_settings_ui_language_desc">SillyTavern Web クライアントの表示言語。17 種類の言語パックに対応。</string>
     <string name="st_settings_lang_synced">アプリと同期中 (%1$s)</string>
     <string name="btn_sync_app_language">アプリ言語と同期 (%1$s)</string>
     <string name="st_settings_auto_load_chat">最後のチャットを自動読み込み</string>
@@ -131,22 +123,6 @@
     <string name="dialog_restore_merge_title">マージ復元 (統合)</string>
     <string name="dialog_restore_merge_desc">競合するファイルのみ上書きし、アーカイブにないローカルファイルは保持します。</string>
 
-    <!-- Setup Screen (Onboarding) -->
-    <string name="setup_welcome_title">ST Mobile へようこそ</string>
-    <string name="setup_welcome_subtitle">外部依存なしで Android 上でローカルに SillyTavern を動かします。環境設定を選択してください:</string>
-    <string name="setup_fresh_title">新規インストール</string>
-    <string name="setup_fresh_desc">内蔵 SillyTavern ランタイムを展開し、初期設定を作成します。</string>
-    <string name="setup_start_setup">セットアップを開始</string>
-    <string name="setup_restore_title">既存のバックアップから復元</string>
-    <string name="setup_restore_desc">標準の SillyTavern ZIP アーカイブ（PC インストール、data フォルダ、Web バックアップ）を選択します。データと設定のみ復元されます。</string>
-    <string name="setup_details">詳細</string>
-    <string name="setup_hide_details">閉じる</string>
-    <string name="setup_retry">再試行</string>
-    <string name="setup_back_options">選択に戻る</string>
-    <string name="setup_status_preparing">ランタイムの準備中…</string>
-    <string name="setup_status_starting">SillyTavern のセットアップ開始中…</string>
-    <string name="setup_status_restoring">バックアップデータを復元中…</string>
-
     <!-- Content Descriptions for Accessibility -->
     <string name="cd_menu">メニュー</string>
     <string name="cd_dashboard">ダッシュボード</string>
@@ -161,7 +137,6 @@
     <string name="toast_invalid_backup">無効なバックアップファイル: %1$s</string>
     <string name="toast_restore_success">%1$d 個のファイルを復元しました</string>
     <string name="toast_restore_failed">復元失敗: %1$s</string>
-    <string name="toast_payload_reset">SillyTavern ファイルをリセットしました</string>
     <string name="toast_save_settings_failed">設定の保存に失敗しました: %1$s</string>
     <string name="toast_save_engine_failed">エンジン設定の保存に失敗しました: %1$s</string>
 
@@ -217,5 +192,4 @@
     <string name="updates_custom_archive">カスタムアーカイブ</string>
     <string name="toast_import_archive_failed">アーカイブのインポートに失敗しました: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern アーカイブが正常にインストールされました</string>
-    <string name="dashboard_downloading_payload">SillyTavern をダウンロード中…</string>
 </resources>

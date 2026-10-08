@@ -1,4 +1,4 @@
-package app.stmobile.sillytavern
+package app.stmobile.payload
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -15,8 +15,10 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -498,7 +500,10 @@ class PayloadManager(
             if (!promoted && movedOld && old.exists()) {
                 // Rollback: restore old stDir
                 safeDeleteRecursively(stDir)
-                old.renameTo(stDir)
+                if (!old.renameTo(stDir)) {
+                    copyRecursivelyNoFollow(old, stDir)
+                    safeDeleteRecursively(old)
+                }
             }
         }
 
@@ -569,6 +574,11 @@ class PayloadManager(
                         return FileVisitResult.CONTINUE
                     }
 
+                    override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
+                        Files.deleteIfExists(file)
+                        return FileVisitResult.CONTINUE
+                    }
+
                     override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
                         Files.deleteIfExists(dir)
                         return FileVisitResult.CONTINUE
@@ -579,5 +589,64 @@ class PayloadManager(
                 false
             }
         }
+
+        /**
+         * Recursively copies [source] to [target] preserving symbolic links without
+         * dereferencing or traversing into symlinked directories.
+         */
+        fun copyRecursivelyNoFollow(source: File, target: File) {
+            val sourcePath = source.toPath()
+            val targetPath = target.toPath()
+            if (!Files.exists(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
+                return
+            }
+
+            Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    val relative = sourcePath.relativize(dir)
+                    val dest = targetPath.resolve(relative)
+                    if (Files.isSymbolicLink(dest) || (Files.exists(dest, LinkOption.NOFOLLOW_LINKS) && !Files.isDirectory(dest, LinkOption.NOFOLLOW_LINKS))) {
+                        Files.deleteIfExists(dest)
+                    }
+                    if (!Files.exists(dest, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(dest)
+                    }
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    val relative = sourcePath.relativize(file)
+                    val dest = targetPath.resolve(relative)
+                    dest.parent?.let { parent ->
+                        if (!Files.exists(parent)) {
+                            Files.createDirectories(parent)
+                        }
+                    }
+                    if (Files.exists(dest, LinkOption.NOFOLLOW_LINKS)) {
+                        if (Files.isDirectory(dest, LinkOption.NOFOLLOW_LINKS)) {
+                            safeDeleteRecursively(dest.toFile())
+                        } else {
+                            Files.deleteIfExists(dest)
+                        }
+                    }
+                    if (Files.isSymbolicLink(file)) {
+                        val symlinkTarget = Files.readSymbolicLink(file)
+                        Files.createSymbolicLink(dest, symlinkTarget)
+                    } else {
+                        try {
+                            Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+                        } catch (_: UnsupportedOperationException) {
+                            Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    }
+                    return FileVisitResult.CONTINUE
+                }
+            })
+        }
+
+        /**
+         * Alias for [safeDeleteRecursively], providing consistent non-dereferencing deletion.
+         */
+        fun deleteRecursivelyNoFollow(file: File): Boolean = safeDeleteRecursively(file)
     }
 }

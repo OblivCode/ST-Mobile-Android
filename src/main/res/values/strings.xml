@@ -11,7 +11,6 @@
     <string name="btn_export">Export</string>
     <string name="btn_unlock">Unlock</string>
     <string name="btn_restore">Restore</string>
-    <string name="btn_reset">Reset</string>
     <string name="locale_system_default">System Default</string>
 
     <!-- Navigation -->
@@ -24,7 +23,6 @@
     <string name="dashboard_btn_start">Start Server</string>
     <string name="dashboard_btn_stop">Stop Server</string>
     <string name="dashboard_btn_open">Open SillyTavern</string>
-    <string name="status_idle">Idle</string>
     <string name="status_running">Running</string>
     <string name="status_starting">Starting…</string>
     <string name="status_stopping">Stopping…</string>
@@ -48,19 +46,13 @@
     <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>
     <string name="settings_auto_sync_lang_desc">Keep SillyTavern interface language synchronized with the app shell</string>
     <string name="settings_app_language">App Shell Language</string>
-    <string name="settings_app_language_desc">Configure the native interface display language</string>
     <string name="btn_match_st_language">Match SillyTavern Language (%1$s)</string>
     <string name="btn_open_system_locale">System Language Settings</string>
-
-    <!-- Reset Payload Dialog -->
-    <string name="dialog_reset_payload_title">Reset Payload</string>
-    <string name="dialog_reset_payload_msg">This will reinstall the bundled SillyTavern application code. User data (characters, chats) will be preserved.</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
     <string name="st_settings_user_title">User Settings</string>
     <string name="st_settings_user_desc">Preferences synchronized directly with SillyTavern\'s settings.json. Changes take effect on page reload (via the quick toolbar 🔄 button) or server restart.</string>
     <string name="st_settings_ui_language">UI Language</string>
-    <string name="st_settings_ui_language_desc">Interface language for SillyTavern web client. Supports 17 bundled locale packs.</string>
     <string name="st_settings_lang_synced">Auto-synced with App (%1$s)</string>
     <string name="btn_sync_app_language">Sync with App Language (%1$s)</string>
     <string name="st_settings_auto_load_chat">Auto load last chat</string>
@@ -131,22 +123,6 @@
     <string name="dialog_restore_merge_title">Merge</string>
     <string name="dialog_restore_merge_desc">Overwrites conflicting files, keeping local files not in archive.</string>
 
-    <!-- Setup Screen (Onboarding) -->
-    <string name="setup_welcome_title">Welcome to ST Mobile</string>
-    <string name="setup_welcome_subtitle">Run SillyTavern locally on Android with no external dependencies. Choose how to set up your environment:</string>
-    <string name="setup_fresh_title">Fresh Installation</string>
-    <string name="setup_fresh_desc">Unpacks the bundled SillyTavern runtime and seeds default configurations.</string>
-    <string name="setup_start_setup">Start Setup</string>
-    <string name="setup_restore_title">Restore Existing SillyTavern Backup</string>
-    <string name="setup_restore_desc">Select a standard SillyTavern ZIP archive (full PC install, data folder, or web backup). Only user data and settings are extracted automatically.</string>
-    <string name="setup_details">Details</string>
-    <string name="setup_hide_details">Hide Details</string>
-    <string name="setup_retry">Retry Setup</string>
-    <string name="setup_back_options">Back to Options</string>
-    <string name="setup_status_preparing">Preparing runtime…</string>
-    <string name="setup_status_starting">Starting SillyTavern setup…</string>
-    <string name="setup_status_restoring">Restoring backup data…</string>
-
     <!-- Content Descriptions for Accessibility -->
     <string name="cd_menu">Menu</string>
     <string name="cd_dashboard">Dashboard</string>
@@ -161,7 +137,6 @@
     <string name="toast_invalid_backup">Invalid backup: %1$s</string>
     <string name="toast_restore_success">Restored %1$d files</string>
     <string name="toast_restore_failed">Restore failed: %1$s</string>
-    <string name="toast_payload_reset">SillyTavern payload reset</string>
     <string name="toast_save_settings_failed">Failed to save settings: %1$s</string>
     <string name="toast_save_engine_failed">Failed to save engine config: %1$s</string>
 
@@ -217,5 +192,4 @@
     <string name="updates_custom_archive">custom archive</string>
     <string name="toast_import_archive_failed">Failed to import archive: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern archive installed successfully</string>
-    <string name="dashboard_downloading_payload">Downloading SillyTavern…</string>
 </resources>

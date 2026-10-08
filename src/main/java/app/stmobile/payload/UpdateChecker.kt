@@ -1,4 +1,4 @@
-package app.stmobile.sillytavern
+package app.stmobile.payload
 
 import org.json.JSONObject
 import java.io.IOException

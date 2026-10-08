@@ -39,7 +39,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import app.stmobile.R
-import app.stmobile.sillytavern.BackupManager
+import app.stmobile.backup.BackupManager
 
 /**
  * Reusable dialogs for SillyTavern backup export and restore workflows (Phase F).

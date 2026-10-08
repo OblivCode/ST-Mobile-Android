@@ -1,4 +1,4 @@
-package app.stmobile.sillytavern
+package app.stmobile.payload
 
 import app.stmobile.testutils.FakeHttpURLConnection
 import kotlinx.coroutines.runBlocking

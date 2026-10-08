@@ -5,7 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import app.stmobile.node.NodeService
+import app.stmobile.service.ServerLifecycleManager
 
 /**
  * Custom application class providing centralized activity lifecycle tracking
@@ -19,13 +19,13 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
     private val backgroundRunnable = Runnable {
         if (startedActivityCount == 0) {
             isAppInForeground = false
-            NodeService.onAppBackgrounded(this)
+            ServerLifecycleManager.onAppBackgrounded(this)
         }
     }
 
     // @Volatile guarantees immediate cross-thread memory visibility:
     // written on the main UI thread by ActivityLifecycleCallbacks,
-    // read by background worker threads in NodeService without stale CPU cache delay.
+    // read by background worker threads without stale CPU cache delay.
     @Volatile
     var isAppInForeground: Boolean = false
         private set
@@ -41,7 +41,7 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
         startedActivityCount++
         if (startedActivityCount == 1) {
             isAppInForeground = true
-            NodeService.onAppForegrounded()
+            ServerLifecycleManager.onAppForegrounded()
         }
     }
 

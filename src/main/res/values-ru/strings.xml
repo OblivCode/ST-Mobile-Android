@@ -11,7 +11,6 @@
     <string name="btn_export">Экспорт</string>
     <string name="btn_unlock">Разблокировать</string>
     <string name="btn_restore">Восстановить</string>
-    <string name="btn_reset">Сбросить</string>
     <string name="locale_system_default">Системный по умолчанию</string>
 
     <!-- Navigation -->
@@ -24,7 +23,6 @@
     <string name="dashboard_btn_start">Запустить сервер</string>
     <string name="dashboard_btn_stop">Остановить сервер</string>
     <string name="dashboard_btn_open">Открыть SillyTavern</string>
-    <string name="status_idle">Ожидание</string>
     <string name="status_running">Работает</string>
     <string name="status_starting">Запуск…</string>
     <string name="status_stopping">Остановка…</string>
@@ -48,19 +46,13 @@
     <string name="settings_auto_sync_lang">Синхронизировать язык SillyTavern с приложением</string>
     <string name="settings_auto_sync_lang_desc">Поддерживать язык интерфейса SillyTavern в соответствии с языком приложения</string>
     <string name="settings_app_language">Язык приложения</string>
-    <string name="settings_app_language_desc">Настроить язык интерфейса оболочки приложения</string>
     <string name="btn_match_st_language">Выбрать язык как в SillyTavern (%1$s)</string>
     <string name="btn_open_system_locale">Языковые настройки системы</string>
-
-    <!-- Reset Payload Dialog -->
-    <string name="dialog_reset_payload_title">Сброс компонентов</string>
-    <string name="dialog_reset_payload_msg">Будет переустановлен встроенный код SillyTavern. Данные пользователя (персонажи, чаты) сохранятся.</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
     <string name="st_settings_user_title">Пользовательские настройки</string>
     <string name="st_settings_user_desc">Синхронизируются напрямую с settings.json SillyTavern. Применяются после обновления страницы (кнопка 🔄) или перезапуска сервера.</string>
     <string name="st_settings_ui_language">Язык интерфейса</string>
-    <string name="st_settings_ui_language_desc">Язык веб-интерфейса SillyTavern. Доступно 17 встроенных языковых пакетов.</string>
     <string name="st_settings_lang_synced">Синхронизировано с приложением (%1$s)</string>
     <string name="btn_sync_app_language">Синхронизировать с языком приложения (%1$s)</string>
     <string name="st_settings_auto_load_chat">Автозагрузка последнего чата</string>
@@ -131,22 +123,6 @@
     <string name="dialog_restore_merge_title">Объединение (Merge)</string>
     <string name="dialog_restore_merge_desc">Перезаписывает конфликтующие файлы, сохраняя локальные файлы вне архива.</string>
 
-    <!-- Setup Screen (Onboarding) -->
-    <string name="setup_welcome_title">Добро пожаловать в ST Mobile</string>
-    <string name="setup_welcome_subtitle">Запуск SillyTavern локально на Android без внешних зависимостей. Выберите способ настройки:</string>
-    <string name="setup_fresh_title">Чистая установка</string>
-    <string name="setup_fresh_desc">Распаковывает встроенную среду SillyTavern и инициализирует стандартные конфигурации.</string>
-    <string name="setup_start_setup">Начать установку</string>
-    <string name="setup_restore_title">Восстановить из резервной копии</string>
-    <string name="setup_restore_desc">Выберите стандартный ZIP-архив SillyTavern (установка с ПК, папка data или веб-бэкап). Восстанавливаются только данные и настройки.</string>
-    <string name="setup_details">Подробнее</string>
-    <string name="setup_hide_details">Скрыть</string>
-    <string name="setup_retry">Повторить установку</string>
-    <string name="setup_back_options">Назад к вариантам</string>
-    <string name="setup_status_preparing">Подготовка среды…</string>
-    <string name="setup_status_starting">Инициализация SillyTavern…</string>
-    <string name="setup_status_restoring">Восстановление данных бэкапа…</string>
-
     <!-- Content Descriptions for Accessibility -->
     <string name="cd_menu">Меню</string>
     <string name="cd_dashboard">Панель</string>
@@ -161,7 +137,6 @@
     <string name="toast_invalid_backup">Недействительный архив: %1$s</string>
     <string name="toast_restore_success">Восстановлено файлов: %1$d</string>
     <string name="toast_restore_failed">Ошибка восстановления: %1$s</string>
-    <string name="toast_payload_reset">Компоненты SillyTavern сброшены</string>
     <string name="toast_save_settings_failed">Не удалось сохранить настройки: %1$s</string>
     <string name="toast_save_engine_failed">Не удалось сохранить параметры движка: %1$s</string>
 
@@ -217,5 +192,4 @@
     <string name="updates_custom_archive">пользовательский архив</string>
     <string name="toast_import_archive_failed">Не удалось импортировать архив: %1$s</string>
     <string name="toast_import_archive_success">Архив SillyTavern успешно установлен</string>
-    <string name="dashboard_downloading_payload">Загрузка SillyTavern…</string>
 </resources>

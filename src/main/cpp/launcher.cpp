@@ -9,8 +9,13 @@
 // libnode.so is resolved at runtime via LD_LIBRARY_PATH=nativeLibraryDir.
 
 #include <node/node.h>
+#include <signal.h>
+#include <sys/prctl.h>
 
 int main(int argc, char** argv) {
+    // Deliver SIGKILL if the Android parent process dies, eliminating zombies/orphans.
+    prctl(PR_SET_PDEATHSIG, SIGKILL);
+
     // node::Start blocks for the lifetime of the runtime and returns its exit code.
     return node::Start(argc, argv);
 }

@@ -43,12 +43,18 @@ class FakeSharedPreferences(
 
     override fun edit(): SharedPreferences.Editor = EditorImpl()
 
+    private val listeners = java.util.concurrent.CopyOnWriteArraySet<SharedPreferences.OnSharedPreferenceChangeListener>()
+
     override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
-        // No-op: in-memory test double does not dispatch change notifications
+        if (listener != null) {
+            listeners.add(listener)
+        }
     }
 
     override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
-        // No-op
+        if (listener != null) {
+            listeners.remove(listener)
+        }
     }
 
     private inner class EditorImpl : SharedPreferences.Editor {
@@ -93,8 +99,14 @@ class FakeSharedPreferences(
         }
 
         override fun apply() {
+            val changedKeys = mutableListOf<String>()
             synchronized(values) {
                 if (clearRequested) {
+                    for (k in values.keys) {
+                        if (!changedKeys.contains(k)) {
+                            changedKeys.add(k)
+                        }
+                    }
                     values.clear()
                 }
                 for ((key, value) in modifications) {
@@ -105,6 +117,14 @@ class FakeSharedPreferences(
                     } else {
                         values.remove(key)
                     }
+                    if (!changedKeys.contains(key)) {
+                        changedKeys.add(key)
+                    }
+                }
+            }
+            for (key in changedKeys) {
+                for (listener in listeners) {
+                    listener.onSharedPreferenceChanged(this@FakeSharedPreferences, key)
                 }
             }
         }

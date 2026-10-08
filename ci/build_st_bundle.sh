@@ -26,8 +26,9 @@ echo "Installing production dependencies (no scripts)…"
 ( cd "$SRC" && npm ci --omit=dev --ignore-scripts )
 
 echo "Auditing for native addons…"
-if find "$SRC/node_modules" \( -name binding.gyp -o -name '*.node' -o -type d -name prebuilds \) | grep -q .; then
-  echo "ERROR: native addon found in node_modules; the embedded runtime cannot build these." >&2
+NATIVE_ADDONS="$(find "$SRC/node_modules" \( -name binding.gyp -o -name '*.node' -o -type d -name prebuilds \) -print -quit 2>/dev/null || true)"
+if [ -n "$NATIVE_ADDONS" ]; then
+  echo "ERROR: native addon found in node_modules; the embedded runtime cannot build these: $NATIVE_ADDONS" >&2
   exit 1
 fi
 

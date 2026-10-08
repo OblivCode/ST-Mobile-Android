@@ -1,9 +1,9 @@
-package app.stmobile.node
+package app.stmobile.runtime
 
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
 import app.stmobile.models.StConfig
-import app.stmobile.sillytavern.PayloadManager
+import app.stmobile.payload.PayloadManager
 import app.stmobile.testutils.FakeSharedPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

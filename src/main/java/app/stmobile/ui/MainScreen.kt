@@ -10,9 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
-import app.stmobile.sillytavern.PayloadManager
-import app.stmobile.sillytavern.UpdateCheckResult
-import app.stmobile.sillytavern.UpdateInfo
+import app.stmobile.payload.PayloadManager
+import app.stmobile.payload.UpdateCheckResult
+import app.stmobile.payload.UpdateInfo
 
 @Composable
 fun MainScreen(

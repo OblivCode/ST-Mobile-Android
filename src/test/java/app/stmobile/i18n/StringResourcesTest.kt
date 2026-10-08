@@ -67,11 +67,54 @@ class StringResourcesTest {
 
             val localizedKeys = extractStringKeys(localizedFile)
             val missingKeys = baseKeys - localizedKeys
+            val orphanKeys = localizedKeys - baseKeys
 
             assertTrue(
                 "Localized bucket '$bucket' is missing ${missingKeys.size} keys from base strings.xml: $missingKeys",
                 missingKeys.isEmpty()
             )
+            assertTrue(
+                "Localized bucket '$bucket' contains ${orphanKeys.size} orphan keys not in base strings.xml: $orphanKeys",
+                orphanKeys.isEmpty()
+            )
         }
+    }
+
+    @Test
+    fun testDeadKeysAreAbsentFromBaseStrings() {
+        val resDir = findResDir()
+        val baseFile = File(resDir, "values/strings.xml")
+        val keys = extractStringKeys(baseFile)
+
+        val deadKeys = setOf(
+            "btn_reset",
+            "status_idle",
+            "settings_app_language_desc",
+            "dialog_reset_payload_title",
+            "dialog_reset_payload_msg",
+            "st_settings_ui_language_desc",
+            "setup_welcome_title",
+            "setup_welcome_subtitle",
+            "setup_fresh_title",
+            "setup_fresh_desc",
+            "setup_start_setup",
+            "setup_restore_title",
+            "setup_restore_desc",
+            "setup_details",
+            "setup_hide_details",
+            "setup_retry",
+            "setup_back_options",
+            "setup_status_preparing",
+            "setup_status_starting",
+            "setup_status_restoring",
+            "toast_payload_reset",
+            "dashboard_downloading_payload"
+        )
+
+        val presentDeadKeys = deadKeys.intersect(keys)
+        assertTrue(
+            "Base strings.xml must not contain dead keys: $presentDeadKeys",
+            presentDeadKeys.isEmpty()
+        )
     }
 }

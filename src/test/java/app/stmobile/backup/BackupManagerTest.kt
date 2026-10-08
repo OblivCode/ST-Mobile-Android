@@ -1,4 +1,4 @@
-package app.stmobile.sillytavern
+package app.stmobile.backup
 
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
@@ -11,6 +11,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.LinkOption
 
 class BackupManagerTest {
 
@@ -772,5 +774,112 @@ class BackupManagerTest {
         assertTrue("No rollback directories left behind", parentFiles.none { it.name.startsWith(".data_rollback_") })
         assertTrue("No rollback config files left behind", parentFiles.none { it.name.startsWith(".config_rollback_") })
         assertTrue("No staging roots left behind", parentFiles.none { it.name.startsWith(".restore_staging_") })
+    }
+
+    @Test
+    fun testCleanRestoreRollbackPreservesExternalSymlinkTargets() {
+        // 1. Create a dummy external directory outside dataDir with critical content
+        val externalStorage = tempFolder.newFolder("external_sdcard")
+        val externalFile = File(externalStorage, "user_photo.png").apply {
+            writeText("external_photo_bytes")
+        }
+
+        val (manager, paths) = createTestManager()
+        val (dataDir, configFile, tmpDir) = paths
+
+        // 2. Create a symlink inside dataDir pointing to the external directory
+        val symlinkInsideData = File(dataDir, "external_link")
+        Files.createSymbolicLink(symlinkInsideData.toPath(), externalStorage.toPath())
+        assertTrue("Pre-condition: must be a symbolic link", Files.isSymbolicLink(symlinkInsideData.toPath()))
+
+        // Also create a normal local file
+        val localFile = File(dataDir, "default-user/characters/hero.json").apply {
+            parentFile?.mkdirs()
+            writeText("hero_data")
+        }
+        configFile.parentFile?.mkdirs()
+        configFile.writeText("port: 5000\noriginal: true")
+
+        // 3. Prepare an archive to import
+        val zip = File(tmpDir, "import_with_rollback.zip")
+        ZipFile(zip).use { z ->
+            val newFile = File(tmpDir, "new_hero.json").apply { writeText("new_hero") }
+            z.addFile(newFile, ZipParameters().apply { fileNameInZip = "default-user/characters/new_hero.json" })
+        }
+
+        // 4. Trigger clean restore with simulated failure during promotion to force rollback
+        val result = manager.importFromFile(
+            archiveFile = zip,
+            strategy = BackupManager.Strategy.CLEAN,
+            onProgress = { msg ->
+                if (msg == "Applying restored data…") {
+                    throw RuntimeException("Simulated promotion failure for rollback test")
+                }
+            }
+        )
+
+        // 5. Verification: operation failed and rolled back
+        assertTrue("Restore must fail on simulated error", result.isFailure)
+
+        // 6. CRITICAL SAFETY VERIFICATION: External directory and its files MUST NOT be deleted!
+        assertTrue("External directory outside dataDir must still exist", externalStorage.exists())
+        assertTrue("External file inside external directory must still exist", externalFile.exists())
+        assertEquals("external_photo_bytes", externalFile.readText())
+
+        // 7. Verify dataDir and symlink restoration
+        assertTrue("Local file must still exist after rollback", localFile.exists())
+        assertEquals("hero_data", localFile.readText())
+        assertTrue("Symlink inside dataDir must still exist", Files.exists(symlinkInsideData.toPath(), LinkOption.NOFOLLOW_LINKS))
+        assertTrue("Symlink inside dataDir must still be a symbolic link", Files.isSymbolicLink(symlinkInsideData.toPath()))
+    }
+
+    @Test
+    fun testDeleteRecursivelyNoFollowDoesNotDeleteSymlinkTarget() {
+        val externalDir = tempFolder.newFolder("external_dir_delete_test")
+        val externalFile = File(externalDir, "important.dat").apply { writeText("do_not_delete") }
+
+        val rootToDelete = tempFolder.newFolder("root_to_delete")
+        val linkInRoot = File(rootToDelete, "link_to_external")
+        Files.createSymbolicLink(linkInRoot.toPath(), externalDir.toPath())
+
+        val regularFileInRoot = File(rootToDelete, "regular.txt").apply { writeText("delete_me") }
+
+        val deleted = BackupManager.deleteRecursivelyNoFollow(rootToDelete)
+        assertTrue("deleteRecursivelyNoFollow should succeed", deleted)
+        assertFalse("rootToDelete must be deleted", rootToDelete.exists())
+        assertFalse("regularFileInRoot must be deleted", regularFileInRoot.exists())
+
+        // External target must be completely intact
+        assertTrue("External directory must NOT be deleted", externalDir.exists())
+        assertTrue("External file must NOT be deleted", externalFile.exists())
+        assertEquals("do_not_delete", externalFile.readText())
+    }
+
+    @Test
+    fun testCopyRecursivelyNoFollowPreservesSymlinkWithoutDereferencing() {
+        val externalDir = tempFolder.newFolder("external_dir_copy_test")
+        val externalFile = File(externalDir, "data.bin").apply { writeText("bin_data") }
+
+        val sourceDir = tempFolder.newFolder("source_dir")
+        val linkInSource = File(sourceDir, "link_external")
+        Files.createSymbolicLink(linkInSource.toPath(), externalDir.toPath())
+        val regularInSource = File(sourceDir, "file.txt").apply { writeText("plain") }
+
+        val destDir = File(tempFolder.root, "dest_dir")
+        BackupManager.copyRecursivelyNoFollow(sourceDir, destDir)
+
+        assertTrue("Destination directory must exist", destDir.exists())
+        val regularInDest = File(destDir, "file.txt")
+        assertTrue("Regular file must be copied", regularInDest.exists())
+        assertEquals("plain", regularInDest.readText())
+
+        val linkInDest = File(destDir, "link_external")
+        assertTrue("Link in dest must exist", Files.exists(linkInDest.toPath(), LinkOption.NOFOLLOW_LINKS))
+        assertTrue("Link in dest must be a symbolic link (not copied directory)", Files.isSymbolicLink(linkInDest.toPath()))
+        assertEquals(externalDir.toPath(), Files.readSymbolicLink(linkInDest.toPath()))
+
+        // External target must be completely intact
+        assertTrue("External directory must remain untouched", externalDir.exists())
+        assertTrue("External file must remain untouched", externalFile.exists())
     }
 }

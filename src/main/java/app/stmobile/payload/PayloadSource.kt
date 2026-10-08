@@ -1,4 +1,4 @@
-package app.stmobile.sillytavern
+package app.stmobile.payload
 
 import android.content.ContentResolver
 import android.net.Uri

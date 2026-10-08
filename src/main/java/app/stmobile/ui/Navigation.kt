@@ -23,6 +23,12 @@ import app.stmobile.models.NodeState
 
 enum class ActiveScreen { DASHBOARD, UPDATES, BACKUPS, SETTINGS, WEBVIEW }
 
+private val SECONDARY_DOCK_DESTINATIONS = setOf(
+    ActiveScreen.UPDATES,
+    ActiveScreen.BACKUPS,
+    ActiveScreen.SETTINGS,
+)
+
 /**
  * Pure screen routing decision logic based on NodeService status.
  */
@@ -99,12 +105,14 @@ class NavigationController(
             return
         }
 
+        val isCurrentSecondary = currentScreen in SECONDARY_DOCK_DESTINATIONS
+
         val existingIndex = backStack.lastIndexOf(target)
         if (existingIndex >= 0) {
             while (backStack.size > existingIndex) {
                 backStack.removeAt(backStack.lastIndex)
             }
-        } else {
+        } else if (!isCurrentSecondary) {
             backStack.add(currentScreen)
         }
         currentScreen = target

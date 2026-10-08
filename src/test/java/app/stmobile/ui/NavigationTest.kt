@@ -144,27 +144,19 @@ class NavigationTest {
         nav.navigateTo(ActiveScreen.SETTINGS)
 
         assertEquals(ActiveScreen.SETTINGS, nav.currentScreen)
+        // Secondary dock tabs do not accumulate linear history
         assertEquals(
-            listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD, ActiveScreen.UPDATES, ActiveScreen.BACKUPS),
+            listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD),
             nav.stack,
         )
 
-        // 1. Back pops to BACKUPS
-        assertTrue(nav.canGoBack(NodeState.RUNNING))
-        nav.handleBack(NodeState.RUNNING)
-        assertEquals(ActiveScreen.BACKUPS, nav.currentScreen)
-
-        // 2. Back pops to UPDATES
-        assertTrue(nav.canGoBack(NodeState.RUNNING))
-        nav.handleBack(NodeState.RUNNING)
-        assertEquals(ActiveScreen.UPDATES, nav.currentScreen)
-
-        // 3. Back pops to DASHBOARD
+        // 1. Back pops directly to DASHBOARD
         assertTrue(nav.canGoBack(NodeState.RUNNING))
         nav.handleBack(NodeState.RUNNING)
         assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
 
-        // 4. Back pops to WEBVIEW
+        // 2. Back pops to WEBVIEW
         assertTrue(nav.canGoBack(NodeState.RUNNING))
         nav.handleBack(NodeState.RUNNING)
         assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
@@ -184,12 +176,73 @@ class NavigationTest {
         nav.navigateTo(ActiveScreen.UPDATES)
 
         assertEquals(ActiveScreen.UPDATES, nav.currentScreen)
-        // Stack unwinds to the prior occurrence instead of appending duplicates
+        // Secondary tabs do not accumulate on stack
         assertEquals(listOf(ActiveScreen.WEBVIEW, ActiveScreen.DASHBOARD), nav.stack)
 
         // Back directly returns to Dashboard
         nav.handleBack(NodeState.RUNNING)
         assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
+
+        // Further back returns to WebView
+        nav.handleBack(NodeState.RUNNING)
+        assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
+        assertTrue(nav.stack.isEmpty())
+    }
+
+    @Test
+    fun testNavController_tabSwitchingFromDashboardRoot_unwindsDirectly() {
+        val nav = NavigationController(initialScreen = ActiveScreen.DASHBOARD)
+        nav.navigateTo(ActiveScreen.UPDATES)
+        nav.navigateTo(ActiveScreen.BACKUPS)
+        nav.navigateTo(ActiveScreen.SETTINGS)
+
+        assertEquals(ActiveScreen.SETTINGS, nav.currentScreen)
+        assertEquals(listOf(ActiveScreen.DASHBOARD), nav.stack)
+
+        // Back from secondary tab returns directly to DASHBOARD in single press
+        assertTrue(nav.canGoBack(NodeState.RUNNING))
+        nav.handleBack(NodeState.RUNNING)
+        assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        assertTrue(nav.stack.isEmpty())
+
+        // At root DASHBOARD: cannot go back further (exits app)
+        assertFalse(nav.canGoBack(NodeState.RUNNING))
+    }
+
+    @Test
+    fun testNavController_tabSwitchingDirectFromWebViewQuickToolbar() {
+        val nav = NavigationController(initialScreen = ActiveScreen.WEBVIEW)
+        // Direct entry to Settings from WebView quick toolbar
+        nav.navigateTo(ActiveScreen.SETTINGS)
+        assertEquals(ActiveScreen.SETTINGS, nav.currentScreen)
+        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
+
+        // Tab switches across dock secondary destinations
+        nav.navigateTo(ActiveScreen.BACKUPS)
+        nav.navigateTo(ActiveScreen.UPDATES)
+        assertEquals(ActiveScreen.UPDATES, nav.currentScreen)
+        assertEquals(listOf(ActiveScreen.WEBVIEW), nav.stack)
+
+        // Back directly returns to WEBVIEW
+        assertTrue(nav.canGoBack(NodeState.RUNNING))
+        nav.handleBack(NodeState.RUNNING)
+        assertEquals(ActiveScreen.WEBVIEW, nav.currentScreen)
+        assertTrue(nav.stack.isEmpty())
+        assertFalse(nav.canGoBack(NodeState.RUNNING))
+    }
+
+    @Test
+    fun testNavController_dockTabSelectionDashboardUnwindsBackStack() {
+        val nav = NavigationController(initialScreen = ActiveScreen.DASHBOARD)
+        nav.navigateTo(ActiveScreen.UPDATES)
+        assertEquals(listOf(ActiveScreen.DASHBOARD), nav.stack)
+
+        // Selecting Dashboard dock tab returns to Dashboard and clears stack
+        nav.navigateTo(ActiveScreen.DASHBOARD)
+        assertEquals(ActiveScreen.DASHBOARD, nav.currentScreen)
+        assertTrue(nav.stack.isEmpty())
+        assertFalse(nav.canGoBack(NodeState.RUNNING))
     }
 
     @Test

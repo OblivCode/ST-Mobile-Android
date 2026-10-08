@@ -1,9 +1,10 @@
-package app.stmobile.sillytavern
+package app.stmobile.backup
 
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import app.stmobile.AppPaths
+import app.stmobile.payload.PayloadManager
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
 import net.lingala.zip4j.io.outputstream.ZipOutputStream
@@ -16,6 +17,14 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 
 /**
@@ -457,8 +466,8 @@ class BackupManager(
             // 3. Prepare unified rollback: preserve existing dataDir and configFile
             if (dataDir.exists()) {
                 if (!dataDir.renameTo(rollbackData)) {
-                    dataDir.copyRecursively(rollbackData, overwrite = true)
-                    dataDir.deleteRecursively()
+                    copyRecursivelyNoFollow(dataDir, rollbackData)
+                    deleteRecursivelyNoFollow(dataDir)
                 }
             }
             if (configFile.exists()) {
@@ -471,7 +480,7 @@ class BackupManager(
                 dataDir.parentFile?.mkdirs()
                 if (!stagingData.renameTo(dataDir)) {
                     dataDir.mkdirs()
-                    stagingData.copyRecursively(dataDir, overwrite = true)
+                    copyRecursivelyNoFollow(stagingData, dataDir)
                 }
             } else {
                 dataDir.mkdirs()
@@ -483,28 +492,28 @@ class BackupManager(
             }
 
             // 5. Success: cleanup rollback and staging
-            if (rollbackData.exists()) rollbackData.deleteRecursively()
+            if (rollbackData.exists()) deleteRecursivelyNoFollow(rollbackData)
             if (rollbackConfig.exists()) rollbackConfig.delete()
-            stagingRoot.deleteRecursively()
+            deleteRecursivelyNoFollow(stagingRoot)
 
             onProgress("Restore complete ($restoredFilesCount files)")
             return restoredFilesCount
         } catch (t: Throwable) {
             // Unified Rollback on any failure
             if (rollbackData.exists()) {
-                dataDir.deleteRecursively()
+                deleteRecursivelyNoFollow(dataDir)
                 dataDir.parentFile?.mkdirs()
                 if (!rollbackData.renameTo(dataDir)) {
                     dataDir.mkdirs()
-                    rollbackData.copyRecursively(dataDir, overwrite = true)
-                    rollbackData.deleteRecursively()
+                    copyRecursivelyNoFollow(rollbackData, dataDir)
+                    deleteRecursivelyNoFollow(rollbackData)
                 }
             }
             if (rollbackConfig.exists()) {
                 rollbackConfig.copyTo(configFile, overwrite = true)
                 rollbackConfig.delete()
             }
-            stagingRoot.deleteRecursively()
+            deleteRecursivelyNoFollow(stagingRoot)
             throw t
         }
     }
@@ -825,5 +834,92 @@ class BackupManager(
             val code = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pkg)
             resolveVersion(pkg.versionName, code)
         }.getOrDefault("1")
+
+        /**
+         * Recursively deletes [file] without traversing into symbolic links, ensuring
+         * symlink targets outside this tree are never deleted.
+         */
+        fun deleteRecursivelyNoFollow(file: File): Boolean {
+            val rootPath = file.toPath()
+            if (!Files.exists(rootPath, LinkOption.NOFOLLOW_LINKS)) {
+                return true
+            }
+            return try {
+                Files.walkFileTree(rootPath, object : SimpleFileVisitor<Path>() {
+                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                        Files.deleteIfExists(file)
+                        return FileVisitResult.CONTINUE
+                    }
+
+                    override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult {
+                        Files.deleteIfExists(file)
+                        return FileVisitResult.CONTINUE
+                    }
+
+                    override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+                        Files.deleteIfExists(dir)
+                        return FileVisitResult.CONTINUE
+                    }
+                })
+                true
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        /**
+         * Recursively copies [source] to [target] without dereferencing symbolic links.
+         * When a symlink is encountered, it is recreated at the target destination
+         * via [Files.createSymbolicLink] without copying or traversing the linked directory/file.
+         */
+        fun copyRecursivelyNoFollow(source: File, target: File) {
+            val sourcePath = source.toPath()
+            val targetPath = target.toPath()
+            if (!Files.exists(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
+                return
+            }
+
+            Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    val relative = sourcePath.relativize(dir)
+                    val dest = targetPath.resolve(relative)
+                    if (Files.isSymbolicLink(dest) || (Files.exists(dest, LinkOption.NOFOLLOW_LINKS) && !Files.isDirectory(dest, LinkOption.NOFOLLOW_LINKS))) {
+                        Files.deleteIfExists(dest)
+                    }
+                    if (!Files.exists(dest, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(dest)
+                    }
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    val relative = sourcePath.relativize(file)
+                    val dest = targetPath.resolve(relative)
+                    dest.parent?.let { parent ->
+                        if (!Files.exists(parent)) {
+                            Files.createDirectories(parent)
+                        }
+                    }
+                    if (Files.exists(dest, LinkOption.NOFOLLOW_LINKS)) {
+                        if (Files.isDirectory(dest, LinkOption.NOFOLLOW_LINKS)) {
+                            deleteRecursivelyNoFollow(dest.toFile())
+                        } else {
+                            Files.deleteIfExists(dest)
+                        }
+                    }
+                    if (Files.isSymbolicLink(file)) {
+                        val symlinkTarget = Files.readSymbolicLink(file)
+                        Files.createSymbolicLink(dest, symlinkTarget)
+                    } else {
+                        try {
+                            Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+                        } catch (_: UnsupportedOperationException) {
+                            Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    }
+                    return FileVisitResult.CONTINUE
+                }
+            })
+        }
     }
 }

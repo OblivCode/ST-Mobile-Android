@@ -92,8 +92,12 @@ fun StWebView(
 
     var pendingFileCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
     var didInitialReload by remember { mutableStateOf(false) }
-    var pendingUrl by remember { mutableStateOf<String?>(null) }
-    var lastLoadedBaseUrl by remember { mutableStateOf<String?>(null) }
+    val urlHolder = remember {
+        object {
+            var lastLoadedBaseUrl: String? = null
+            var pendingUrl: String? = null
+        }
+    }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
 
     val fileChooser = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -185,9 +189,9 @@ fun StWebView(
                     }
 
                     addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ ->
-                        val queued = pendingUrl ?: return@addOnLayoutChangeListener
+                        val queued = urlHolder.pendingUrl ?: return@addOnLayoutChangeListener
                         if (r - l > 0 && b - t > 0) {
-                            pendingUrl = null
+                            urlHolder.pendingUrl = null
                             loadUrl(queued)
                         }
                     }
@@ -198,12 +202,12 @@ fun StWebView(
             update = { wv ->
                 // Use INVISIBLE instead of GONE to preserve full viewport dimensions without layout reflows
                 wv.visibility = if (visible) View.VISIBLE else View.INVISIBLE
-                if (url != null && url != lastLoadedBaseUrl) {
-                    lastLoadedBaseUrl = url
+                if (url != null && url != urlHolder.lastLoadedBaseUrl) {
+                    urlHolder.lastLoadedBaseUrl = url
                     if (wv.width > 0 && wv.height > 0) {
                         wv.loadUrl(url)
                     } else {
-                        pendingUrl = url
+                        urlHolder.pendingUrl = url
                     }
                 }
             },

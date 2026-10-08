@@ -1,11 +1,11 @@
-package app.stmobile.node
+package app.stmobile.runtime
 
 import android.content.Context
 import app.stmobile.AppPaths
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
 import app.stmobile.models.StConfig
-import app.stmobile.sillytavern.PayloadManager
+import app.stmobile.payload.PayloadManager
 import java.io.File
 import java.util.concurrent.TimeUnit
 
