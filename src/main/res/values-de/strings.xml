@@ -24,7 +24,9 @@
     <string name="dashboard_btn_stop">Server stoppen</string>
     <string name="dashboard_btn_open">SillyTavern öffnen</string>
     <string name="status_running">Läuft</string>
+    <string name="status_generating">Antwort wird generiert…</string>
     <string name="status_starting">Startet…</string>
+    <string name="status_restarting">Neustart…</string>
     <string name="status_stopping">Stoppt…</string>
     <string name="status_stopped">Gestoppt</string>
     <string name="status_error">Fehler</string>

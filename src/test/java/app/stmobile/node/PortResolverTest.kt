@@ -1,4 +1,4 @@
-package app.stmobile.runtime
+package app.stmobile.node
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

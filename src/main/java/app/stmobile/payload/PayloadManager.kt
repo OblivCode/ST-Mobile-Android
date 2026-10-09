@@ -76,6 +76,7 @@ class PayloadManager(
         val nodeTmpDir: File,
         val nativeLibDir: String,
         val payloadUpdated: Boolean,
+        val generationHook: File? = null,
     )
 
     data class ExtractProgress(
@@ -209,6 +210,7 @@ class PayloadManager(
 
         ensureSymlink(paths.stConfigLink, paths.configFile)
         ensureSymlink(paths.stDataLink, paths.dataDir)
+        val hookFile = ensureGenerationHook()
 
         return Layout(
             launcher = paths.launcher,
@@ -220,6 +222,7 @@ class PayloadManager(
             nodeTmpDir = paths.nodeTmpDir,
             nativeLibDir = paths.nativeLibDir,
             payloadUpdated = false,
+            generationHook = hookFile,
         )
     }
 
@@ -271,6 +274,8 @@ class PayloadManager(
 
         onProgress(ExtractProgress(stage = "Setup complete", filesProcessed = 11000, isCompleted = true))
 
+        val hookFile = ensureGenerationHook()
+
         return Layout(
             launcher = paths.launcher,
             stDir = paths.stDir,
@@ -281,7 +286,20 @@ class PayloadManager(
             nodeTmpDir = paths.nodeTmpDir,
             nativeLibDir = paths.nativeLibDir,
             payloadUpdated = true,
+            generationHook = hookFile,
         )
+    }
+
+    fun ensureGenerationHook(): File? {
+        return try {
+            paths.scriptsDir.mkdirs()
+            assetOpener("generation_hook.cjs").use { input ->
+                paths.generationHookFile.outputStream().use { out -> input.copyTo(out) }
+            }
+            paths.generationHookFile
+        } catch (_: Exception) {
+            if (paths.generationHookFile.exists()) paths.generationHookFile else null
+        }
     }
 
     private fun extractFromSource(

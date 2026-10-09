@@ -24,7 +24,9 @@
     <string name="dashboard_btn_stop">停止服务</string>
     <string name="dashboard_btn_open">打开 SillyTavern</string>
     <string name="status_running">运行中</string>
+    <string name="status_generating">正在生成回复…</string>
     <string name="status_starting">启动中…</string>
+    <string name="status_restarting">重启中…</string>
     <string name="status_stopping">停止中…</string>
     <string name="status_stopped">已停止</string>
     <string name="status_error">错误</string>

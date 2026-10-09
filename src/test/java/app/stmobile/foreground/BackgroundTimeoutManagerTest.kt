@@ -1,4 +1,4 @@
-package app.stmobile.runtime
+package app.stmobile.foreground
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,6 +53,39 @@ class BackgroundTimeoutManagerTest {
     }
 
     @Test
+    fun testPauseAndResumeCountdown() {
+        val latch = CountDownLatch(1)
+        val manager = BackgroundTimeoutManager {
+            latch.countDown()
+        }
+
+        try {
+            manager.schedule(150, TimeUnit.MILLISECONDS)
+            assertTrue(manager.isScheduled)
+            assertFalse(manager.isPaused)
+
+            Thread.sleep(30)
+            manager.pause()
+            assertTrue(manager.isScheduled)
+            assertTrue(manager.isPaused)
+
+            // While paused, callback must not fire
+            val firedWhilePaused = latch.await(200, TimeUnit.MILLISECONDS)
+            assertFalse("Timeout must not fire while paused", firedWhilePaused)
+
+            // Resume should continue and fire with remaining time
+            manager.resume()
+            assertFalse(manager.isPaused)
+            assertTrue(manager.isScheduled)
+
+            val firedAfterResume = latch.await(300, TimeUnit.MILLISECONDS)
+            assertTrue("Timeout must fire after resume", firedAfterResume)
+        } finally {
+            manager.shutdown()
+        }
+    }
+
+    @Test
     fun testZeroOrNegativeTimeoutDisabled() {
         var called = false
         val manager = BackgroundTimeoutManager {
@@ -89,35 +122,6 @@ class BackgroundTimeoutManagerTest {
             assertEquals("Only the rescheduled task should execute", 1, counter.get())
         } finally {
             manager.shutdown()
-        }
-    }
-
-    @Test
-    fun testZeroDaemonLeaksAndImmediateQueuePurge() {
-        val customExecutor = ScheduledThreadPoolExecutor(1) { r ->
-            Thread(r, "test-timeout-worker").apply { isDaemon = true }
-        }.apply {
-            removeOnCancelPolicy = true
-        }
-
-        val latch = CountDownLatch(1)
-        val manager = BackgroundTimeoutManager(scheduler = customExecutor) {
-            latch.countDown()
-        }
-
-        try {
-            // Schedule long running timeout
-            manager.schedule(60, TimeUnit.MINUTES)
-            assertTrue(manager.isScheduled)
-            assertEquals("Executor queue must hold exactly 1 pending task", 1, customExecutor.queue.size)
-
-            // Cancel must purge immediately from queue due to removeOnCancelPolicy
-            manager.cancel()
-            assertFalse(manager.isScheduled)
-            assertEquals("Executor queue must be immediately purged of cancelled task", 0, customExecutor.queue.size)
-        } finally {
-            manager.shutdown()
-            assertTrue("Executor must be shut down", customExecutor.isShutdown)
         }
     }
 

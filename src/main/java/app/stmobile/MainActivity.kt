@@ -24,7 +24,8 @@ import app.stmobile.payload.RemotePayloadSource
 import app.stmobile.payload.UpdateChecker
 import app.stmobile.payload.UpdateCheckResult
 import app.stmobile.payload.UpdateInfo
-import app.stmobile.service.ServerLifecycleManager
+import app.stmobile.foreground.ForegroundService
+import app.stmobile.node.NodeController
 import app.stmobile.ui.ActiveScreen
 import app.stmobile.ui.ExportBackupDialog
 import app.stmobile.ui.ImportPasswordDialog
@@ -124,12 +125,12 @@ class MainActivity : AppCompatActivity() {
 
         // Auto-resumes the server on-demand if auto-start is enabled OR if the OS killed the app process while running
         if (installedInfo.isInstalled && (appConfig.autoStartOnAppOpen || appConfig.wasRunningBeforeKill)) {
-            ServerLifecycleManager.start(this)
+            ForegroundService.start(this)
         }
 
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                val nodeStatus by ServerLifecycleManager.status.collectAsState()
+                val nodeStatus by NodeController.status.collectAsState()
 
                 LaunchedEffect(nodeStatus.state) {
                     navController.onNodeStateChanged(nodeStatus.state, appConfig.autoLaunchWebViewOnStart)
@@ -147,8 +148,8 @@ class MainActivity : AppCompatActivity() {
                     updateCheckResult = updateCheckResult,
                     onInstallPayload = { installPayload() },
                     onCancelInstall = { cancelInstall() },
-                    onStartServer = { ServerLifecycleManager.start(this@MainActivity) },
-                    onStopServer = { ServerLifecycleManager.stop(this@MainActivity) },
+                    onStartServer = { ForegroundService.start(this@MainActivity) },
+                    onStopServer = { ForegroundService.stop(this@MainActivity) },
                     onExportBackup = { showExportDialog.value = true },
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
@@ -232,11 +233,11 @@ class MainActivity : AppCompatActivity() {
         installProgress = null
 
         installJob = lifecycleScope.launch(Dispatchers.IO) {
-            val wasActive = ServerLifecycleManager.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            val wasActive = NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
-                ServerLifecycleManager.stop(this@MainActivity)
+                ForegroundService.stop(this@MainActivity)
                 withTimeoutOrNull(5000) {
-                    ServerLifecycleManager.status.first { it.state == NodeState.STOPPED }
+                    NodeController.status.first { it.state == NodeState.STOPPED }
                 }
             }
             val payloadManager = PayloadManager(this@MainActivity)
@@ -269,7 +270,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     val appConfig = AppConfig(this@MainActivity)
                     if (wasActive || appConfig.autoStartOnAppOpen) {
-                        ServerLifecycleManager.start(this@MainActivity)
+                        ForegroundService.start(this@MainActivity)
                     }
                 }
             } catch (_: CancellationException) {
@@ -341,11 +342,11 @@ class MainActivity : AppCompatActivity() {
         pendingArchiveInfo = null
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val wasActive = ServerLifecycleManager.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
+            val wasActive = NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
-                ServerLifecycleManager.stop(this@MainActivity)
+                ForegroundService.stop(this@MainActivity)
                 withTimeoutOrNull(5000) {
-                    ServerLifecycleManager.status.first { it.state == NodeState.STOPPED }
+                    NodeController.status.first { it.state == NodeState.STOPPED }
                 }
             }
 
@@ -354,7 +355,7 @@ class MainActivity : AppCompatActivity() {
                 .onSuccess { count ->
                     Utils.toast(this@MainActivity, getString(R.string.toast_restore_success, count))
                     if (wasActive) {
-                        ServerLifecycleManager.start(this@MainActivity)
+                        ForegroundService.start(this@MainActivity)
                     } else if (!installedInfo.isInstalled) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             navController.navigateTo(ActiveScreen.DASHBOARD)

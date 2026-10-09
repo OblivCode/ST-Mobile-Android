@@ -24,7 +24,9 @@
     <string name="dashboard_btn_stop">Detener Servidor</string>
     <string name="dashboard_btn_open">Abrir SillyTavern</string>
     <string name="status_running">En ejecución</string>
+    <string name="status_generating">Generando respuesta…</string>
     <string name="status_starting">Iniciando…</string>
+    <string name="status_restarting">Reiniciando…</string>
     <string name="status_stopping">Deteniendo…</string>
     <string name="status_stopped">Detenido</string>
     <string name="status_error">Error</string>

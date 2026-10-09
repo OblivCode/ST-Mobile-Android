@@ -29,6 +29,8 @@ class AppPaths(
     val logsDir: File get() = File(filesDir, "logs")
     val tmpDir: File get() = File(filesDir, "tmp")
     val nodeTmpDir: File get() = File(cacheDir, "node_tmp")
+    val scriptsDir: File get() = File(filesDir, "scripts")
+    val generationHookFile: File get() = File(scriptsDir, "generation_hook.cjs")
 
     /** Executable location: read-only, extracted from the APK, exec-safe (W^X). */
     val launcher: File get() = File(nativeLibDir, "libstnode.so")

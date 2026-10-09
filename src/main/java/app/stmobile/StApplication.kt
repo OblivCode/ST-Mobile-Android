@@ -5,7 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import app.stmobile.service.ServerLifecycleManager
+import app.stmobile.foreground.ForegroundService
 
 /**
  * Custom application class providing centralized activity lifecycle tracking
@@ -19,7 +19,7 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
     private val backgroundRunnable = Runnable {
         if (startedActivityCount == 0) {
             isAppInForeground = false
-            ServerLifecycleManager.onAppBackgrounded(this)
+            ForegroundService.onAppBackgrounded(this)
         }
     }
 
@@ -41,7 +41,7 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
         startedActivityCount++
         if (startedActivityCount == 1) {
             isAppInForeground = true
-            ServerLifecycleManager.onAppForegrounded()
+            ForegroundService.onAppForegrounded()
         }
     }
 

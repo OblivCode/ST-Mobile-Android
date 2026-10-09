@@ -1,4 +1,4 @@
-package app.stmobile.runtime
+package app.stmobile.node
 
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeConfig
@@ -22,8 +22,8 @@ class ProcessLaunchContractTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private fun createFakeLayout(): Pair<PayloadManager.Layout, File> {
-        val root = tempFolder.newFolder("runtime_root")
+    private fun createFakeLayout(withHook: Boolean = false): Pair<PayloadManager.Layout, File> {
+        val root = tempFolder.newFolder("runtime_root_" + System.nanoTime())
         val launcher = File(root, "libstnode.so").apply { createNewFile() }
         val stDir = File(root, "st").apply { mkdirs() }
         val stEntry = File(stDir, "server.js").apply { createNewFile() }
@@ -33,6 +33,7 @@ class ProcessLaunchContractTest {
         val nodeTmpDir = File(root, "node_tmp").apply { mkdirs() }
         val nativeLibDir = File(root, "lib").apply { mkdirs() }.absolutePath
         val homeDir = File(root, "home").apply { mkdirs() }
+        val hookFile = if (withHook) File(root, "generation_hook.cjs").apply { createNewFile() } else null
 
         val layout = PayloadManager.Layout(
             launcher = launcher,
@@ -43,7 +44,8 @@ class ProcessLaunchContractTest {
             logsDir = logsDir,
             nodeTmpDir = nodeTmpDir,
             nativeLibDir = nativeLibDir,
-            payloadUpdated = false
+            payloadUpdated = false,
+            generationHook = hookFile,
         )
         return layout to homeDir
     }
@@ -94,6 +96,31 @@ class ProcessLaunchContractTest {
         val portFlagIndex = cmd.indexOf("--port")
         assertTrue("--port must follow entry file", portFlagIndex > entryIndex)
         assertEquals("8000", cmd[portFlagIndex + 1])
+    }
+
+    @Test
+    fun testGenerationHookInjectedWhenPresentAndIpcConfigured() {
+        val (layout, homeDir) = createFakeLayout(withHook = true)
+        val stConfig = StConfig.fromYaml("port: 8000\n")
+        val nodeConfig = NodeConfig()
+        val appConfig = AppConfig(FakeSharedPreferences())
+
+        val spec = NodeController.buildLaunchSpec(
+            layout = layout,
+            stConfig = stConfig,
+            nodeConfig = nodeConfig,
+            appConfig = appConfig,
+            homeDir = homeDir,
+            ipcPort = 45678,
+        )
+        val cmd = spec.command
+        val entryIndex = cmd.indexOf(layout.stEntry.absolutePath)
+
+        val requireFlagIndex = cmd.indexOf("--require")
+        assertTrue("--require must be present before script entry", requireFlagIndex in 1 until entryIndex)
+        assertEquals(layout.generationHook!!.absolutePath, cmd[requireFlagIndex + 1])
+
+        assertEquals("45678", spec.environment["ST_GEN_PORT"])
     }
 
     @Test

@@ -1,4 +1,4 @@
-package app.stmobile.service
+package app.stmobile.foreground
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,11 +11,12 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import app.stmobile.MainActivity
 import app.stmobile.R
+import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
 
 /**
  * Encapsulates notification channel configuration and foreground notification construction
- * for [NodeForegroundService].
+ * with dynamic status messages and native chronometer countdowns for [ForegroundService].
  */
 object ServiceNotificationHelper {
 
@@ -35,7 +36,13 @@ object ServiceNotificationHelper {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    fun buildNotification(context: Context, status: NodeStatus, text: String): Notification {
+    fun buildNotification(
+        context: Context,
+        status: NodeStatus,
+        isGenerating: Boolean = false,
+        idleTargetEpochMs: Long = 0L,
+        customText: String? = null,
+    ): Notification {
         val openIntent = PendingIntent.getActivity(
             context,
             0,
@@ -45,12 +52,23 @@ object ServiceNotificationHelper {
         val stopIntent = PendingIntent.getService(
             context,
             0,
-            Intent(context, NodeForegroundService::class.java).setAction(NodeForegroundService.ACTION_STOP),
+            Intent(context, ForegroundService::class.java).setAction(ForegroundService.ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        return Notification.Builder(context, CHANNEL_ID)
+
+        val displayText = when {
+            customText != null -> customText
+            isGenerating -> context.getString(R.string.status_generating)
+            idleTargetEpochMs > System.currentTimeMillis() -> context.getString(R.string.status_running)
+            status.state == NodeState.STOPPING -> context.getString(R.string.status_stopping)
+            status.state == NodeState.STARTING -> context.getString(R.string.status_starting)
+            status.message.isNotBlank() -> status.message
+            else -> status.state.name
+        }
+
+        val builder = Notification.Builder(context, CHANNEL_ID)
             .setContentTitle(context.getString(R.string.app_name))
-            .setContentText(text)
+            .setContentText(displayText)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setOngoing(status.isActive)
             .setOnlyAlertOnce(true)
@@ -62,7 +80,19 @@ object ServiceNotificationHelper {
                     stopIntent,
                 ).build()
             )
-            .build()
+
+        val isCountdownActive = !isGenerating && idleTargetEpochMs > System.currentTimeMillis()
+        if (isCountdownActive) {
+            builder.setUsesChronometer(true)
+            builder.setChronometerCountDown(true)
+            builder.setWhen(idleTargetEpochMs)
+            builder.setShowWhen(true)
+        } else {
+            builder.setUsesChronometer(false)
+            builder.setShowWhen(false)
+        }
+
+        return builder.build()
     }
 
     fun startForeground(service: Service, notification: Notification) {

@@ -31,7 +31,7 @@
              the app being backgrounded. specialUse (not dataSync, which Android
              15 caps at 6 h/24 h). -->
         <service
-            android:name=".service.NodeForegroundService"
+            android:name=".foreground.ForegroundService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property

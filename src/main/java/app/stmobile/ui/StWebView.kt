@@ -1,5 +1,6 @@
 package app.stmobile.ui
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.view.View
@@ -12,6 +13,7 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import app.stmobile.foreground.ForegroundService
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -117,6 +119,7 @@ fun StWebView(
 
     DisposableEffect(Unit) {
         onDispose {
+            ForegroundService.onGenerationEnded("webview")
             webViewInstance?.destroy()
             webViewInstance = null
         }
@@ -139,7 +142,14 @@ fun StWebView(
                     settings.useWideViewPort = true
                     settings.loadWithOverviewMode = true
 
+                    addJavascriptInterface(GenerationJavascriptBridge(), "StMobileBridge")
+
                     webViewClient = object : WebViewClient() {
+                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                            super.onPageStarted(view, url, favicon)
+                            ForegroundService.onGenerationEnded("webview")
+                        }
+
                         override fun onPageFinished(view: WebView?, finishedUrl: String?) {
                             super.onPageFinished(view, finishedUrl)
                             if (!didInitialReload) {
@@ -160,6 +170,29 @@ fun StWebView(
                                 })();
                             """.trimIndent()
                             view?.evaluateJavascript(syncJs, null)
+
+                            // Subscribe to SillyTavern client-side generation event bus
+                            val bridgeJs = """
+                                (async function() {
+                                    if (window.__stBridgeSubscribed) return;
+                                    try {
+                                        const { eventSource, event_types } = await import('/scripts/events.js');
+                                        if (window.StMobileBridge && eventSource && event_types) {
+                                            window.__stBridgeSubscribed = true;
+                                            eventSource.on(event_types.GENERATION_STARTED, function() {
+                                                window.StMobileBridge.onGenerationStarted();
+                                            });
+                                            eventSource.on(event_types.GENERATION_ENDED, function() {
+                                                window.StMobileBridge.onGenerationEnded();
+                                            });
+                                            eventSource.on(event_types.GENERATION_STOPPED, function() {
+                                                window.StMobileBridge.onGenerationEnded();
+                                            });
+                                        }
+                                    } catch(e) {}
+                                })();
+                            """.trimIndent()
+                            view?.evaluateJavascript(bridgeJs, null)
                         }
                     }
 

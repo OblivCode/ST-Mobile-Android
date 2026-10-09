@@ -8,6 +8,7 @@ data class NodeStatus(
     val message: String,
     val port: Int,
     val pid: Long? = null,
+    val isGenerating: Boolean = false,
 ) {
-    val isActive: Boolean get() = state == NodeState.STARTING || state == NodeState.RUNNING
+    val isActive: Boolean get() = state == NodeState.STARTING || state == NodeState.RUNNING || state == NodeState.STOPPING
 }

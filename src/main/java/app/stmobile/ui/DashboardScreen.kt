@@ -125,12 +125,14 @@ fun DashboardScreen(
                         NodeState.ERROR -> Color(0xFFE06C75)
                     }
 
-                    val stateLabel = when (status.state) {
-                        NodeState.RUNNING -> stringResource(R.string.status_running)
-                        NodeState.STARTING -> stringResource(R.string.status_starting)
-                        NodeState.STOPPING -> stringResource(R.string.status_stopping)
-                        NodeState.STOPPED -> stringResource(R.string.status_stopped)
-                        NodeState.ERROR -> stringResource(R.string.status_error)
+                    val stateLabel = when {
+                        status.isGenerating -> stringResource(R.string.status_generating)
+                        status.state == NodeState.RUNNING -> stringResource(R.string.status_running)
+                        status.state == NodeState.STARTING -> stringResource(R.string.status_starting)
+                        status.state == NodeState.STOPPING -> stringResource(R.string.status_stopping)
+                        status.state == NodeState.STOPPED -> stringResource(R.string.status_stopped)
+                        status.state == NodeState.ERROR -> stringResource(R.string.status_error)
+                        else -> ""
                     }
 
                     // Server Status Card
