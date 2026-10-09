@@ -42,6 +42,7 @@ class BackupManager(
     private val stVersionProvider: () -> String? = { null },
     private val appVersion: String = "1",
     private val contentResolver: ContentResolver? = null,
+    private val paths: AppPaths? = null,
 ) {
 
     /** Standard Android constructor binding AppPaths and PayloadManager. */
@@ -52,7 +53,17 @@ class BackupManager(
         stVersionProvider = resolveStVersion(context),
         appVersion = resolveAppVersion(context),
         contentResolver = context.contentResolver,
+        paths = AppPaths(context),
     )
+
+    private val targetFilesDir: File get() {
+        val base = paths?.filesDir ?: (dataDir.parentFile ?: dataDir)
+        var curr: File? = base
+        while (curr != null && !curr.exists()) {
+            curr = curr.parentFile
+        }
+        return curr ?: base
+    }
 
     /** Metadata embedded in exported archives (`backup_manifest.json`). */
     data class Manifest(
@@ -290,17 +301,18 @@ class BackupManager(
         // Gather all files to include in data/
         val filesToArchive = mutableListOf<Pair<File, String>>()
         if (dataDir.exists()) {
-            val base = dataDir.canonicalPath
-            dataDir.walkTopDown().forEach { file ->
-                if (file.isFile) {
-                    val rel = file.canonicalPath.removePrefix(base)
-                        .trimStart(File.separatorChar)
-                        .replace(File.separatorChar, '/')
-                    filesToArchive.add(file to "data/$rel")
+            val basePath = dataDir.toPath()
+            Files.walkFileTree(basePath, object : SimpleFileVisitor<Path>() {
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    if (attrs.isRegularFile && !attrs.isSymbolicLink) {
+                        val rel = basePath.relativize(file).toString().replace(File.separatorChar, '/')
+                        filesToArchive.add(file.toFile() to "data/$rel")
+                    }
+                    return FileVisitResult.CONTINUE
                 }
-            }
+            })
         }
-        if (configFile.exists()) {
+        if (configFile.exists() && configFile.isFile && !Files.isSymbolicLink(configFile.toPath())) {
             filesToArchive.add(configFile to "config.yaml")
         }
 
@@ -389,6 +401,13 @@ class BackupManager(
             throw IllegalArgumentException(inspection.errorMessage ?: "Password required to unlock archive")
         }
 
+        val requiredSpace = inspection.uncompressedSize
+        if (requiredSpace > 0 && targetFilesDir.usableSpace < requiredSpace) {
+            throw IOException(
+                "Insufficient storage space: required $requiredSpace bytes, available ${targetFilesDir.usableSpace} bytes"
+            )
+        }
+
         val charPassword = password?.takeIf { it.isNotBlank() }?.toCharArray()
         ZipFile(archiveFile, charPassword).use { zipFile ->
             when (strategy) {
@@ -397,6 +416,72 @@ class BackupManager(
             }
         }
     }
+
+    /**
+     * Checks dataDir.parentFile for leftover rollback and staging directories.
+     * If dataDir does not exist or is empty, restores the latest .data_rollback_* directory
+     * and deletes older rollbacks and .restore_staging_* folders.
+     */
+    fun recoverOrphanedRollbackIfPresent(): Boolean = runCatching {
+        val parent = dataDir.parentFile ?: return false
+        val rollbacks = parent.listFiles { file ->
+            file.isDirectory && file.name.startsWith(".data_rollback_")
+        }?.sortedByDescending { it.name } ?: emptyList()
+
+        val stagings = parent.listFiles { file ->
+            file.isDirectory && file.name.startsWith(".restore_staging_")
+        } ?: emptyArray()
+
+        for (staging in stagings) {
+            deleteRecursivelyNoFollow(staging)
+        }
+
+        if (rollbacks.isEmpty()) return false
+
+        val isDataEmpty = !dataDir.exists() || (dataDir.isDirectory && dataDir.list().isNullOrEmpty())
+        if (isDataEmpty) {
+            val latest = rollbacks.first()
+            if (dataDir.exists()) {
+                deleteRecursivelyNoFollow(dataDir)
+            }
+            val restored = if (latest.renameTo(dataDir)) {
+                true
+            } else {
+                dataDir.mkdirs()
+                copyRecursivelyNoFollow(latest, dataDir)
+                deleteRecursivelyNoFollow(latest)
+                true
+            }
+
+            val configRollbacks = parent.listFiles { file ->
+                file.name.startsWith(".config_rollback_")
+            }?.sortedByDescending { it.name } ?: emptyList()
+            if ((!configFile.exists() || configFile.length() == 0L) && configRollbacks.isNotEmpty()) {
+                val latestConfig = configRollbacks.first()
+                configFile.parentFile?.mkdirs()
+                latestConfig.copyTo(configFile, overwrite = true)
+            }
+            for (cr in configRollbacks) {
+                cr.delete()
+            }
+
+            for (older in rollbacks.drop(1)) {
+                deleteRecursivelyNoFollow(older)
+            }
+            restored
+        } else {
+            for (rb in rollbacks) {
+                deleteRecursivelyNoFollow(rb)
+            }
+            val configRollbacks = parent.listFiles { file ->
+                file.name.startsWith(".config_rollback_")
+            } ?: emptyArray()
+            for (cr in configRollbacks) {
+                cr.delete()
+            }
+            false
+        }
+    }.getOrDefault(false)
 
     /**
      * Restores user state from an incoming SAF Uri via staged temporary archive.
@@ -440,6 +525,11 @@ class BackupManager(
         try {
             stagingRoot.mkdirs()
             val plan = resolveRestorePlan(zipFile)
+            if (plan.uncompressedSize > 0 && targetFilesDir.usableSpace < plan.uncompressedSize) {
+                throw IOException(
+                    "Insufficient storage space: required ${plan.uncompressedSize} bytes, available ${targetFilesDir.usableSpace} bytes"
+                )
+            }
             onProgress("Extracting archive to staging…")
 
             // 1. Extract data files into temporary staging folder
@@ -523,6 +613,11 @@ class BackupManager(
      */
     private fun performMergeRestore(zipFile: ZipFile, onProgress: (String) -> Unit): Int {
         val plan = resolveRestorePlan(zipFile)
+        if (plan.uncompressedSize > 0 && targetFilesDir.usableSpace < plan.uncompressedSize) {
+            throw IOException(
+                "Insufficient storage space: required ${plan.uncompressedSize} bytes, available ${targetFilesDir.usableSpace} bytes"
+            )
+        }
         var count = 0
         for ((relPath, header) in plan.dataEntries) {
             val target = validateSafeChild(dataDir, relPath)
@@ -548,13 +643,13 @@ class BackupManager(
 
     /** Hardened Zip Slip path traversal defense enforcing trailing separator bounds. */
     fun validateSafeChild(baseDir: File, entryName: String): File {
-        val normalized = entryName.replace('\\', '/')
-        if (normalized.split('/').any { it == ".." }) {
+        val normalized = entryName.replace('\\', '/').trim()
+        if (normalized.isEmpty() || normalized == "." || normalized.split('/').any { it == ".." }) {
             throw SecurityException("Zip Slip path traversal blocked: $entryName")
         }
-        val baseCanonical = baseDir.canonicalPath + File.separator
+        val baseCanonical = baseDir.canonicalPath.trimEnd(File.separatorChar) + File.separator
         val target = File(baseDir, normalized).canonicalFile
-        if (!target.path.startsWith(baseCanonical) && target.path != baseDir.canonicalPath) {
+        if (!target.path.startsWith(baseCanonical) || target.path == baseDir.canonicalPath) {
             throw SecurityException("Zip Slip path traversal blocked: $entryName")
         }
         return target

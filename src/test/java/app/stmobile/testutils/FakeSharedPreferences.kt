@@ -15,45 +15,56 @@ class FakeSharedPreferences(
     override fun getAll(): MutableMap<String, *> = HashMap(values)
 
     override fun getString(key: String, defValue: String?): String? {
-        return (values[key] as? String) ?: defValue
+        val v = values[key] ?: return defValue
+        return v as String
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun getStringSet(key: String, defValues: MutableSet<String>?): MutableSet<String>? {
-        return (values[key] as? Set<String>)?.toMutableSet() ?: defValues
+        val v = values[key] ?: return defValues
+        return (v as Set<String>).toMutableSet()
     }
 
     override fun getInt(key: String, defValue: Int): Int {
-        return (values[key] as? Number)?.toInt() ?: defValue
+        val v = values[key] ?: return defValue
+        return v as Int
     }
 
     override fun getLong(key: String, defValue: Long): Long {
-        return (values[key] as? Number)?.toLong() ?: defValue
+        val v = values[key] ?: return defValue
+        return v as Long
     }
 
     override fun getFloat(key: String, defValue: Float): Float {
-        return (values[key] as? Number)?.toFloat() ?: defValue
+        val v = values[key] ?: return defValue
+        return v as Float
     }
 
     override fun getBoolean(key: String, defValue: Boolean): Boolean {
-        return (values[key] as? Boolean) ?: defValue
+        val v = values[key] ?: return defValue
+        return v as Boolean
     }
 
     override fun contains(key: String): Boolean = values.containsKey(key)
 
     override fun edit(): SharedPreferences.Editor = EditorImpl()
 
-    private val listeners = java.util.concurrent.CopyOnWriteArraySet<SharedPreferences.OnSharedPreferenceChangeListener>()
+    private val listeners = java.util.WeakHashMap<SharedPreferences.OnSharedPreferenceChangeListener, Any>()
+    private val CONTENT = Any()
 
     override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
         if (listener != null) {
-            listeners.add(listener)
+            synchronized(listeners) {
+                listeners.put(listener, CONTENT)
+            }
         }
     }
 
     override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
         if (listener != null) {
-            listeners.remove(listener)
+            synchronized(listeners) {
+                listeners.remove(listener)
+            }
         }
     }
 
@@ -121,9 +132,14 @@ class FakeSharedPreferences(
                         changedKeys.add(key)
                     }
                 }
+                clearRequested = false
+                modifications.clear()
+            }
+            val listenersToNotify = synchronized(listeners) {
+                listeners.keys.toList()
             }
             for (key in changedKeys) {
-                for (listener in listeners) {
+                for (listener in listenersToNotify) {
                     listener.onSharedPreferenceChanged(this@FakeSharedPreferences, key)
                 }
             }

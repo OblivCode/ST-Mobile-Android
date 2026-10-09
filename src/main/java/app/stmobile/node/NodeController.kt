@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -82,6 +83,7 @@ object NodeController {
         appConfig: AppConfig,
         homeDir: File,
         ipcPort: Int? = null,
+        ipcToken: String? = null,
     ): ProcessLaunchSpec {
         val stdout = File(layout.logsDir, "node_stdout.log")
         val stderr = File(layout.logsDir, "node_stderr.log")
@@ -130,6 +132,10 @@ object NodeController {
 
         if (ipcPort != null && ipcPort > 0) {
             env["ST_GEN_PORT"] = ipcPort.toString()
+        }
+
+        if (!ipcToken.isNullOrBlank()) {
+            env["ST_GEN_TOKEN"] = ipcToken
         }
 
         val nodeOptions = nodeConfig.toNodeOptions()
@@ -215,7 +221,7 @@ object NodeController {
     fun forceStop() {
         stopRequested = true
         activeStoppingExpected?.set(true)
-        stopServerInternal()
+        stopServerInternal(forceImmediate = true)
         if (_status.value.state != NodeState.ERROR) {
             _status.value = NodeStatus(NodeState.STOPPED, "Stopped", currentPort ?: DEFAULT_PORT)
         }
@@ -254,8 +260,12 @@ object NodeController {
             val targetPort = explicitPort ?: stConfig.port
             currentPort = targetPort
 
+            // Generate ephemeral auth token for loopback IPC
+            val genToken = UUID.randomUUID().toString()
+
             // Start Generation IPC server before spawning Node
             val ipc = GenerationIpcServer(
+                authToken = genToken,
                 onGenerationStarted = onIpcStarted,
                 onGenerationEnded = onIpcEnded,
                 onClientDisconnected = onIpcDisconnected,
@@ -264,7 +274,7 @@ object NodeController {
             this.ipcServer = ipc
 
             sendStatus(NodeState.STARTING, "Launching server on port $targetPort…")
-            val spec = buildLaunchSpec(layout, stConfig, nodeConfig, appConfig, paths.filesDir, ipc.port)
+            val spec = buildLaunchSpec(layout, stConfig, nodeConfig, appConfig, paths.filesDir, ipc.port, genToken)
             rotateIfNeeded(spec.stdoutFile)
             rotateIfNeeded(spec.stderrFile)
             currentPort = spec.effectivePort
@@ -302,12 +312,13 @@ object NodeController {
             }
 
             if (readiness != ReadinessStatus.READY) {
-                if (!isRunning() || readiness == ReadinessStatus.PROCESS_EXITED) {
-                    sendStatus(NodeState.ERROR, "Server process terminated unexpectedly")
+                val errorMsg = if (!isRunning() || readiness == ReadinessStatus.PROCESS_EXITED) {
+                    "Server process terminated unexpectedly"
                 } else {
-                    sendStatus(NodeState.ERROR, "Server failed to respond within 30 seconds")
-                    stopServerInternal()
+                    "Server failed to respond within 30 seconds"
                 }
+                stopServerInternal()
+                sendStatus(NodeState.ERROR, errorMsg)
                 onProcessTerminated()
                 return
             }
@@ -318,6 +329,7 @@ object NodeController {
 
             val stoppingToken = AtomicBoolean(false)
             this.activeStoppingExpected = stoppingToken
+            val currentIpc = ipc
 
             val supervisor = Thread({
                 val exit = try {
@@ -325,8 +337,11 @@ object NodeController {
                 } catch (_: Exception) {
                     null
                 }
-                ipcServer?.stop()
-                ipcServer = null
+                currentIpc.stop()
+                if (this.process === startedProcess) {
+                    this.ipcServer = null
+                    this.process = null
+                }
                 onProcessTerminated()
 
                 val wasStopping = stoppingToken.get() || stopRequested || _status.value.state == NodeState.STOPPING
@@ -357,15 +372,19 @@ object NodeController {
         }
     }
 
-    private fun stopServerInternal() {
+    private fun stopServerInternal(forceImmediate: Boolean = false) {
         ipcServer?.stop()
         ipcServer = null
 
         val current = process
         if (current != null) {
             try {
-                current.destroy()
-                if (!current.waitFor(3, TimeUnit.SECONDS)) current.destroyForcibly()
+                if (forceImmediate) {
+                    current.destroyForcibly()
+                } else {
+                    current.destroy()
+                    if (!current.waitFor(3, TimeUnit.SECONDS)) current.destroyForcibly()
+                }
             } catch (_: Exception) {
                 current.destroyForcibly()
             } finally {

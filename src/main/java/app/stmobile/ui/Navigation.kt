@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.stmobile.R
 import app.stmobile.models.NodeState
+import app.stmobile.node.NodeController
 
 enum class ActiveScreen { DASHBOARD, UPDATES, BACKUPS, SETTINGS, WEBVIEW }
 
@@ -83,7 +84,7 @@ class NavigationController(
     val stack: List<ActiveScreen>
         get() = backStack.toList()
 
-    fun canGoBack(nodeState: NodeState): Boolean {
+    fun canGoBack(nodeState: NodeState = NodeState.STOPPED): Boolean {
         return when (currentScreen) {
             ActiveScreen.SETTINGS, ActiveScreen.UPDATES, ActiveScreen.BACKUPS -> true
             ActiveScreen.DASHBOARD -> backStack.contains(ActiveScreen.WEBVIEW) && nodeState == NodeState.RUNNING
@@ -166,10 +167,16 @@ class NavigationController(
 
         fun fromBundle(
             savedState: Bundle?,
-            defaultScreen: ActiveScreen,
+            defaultScreen: ActiveScreen = ActiveScreen.DASHBOARD,
+            isServerRunning: Boolean = (NodeController.status.value.state == NodeState.RUNNING),
         ): NavigationController {
             val savedCurrent = savedState?.getString(KEY_ACTIVE_SCREEN)?.let { name ->
                 runCatching { ActiveScreen.valueOf(name) }.getOrNull()
+            }
+            val effectiveScreen = if (savedCurrent == ActiveScreen.WEBVIEW && !isServerRunning) {
+                defaultScreen
+            } else {
+                savedCurrent ?: defaultScreen
             }
             val savedStack = savedState?.getStringArrayList(KEY_BACK_STACK)?.mapNotNull { name ->
                 runCatching { ActiveScreen.valueOf(name) }.getOrNull()
@@ -177,9 +184,15 @@ class NavigationController(
                 runCatching { ActiveScreen.valueOf(prevName) }.getOrNull()?.let { listOf(it) }
             } ?: emptyList()
 
+            val effectiveStack = if (!isServerRunning) {
+                savedStack.filter { it != ActiveScreen.WEBVIEW }
+            } else {
+                savedStack
+            }
+
             return NavigationController(
-                initialScreen = savedCurrent ?: defaultScreen,
-                initialStack = savedStack,
+                initialScreen = effectiveScreen,
+                initialStack = effectiveStack,
             )
         }
     }

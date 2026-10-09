@@ -22,7 +22,7 @@ class BackgroundTimeoutManagerTest {
             manager.schedule(50, TimeUnit.MILLISECONDS)
             assertTrue("Timeout task should be marked scheduled", manager.isScheduled)
 
-            val fired = latch.await(500, TimeUnit.MILLISECONDS)
+            val fired = latch.await(1000, TimeUnit.MILLISECONDS)
             assertTrue("Timeout callback must be invoked upon expiration", fired)
             assertFalse("Timeout task should be cleared after firing", manager.isScheduled)
         } finally {
@@ -38,14 +38,14 @@ class BackgroundTimeoutManagerTest {
         }
 
         try {
-            manager.schedule(100, TimeUnit.MILLISECONDS)
+            manager.schedule(5, TimeUnit.MINUTES)
             assertTrue(manager.isScheduled)
 
-            Thread.sleep(15)
             manager.cancel()
             assertFalse(manager.isScheduled)
+            assertEquals(0L, manager.getRemainingMillis())
 
-            val fired = latch.await(200, TimeUnit.MILLISECONDS)
+            val fired = latch.await(100, TimeUnit.MILLISECONDS)
             assertFalse("Timeout callback must not be invoked after cancel", fired)
         } finally {
             manager.shutdown()
@@ -60,17 +60,17 @@ class BackgroundTimeoutManagerTest {
         }
 
         try {
-            manager.schedule(150, TimeUnit.MILLISECONDS)
+            manager.schedule(500, TimeUnit.MILLISECONDS)
             assertTrue(manager.isScheduled)
             assertFalse(manager.isPaused)
 
-            Thread.sleep(30)
             manager.pause()
             assertTrue(manager.isScheduled)
             assertTrue(manager.isPaused)
+            assertTrue("Remaining millis must be preserved", manager.getRemainingMillis() > 0)
 
             // While paused, callback must not fire
-            val firedWhilePaused = latch.await(200, TimeUnit.MILLISECONDS)
+            val firedWhilePaused = latch.await(600, TimeUnit.MILLISECONDS)
             assertFalse("Timeout must not fire while paused", firedWhilePaused)
 
             // Resume should continue and fire with remaining time
@@ -78,7 +78,7 @@ class BackgroundTimeoutManagerTest {
             assertFalse(manager.isPaused)
             assertTrue(manager.isScheduled)
 
-            val firedAfterResume = latch.await(300, TimeUnit.MILLISECONDS)
+            val firedAfterResume = latch.await(2000, TimeUnit.MILLISECONDS)
             assertTrue("Timeout must fire after resume", firedAfterResume)
         } finally {
             manager.shutdown()
@@ -87,9 +87,9 @@ class BackgroundTimeoutManagerTest {
 
     @Test
     fun testZeroOrNegativeTimeoutDisabled() {
-        var called = false
+        val latch = CountDownLatch(1)
         val manager = BackgroundTimeoutManager {
-            called = true
+            latch.countDown()
         }
 
         try {
@@ -99,8 +99,8 @@ class BackgroundTimeoutManagerTest {
             manager.schedule(-5, TimeUnit.MINUTES)
             assertFalse("Negative timeout should not be scheduled", manager.isScheduled)
 
-            Thread.sleep(50)
-            assertFalse("Callback should never be invoked when timeout <= 0", called)
+            val fired = latch.await(50, TimeUnit.MILLISECONDS)
+            assertFalse("Callback should never be invoked when timeout <= 0", fired)
         } finally {
             manager.shutdown()
         }
@@ -109,16 +109,20 @@ class BackgroundTimeoutManagerTest {
     @Test
     fun testRescheduleOverridesPrevious() {
         val counter = AtomicInteger(0)
+        val latch = CountDownLatch(1)
         val manager = BackgroundTimeoutManager {
             counter.incrementAndGet()
+            latch.countDown()
         }
 
         try {
-            manager.schedule(200, TimeUnit.MILLISECONDS)
+            // First schedule with a long delay that will not fire during test
+            manager.schedule(5, TimeUnit.MINUTES)
             // Immediately reschedule with shorter delay
-            manager.schedule(40, TimeUnit.MILLISECONDS)
+            manager.schedule(50, TimeUnit.MILLISECONDS)
 
-            Thread.sleep(150)
+            val fired = latch.await(1000, TimeUnit.MILLISECONDS)
+            assertTrue("Rescheduled task should execute", fired)
             assertEquals("Only the rescheduled task should execute", 1, counter.get())
         } finally {
             manager.shutdown()

@@ -5,6 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import app.stmobile.backup.BackupManager
 import app.stmobile.foreground.ForegroundService
 
 /**
@@ -34,6 +35,7 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
         super.onCreate()
         instance = this
         registerActivityLifecycleCallbacks(this)
+        BackupManager(this).recoverOrphanedRollbackIfPresent()
     }
 
     override fun onActivityStarted(activity: Activity) {

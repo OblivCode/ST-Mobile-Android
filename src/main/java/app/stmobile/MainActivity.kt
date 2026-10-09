@@ -70,6 +70,10 @@ class MainActivity : AppCompatActivity() {
         if (uri != null) {
             val password = pendingExportPassword
             pendingExportPassword = null
+            if (NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)) {
+                Utils.toast(this@MainActivity, getString(R.string.toast_export_failed, "Server must be stopped before exporting"))
+                return@registerForActivityResult
+            }
             lifecycleScope.launch(Dispatchers.IO) {
                 BackupManager(this@MainActivity).export(uri, password) {}
                     .onFailure { Utils.toast(this@MainActivity, getString(R.string.toast_export_failed, it.message)) }
@@ -119,7 +123,11 @@ class MainActivity : AppCompatActivity() {
         val appConfig = AppConfig(this)
         val payloadManager = PayloadManager(this)
         installedInfo = payloadManager.getInstalledInfo()
-        navController = NavigationController.fromBundle(savedInstanceState, ActiveScreen.DASHBOARD)
+        navController = NavigationController.fromBundle(
+            savedState = savedInstanceState,
+            defaultScreen = ActiveScreen.DASHBOARD,
+            isServerRunning = NodeController.status.value.state == NodeState.RUNNING,
+        )
 
         Utils.requestNotificationPermission(this)
 
@@ -150,7 +158,13 @@ class MainActivity : AppCompatActivity() {
                     onCancelInstall = { cancelInstall() },
                     onStartServer = { ForegroundService.start(this@MainActivity) },
                     onStopServer = { ForegroundService.stop(this@MainActivity) },
-                    onExportBackup = { showExportDialog.value = true },
+                    onExportBackup = {
+                        if (NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)) {
+                            Utils.toast(this@MainActivity, getString(R.string.toast_export_failed, "Server must be stopped before exporting"))
+                        } else {
+                            showExportDialog.value = true
+                        }
+                    },
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
@@ -166,8 +180,12 @@ class MainActivity : AppCompatActivity() {
                         onDismiss = { showExportDialog.value = false },
                         onConfirm = { password ->
                             showExportDialog.value = false
-                            pendingExportPassword = password
-                            exportLauncher.launch("st-backup.zip")
+                            if (NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)) {
+                                Utils.toast(this@MainActivity, getString(R.string.toast_export_failed, "Server must be stopped before exporting"))
+                            } else {
+                                pendingExportPassword = password
+                                exportLauncher.launch("st-backup.zip")
+                            }
                         },
                     )
                 }
@@ -345,8 +363,12 @@ class MainActivity : AppCompatActivity() {
             val wasActive = NodeController.status.value.state !in setOf(NodeState.STOPPED, NodeState.ERROR)
             if (wasActive) {
                 ForegroundService.stop(this@MainActivity)
-                withTimeoutOrNull(5000) {
+                val stopped = withTimeoutOrNull(5000) {
                     NodeController.status.first { it.state == NodeState.STOPPED }
+                }
+                if (stopped == null) {
+                    Utils.toast(this@MainActivity, getString(R.string.toast_restore_failed, "Server failed to stop cleanly"))
+                    return@launch
                 }
             }
 

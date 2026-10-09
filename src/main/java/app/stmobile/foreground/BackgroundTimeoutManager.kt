@@ -39,6 +39,11 @@ class BackgroundTimeoutManager(
     var savedRemainingMillis: Long = 0L
         private set
 
+    @Volatile
+    private var targetMonotonicMs: Long = 0L
+
+    private fun nowMonotonicMs(): Long = System.nanoTime() / 1_000_000L
+
     /**
      * Schedules the background timeout countdown.
      * If [timeoutDuration] <= 0, cancels any pending timeout and disables the timer.
@@ -50,19 +55,29 @@ class BackgroundTimeoutManager(
 
         val totalMs = unit.toMillis(timeoutDuration.toLong())
         savedRemainingMillis = totalMs
+        val nowMono = nowMonotonicMs()
+        targetMonotonicMs = nowMono + totalMs
         targetEpochMs = System.currentTimeMillis() + totalMs
         isScheduled = true
         isPaused = false
 
         scheduledTask = scheduler.schedule({
-            synchronized(this) {
-                isScheduled = false
-                isPaused = false
-                targetEpochMs = 0L
-                savedRemainingMillis = 0L
-                scheduledTask = null
+            val shouldFire = synchronized(this) {
+                if (!isScheduled || isPaused) {
+                    false
+                } else {
+                    isScheduled = false
+                    isPaused = false
+                    targetEpochMs = 0L
+                    targetMonotonicMs = 0L
+                    savedRemainingMillis = 0L
+                    scheduledTask = null
+                    true
+                }
             }
-            onTimeout()
+            if (shouldFire) {
+                onTimeout()
+            }
         }, totalMs, TimeUnit.MILLISECONDS)
     }
 
@@ -73,12 +88,13 @@ class BackgroundTimeoutManager(
     @Synchronized
     fun pause() {
         if (!isScheduled || isPaused) return
-        val currentMs = System.currentTimeMillis()
-        savedRemainingMillis = maxOf(0L, targetEpochMs - currentMs)
+        val currentMonoMs = nowMonotonicMs()
+        savedRemainingMillis = maxOf(0L, targetMonotonicMs - currentMonoMs)
         scheduledTask?.cancel(false)
         scheduledTask = null
         isPaused = true
         targetEpochMs = 0L
+        targetMonotonicMs = 0L
     }
 
     /**
@@ -90,18 +106,28 @@ class BackgroundTimeoutManager(
         if (!isScheduled || !isPaused || savedRemainingMillis <= 0L) return
 
         val durationMs = savedRemainingMillis
+        val nowMono = nowMonotonicMs()
+        targetMonotonicMs = nowMono + durationMs
         targetEpochMs = System.currentTimeMillis() + durationMs
         isPaused = false
 
         scheduledTask = scheduler.schedule({
-            synchronized(this) {
-                isScheduled = false
-                isPaused = false
-                targetEpochMs = 0L
-                savedRemainingMillis = 0L
-                scheduledTask = null
+            val shouldFire = synchronized(this) {
+                if (!isScheduled || isPaused) {
+                    false
+                } else {
+                    isScheduled = false
+                    isPaused = false
+                    targetEpochMs = 0L
+                    targetMonotonicMs = 0L
+                    savedRemainingMillis = 0L
+                    scheduledTask = null
+                    true
+                }
             }
-            onTimeout()
+            if (shouldFire) {
+                onTimeout()
+            }
         }, durationMs, TimeUnit.MILLISECONDS)
     }
 
@@ -112,7 +138,7 @@ class BackgroundTimeoutManager(
         return when {
             !isScheduled -> 0L
             isPaused -> savedRemainingMillis
-            else -> maxOf(0L, targetEpochMs - System.currentTimeMillis())
+            else -> maxOf(0L, targetMonotonicMs - nowMonotonicMs())
         }
     }
 
@@ -126,6 +152,7 @@ class BackgroundTimeoutManager(
         isScheduled = false
         isPaused = false
         targetEpochMs = 0L
+        targetMonotonicMs = 0L
         savedRemainingMillis = 0L
     }
 

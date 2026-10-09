@@ -11,6 +11,7 @@ class WakeLockHelperTest {
         var acquireCount = 0
         var releaseCount = 0
         var lastTimeoutMs = 0L
+        var shouldThrowOnRelease = false
         override var isHeld: Boolean = false
 
         override fun acquire(timeoutMs: Long) {
@@ -20,6 +21,9 @@ class WakeLockHelperTest {
         }
 
         override fun release() {
+            if (shouldThrowOnRelease) {
+                throw RuntimeException("WakeLock under-locked")
+            }
             if (isHeld) {
                 releaseCount++
                 isHeld = false
@@ -72,5 +76,33 @@ class WakeLockHelperTest {
 
         assertFalse(helper.isHeld)
         assertEquals(1, fake.releaseCount)
+    }
+
+    @Test
+    fun testReleaseWhenWakeLockExpiredIsNoOp() {
+        val fake = FakeWakeLockAcquirer()
+        val helper = WakeLockHelper(fake)
+
+        helper.acquire()
+        assertTrue(helper.isHeld)
+
+        // Simulate OS-level expiration of the wakelock (isHeld turns false without explicit release)
+        fake.isHeld = false
+        assertFalse(helper.isHeld)
+
+        // Calling release after expiration must not call acquirer.release(), avoiding under-lock crash
+        helper.release()
+        assertEquals("Should not call release when wakelock has already expired", 0, fake.releaseCount)
+    }
+
+    @Test
+    fun testForceReleaseSuppressesExceptionWhenReleaseThrows() {
+        val fake = FakeWakeLockAcquirer()
+        fake.shouldThrowOnRelease = true
+        val helper = WakeLockHelper(fake)
+
+        helper.acquire()
+        // forceRelease should safely absorb the exception without propagating it
+        helper.forceRelease()
     }
 }

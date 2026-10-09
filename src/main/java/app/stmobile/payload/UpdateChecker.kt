@@ -104,6 +104,9 @@ class UpdateChecker(
             if (bundleUrl == null) {
                 return@withContext UpdateCheckResult.Error("No SillyTavern payload bundle found in release ($tagName)")
             }
+            if (!bundleUrl.startsWith("https://")) {
+                return@withContext UpdateCheckResult.Error("Insecure payload bundle URL: $bundleUrl")
+            }
 
             var remotePayloadVersion = tagName
             var remoteStVersion = tagName.removePrefix("v").removePrefix("V").removePrefix("st-")
@@ -111,14 +114,13 @@ class UpdateChecker(
             var bundleSha256: String? = null
 
             if (!manifestUrl.isNullOrBlank()) {
-                runCatching {
-                    val manifestText = fetchString(manifestUrl)
-                    val manifestJson = JSONObject(manifestText)
-                    remotePayloadVersion = manifestJson.optString("payload_version").ifBlank { remotePayloadVersion }
-                    remoteStVersion = manifestJson.optString("st_version").ifBlank { remoteStVersion }
-                    remoteCommit = manifestJson.optString("st_commit").ifBlank { null }
-                    bundleSha256 = manifestJson.optString("bundle_sha256").ifBlank { null }
-                }
+                val manifestText = fetchString(manifestUrl)
+                val manifestJson = JSONObject(manifestText)
+                remotePayloadVersion = manifestJson.optString("payload_version").ifBlank { remotePayloadVersion }
+                remoteStVersion = manifestJson.optString("st_version").ifBlank { remoteStVersion }
+                remoteCommit = manifestJson.optString("st_commit").ifBlank { null }
+                val sha = manifestJson.optString("bundle_sha256").ifBlank { null }
+                bundleSha256 = sha
             }
 
             val updateInfo = UpdateInfo(
@@ -179,6 +181,9 @@ class UpdateChecker(
         val maxRedirects = 5
 
         while (redirectsFollowed <= maxRedirects) {
+            if (!currentUrl.startsWith("https://")) {
+                throw SecurityException("Insecure URL rejected; HTTPS is required: $currentUrl")
+            }
             val conn = urlOpener(currentUrl)
             conn.instanceFollowRedirects = false
             conn.connect()
@@ -191,6 +196,10 @@ class UpdateChecker(
                     location
                 } else {
                     URL(URL(currentUrl), location).toString()
+                }
+                if (!currentUrl.startsWith("https://")) {
+                    conn.disconnect()
+                    throw SecurityException("Insecure redirect to non-HTTPS URL blocked: $currentUrl")
                 }
                 conn.disconnect()
                 redirectsFollowed++

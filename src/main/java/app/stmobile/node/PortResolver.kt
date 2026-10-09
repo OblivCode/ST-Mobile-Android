@@ -35,14 +35,12 @@ object PortResolver {
 
     /**
      * Probes loopback port availability on 127.0.0.1.
-     * Uses reuseAddress = true to avoid false-positive conflicts from TIME_WAIT sockets.
+     * Does not use SO_REUSEADDR so ports occupied on 0.0.0.0 are not falsely reported as available.
      */
     fun isPortAvailable(port: Int): Boolean {
         if (port !in 1..65535) return false
         return try {
             ServerSocket().use { socket ->
-                // SO_REUSEADDR allows immediate re-binding if the port is lingering in TCP TIME_WAIT from a previous run
-                socket.reuseAddress = true
                 socket.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 1)
                 true
             }

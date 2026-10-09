@@ -1,5 +1,6 @@
 package app.stmobile.ui
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
@@ -8,6 +9,7 @@ import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -55,8 +57,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +70,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.LocaleManagerCompat
@@ -74,7 +79,9 @@ import app.stmobile.models.AppConfig
 import app.stmobile.models.StLocales
 import app.stmobile.models.StUserSettings
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import org.json.JSONObject
 
 @Composable
 fun StWebView(
@@ -120,8 +127,8 @@ fun StWebView(
     DisposableEffect(Unit) {
         onDispose {
             ForegroundService.onGenerationEnded("webview")
-            webViewInstance?.destroy()
-            webViewInstance = null
+            pendingFileCallback?.onReceiveValue(null)
+            pendingFileCallback = null
         }
     }
 
@@ -145,6 +152,43 @@ fun StWebView(
                     addJavascriptInterface(GenerationJavascriptBridge(), "StMobileBridge")
 
                     webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                            val uri = request?.url ?: return false
+                            val host = uri.host
+                            if (host == "127.0.0.1" || host == "localhost") {
+                                return false
+                            }
+                            return try {
+                                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                view?.context?.startActivity(intent)
+                                true
+                            } catch (e: Exception) {
+                                Log.w("st-web", "Failed to launch external browser for $uri", e)
+                                true
+                            }
+                        }
+
+                        @Deprecated("Deprecated in Java")
+                        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                            val uri = url?.let { Uri.parse(it) } ?: return false
+                            val host = uri.host
+                            if (host == "127.0.0.1" || host == "localhost") {
+                                return false
+                            }
+                            return try {
+                                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                view?.context?.startActivity(intent)
+                                true
+                            } catch (e: Exception) {
+                                Log.w("st-web", "Failed to launch external browser for $uri", e)
+                                true
+                            }
+                        }
+
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
                             ForegroundService.onGenerationEnded("webview")
@@ -154,13 +198,18 @@ fun StWebView(
                             super.onPageFinished(view, finishedUrl)
                             if (!didInitialReload) {
                                 didInitialReload = true
-                                view?.postDelayed({ view.loadUrl(finishedUrl ?: "about:blank") }, 250)
+                                view?.postDelayed({
+                                    if (view != null && view.isAttachedToWindow && webViewInstance == view) {
+                                        view.loadUrl(finishedUrl ?: "about:blank")
+                                    }
+                                }, 250)
                             }
                             // Synchronize SillyTavern UI language with the effective locale
+                            val quotedLanguage = JSONObject.quote(effectiveStLanguage)
                             val syncJs = """
                                 (function() {
                                     try {
-                                        var desired = '$effectiveStLanguage';
+                                        var desired = $quotedLanguage;
                                         var current = localStorage.getItem('language');
                                         if (current !== desired) {
                                             localStorage.setItem('language', desired);
@@ -223,7 +272,7 @@ fun StWebView(
 
                     addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ ->
                         val queued = urlHolder.pendingUrl ?: return@addOnLayoutChangeListener
-                        if (r - l > 0 && b - t > 0) {
+                        if (isAttachedToWindow && r - l > 0 && b - t > 0) {
                             urlHolder.pendingUrl = null
                             loadUrl(queued)
                         }
@@ -237,25 +286,31 @@ fun StWebView(
                 wv.visibility = if (visible) View.VISIBLE else View.INVISIBLE
                 if (url != null && url != urlHolder.lastLoadedBaseUrl) {
                     urlHolder.lastLoadedBaseUrl = url
-                    if (wv.width > 0 && wv.height > 0) {
+                    if (wv.isAttachedToWindow && wv.width > 0 && wv.height > 0) {
                         wv.loadUrl(url)
                     } else {
                         urlHolder.pendingUrl = url
                     }
                 }
             },
+            onRelease = { wv ->
+                pendingFileCallback?.onReceiveValue(null)
+                pendingFileCallback = null
+                (wv.parent as? ViewGroup)?.removeView(wv)
+                wv.stopLoading()
+                wv.removeJavascriptInterface("StMobileBridge")
+                wv.clearHistory()
+                wv.destroy()
+                webViewInstance = null
+            },
             modifier = Modifier.fillMaxSize(),
         )
-
-        var handleOffsetY by remember { mutableStateOf<Dp?>(null) }
 
         if (visible) {
             EdgeDockedMenuHandle(
                 webViewInstance = webViewInstance,
                 onNavigateToDashboard = onNavigateToDashboard,
                 onNavigateToSettings = onNavigateToSettings,
-                initialOffsetY = handleOffsetY,
-                onOffsetYChange = { handleOffsetY = it },
             )
         }
     }
@@ -266,9 +321,9 @@ fun EdgeDockedMenuHandle(
     webViewInstance: WebView?,
     onNavigateToDashboard: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    initialOffsetY: Dp?,
-    onOffsetYChange: (Dp) -> Unit,
     modifier: Modifier = Modifier,
+    initialOffsetY: Dp? = null,
+    onOffsetYChange: ((Dp) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
@@ -302,9 +357,21 @@ fun EdgeDockedMenuHandle(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val handleHeight = 56.dp
-        val minBound = 16.dp
-        val maxBound = (maxHeight - handleHeight - 16.dp).coerceAtLeast(minBound)
-        val currentY = (initialOffsetY ?: ((maxHeight - handleHeight) / 2)).coerceIn(minBound, maxBound)
+        val minBoundDp = 16.dp
+        val maxBoundDp = (maxHeight - handleHeight - 16.dp).coerceAtLeast(minBoundDp)
+
+        val minBoundPx = with(density) { minBoundDp.toPx() }
+        val maxBoundPx = with(density) { maxBoundDp.toPx() }
+        val defaultYPx = with(density) { (initialOffsetY ?: ((maxHeight - handleHeight) / 2)).toPx() }
+
+        var offsetYPx by rememberSaveable {
+            mutableFloatStateOf(defaultYPx.coerceIn(minBoundPx, maxBoundPx))
+        }
+
+        val clampedYPx = offsetYPx.coerceIn(minBoundPx, maxBoundPx)
+        if (clampedYPx != offsetYPx) {
+            offsetYPx = clampedYPx
+        }
 
         if (isExpanded) {
             BackHandler {
@@ -330,7 +397,7 @@ fun EdgeDockedMenuHandle(
             exit = fadeOut(tween(150)),
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(y = currentY),
+                .offset { IntOffset(0, offsetYPx.roundToInt()) },
         ) {
             Box(
                 modifier = Modifier
@@ -348,11 +415,13 @@ fun EdgeDockedMenuHandle(
                     .draggable(
                         orientation = Orientation.Vertical,
                         state = rememberDraggableState { deltaPx ->
-                            val deltaDp = with(density) { deltaPx.toDp() }
-                            onOffsetYChange((currentY + deltaDp).coerceIn(minBound, maxBound))
+                            offsetYPx = (offsetYPx + deltaPx).coerceIn(minBoundPx, maxBoundPx)
                         },
                         onDragStarted = { isDragging = true },
-                        onDragStopped = { isDragging = false },
+                        onDragStopped = {
+                            isDragging = false
+                            onOffsetYChange?.invoke(with(density) { offsetYPx.toDp() })
+                        },
                     )
                     .clickable(
                         interactionSource = interactionSource,
@@ -382,7 +451,7 @@ fun EdgeDockedMenuHandle(
             exit = fadeOut(tween(150)) + slideOutHorizontally(tween(200)) { it },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(y = currentY),
+                .offset { IntOffset(0, offsetYPx.roundToInt()) },
         ) {
             Surface(
                 modifier = Modifier.systemGestureExclusion(),

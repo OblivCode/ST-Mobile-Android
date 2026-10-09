@@ -21,6 +21,9 @@ class FakeHttpURLConnection(
     var isDisconnected = false
     val requestedProperties = mutableMapOf<String, String>()
 
+    private var cachedInputStream: InputStream? = null
+    private var cachedErrorStream: InputStream? = null
+
     override fun connect() {}
 
     override fun disconnect() {
@@ -36,9 +39,20 @@ class FakeHttpURLConnection(
     override fun getHeaderField(name: String): String? = responseHeaders.entries
         .firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
 
-    override fun getContentLength(): Int = responseData.size
+    override fun getHeaderFields(): Map<String, List<String>> =
+        responseHeaders.mapValues { listOf(it.value) }
 
-    override fun getContentLengthLong(): Long = responseData.size.toLong()
+    override fun getContentLength(): Int {
+        val headerLength = getHeaderField("Content-Length")?.toIntOrNull()
+        if (headerLength != null) return headerLength
+        return if (responseData.isNotEmpty()) responseData.size else -1
+    }
+
+    override fun getContentLengthLong(): Long {
+        val headerLength = getHeaderField("Content-Length")?.toLongOrNull()
+        if (headerLength != null) return headerLength
+        return if (responseData.isNotEmpty()) responseData.size.toLong() else -1L
+    }
 
     override fun setRequestProperty(key: String, value: String) {
         requestedProperties[key] = value
@@ -46,13 +60,20 @@ class FakeHttpURLConnection(
     }
 
     override fun getInputStream(): InputStream {
+        if (isDisconnected) {
+            throw IOException("Connection is closed")
+        }
         if (responseCode >= 400) {
             throw IOException("HTTP $responseCode $responseMessage")
         }
-        return ByteArrayInputStream(responseData)
+        return cachedInputStream ?: ByteArrayInputStream(responseData).also { cachedInputStream = it }
     }
 
     override fun getErrorStream(): InputStream? {
-        return if (responseCode >= 400) ByteArrayInputStream(responseData) else null
+        if (isDisconnected) {
+            return null
+        }
+        if (responseCode < 400) return null
+        return cachedErrorStream ?: ByteArrayInputStream(responseData).also { cachedErrorStream = it }
     }
 }

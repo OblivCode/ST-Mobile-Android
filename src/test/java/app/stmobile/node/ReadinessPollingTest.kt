@@ -1,5 +1,6 @@
 package app.stmobile.node
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -7,11 +8,21 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class ReadinessPollingTest {
+
+    private val threadPool = Executors.newCachedThreadPool { r ->
+        Thread(r, "readiness-test-pool").apply { isDaemon = true }
+    }
+
+    @After
+    fun tearDown() {
+        threadPool.shutdownNow()
+    }
 
     private fun createFakeHttpServer(statusCode: Int = 200): ServerSocket {
         val server = ServerSocket().apply {
@@ -22,7 +33,7 @@ class ReadinessPollingTest {
             while (!server.isClosed) {
                 try {
                     val client = server.accept()
-                    Thread {
+                    threadPool.submit {
                         try {
                             client.getInputStream().bufferedReader().readLine()
                             val response = "HTTP/1.1 $statusCode OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK"
@@ -32,14 +43,15 @@ class ReadinessPollingTest {
                         } finally {
                             try { client.close() } catch (_: Exception) {}
                         }
-                    }.apply { isDaemon = true; start() }
+                    }
                 } catch (_: Exception) {
                     break
                 }
             }
+        }.apply {
+            isDaemon = true
+            start()
         }
-        serverThread.isDaemon = true
-        serverThread.start()
         return server
     }
 
@@ -79,41 +91,58 @@ class ReadinessPollingTest {
 
     @Test
     fun testServerDelayedStartup() {
-        val ephemeralPort = PortResolver.allocateEphemeralPort()
-        val serverStarted = AtomicBoolean(false)
+        val serverReady = AtomicBoolean(false)
         val startLatch = CountDownLatch(1)
-        var server: ServerSocket? = null
+        val probeCount = AtomicInteger(0)
 
-        val startThread = Thread {
-            // Await deterministic signal before binding socket
-            startLatch.await(5, TimeUnit.SECONDS)
-            server = ServerSocket().apply {
-                reuseAddress = true
-                bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), ephemeralPort), 50)
-            }
-            serverStarted.set(true)
-            val listenerThread = Thread {
-                while (server?.isClosed == false) {
-                    try {
-                        val client = server?.accept() ?: break
-                        val response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                        client.getOutputStream().write(response.toByteArray())
-                        client.getOutputStream().flush()
-                        client.close()
-                    } catch (_: Exception) {
-                        break
+        // Bind directly to port 0 to prevent TOCTOU port race with allocateEphemeralPort()
+        val server = ServerSocket().apply {
+            reuseAddress = true
+            bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 50)
+        }
+        val port = server.localPort
+
+        val listenerThread = Thread {
+            while (!server.isClosed) {
+                try {
+                    val client = server.accept()
+                    threadPool.submit {
+                        try {
+                            if (!serverReady.get()) {
+                                // Simulate endpoint not ready yet by closing client connection immediately
+                                client.close()
+                            } else {
+                                client.getInputStream().bufferedReader().readLine()
+                                val response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                                client.getOutputStream().write(response.toByteArray())
+                                client.getOutputStream().flush()
+                                client.close()
+                            }
+                        } catch (_: Exception) {
+                            try { client.close() } catch (_: Exception) {}
+                        }
                     }
+                } catch (_: Exception) {
+                    break
                 }
             }
-            listenerThread.isDaemon = true
-            listenerThread.start()
+        }.apply {
+            isDaemon = true
+            start()
         }
-        startThread.start()
 
-        val probeCount = AtomicInteger(0)
+        val delayedStarter = Thread {
+            if (startLatch.await(5, TimeUnit.SECONDS)) {
+                serverReady.set(true)
+            }
+        }.apply {
+            isDaemon = true
+            start()
+        }
+
         try {
             val status = ServerReadinessPoller.poll(
-                port = ephemeralPort,
+                port = port,
                 maxWaitMs = 3000,
                 intervalMs = 40,
                 probeTimeoutMs = 150,
@@ -125,11 +154,10 @@ class ReadinessPollingTest {
                 },
             )
             assertEquals("Delayed server startup should be polled successfully", ReadinessStatus.READY, status)
-            assertTrue(serverStarted.get())
+            assertTrue(serverReady.get())
         } finally {
             startLatch.countDown()
-            server?.close()
-            startThread.join(1000)
+            server.close()
         }
     }
 

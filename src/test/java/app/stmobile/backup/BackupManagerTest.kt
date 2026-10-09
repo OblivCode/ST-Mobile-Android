@@ -882,4 +882,70 @@ class BackupManagerTest {
         assertTrue("External directory must remain untouched", externalDir.exists())
         assertTrue("External file must remain untouched", externalFile.exists())
     }
+
+    @Test
+    fun testRecoverOrphanedRollbackIfPresent() {
+        val (manager, paths) = createTestManager()
+        val (dataDir, configFile, _) = paths
+
+        val parentDir = dataDir.parentFile!!
+
+        // Simulate orphaned state from an interrupted restore:
+        // 1. dataDir does not exist or is empty
+        BackupManager.deleteRecursivelyNoFollow(dataDir)
+        assertFalse(dataDir.exists())
+
+        // 2. An orphaned rollback directory exists containing user characters
+        val orphanedRollback = File(parentDir, ".data_rollback_${System.currentTimeMillis()}").apply { mkdirs() }
+        val userCharDir = File(orphanedRollback, "default-user/characters").apply { mkdirs() }
+        val charFile = File(userCharDir, "hero.json").apply { writeText("{\"name\":\"Hero\"}") }
+
+        // 3. An orphaned config rollback exists
+        if (configFile.exists()) configFile.delete()
+        val configRollback = File(parentDir, ".config_rollback_${System.currentTimeMillis()}.yaml").apply {
+            writeText("recoveredPort: 7777\n")
+        }
+
+        // 4. An orphaned staging directory exists
+        val orphanedStaging = File(parentDir, ".restore_staging_${System.currentTimeMillis()}").apply { mkdirs() }
+        File(orphanedStaging, "junk.tmp").writeText("junk")
+
+        // Run recovery
+        val recovered = manager.recoverOrphanedRollbackIfPresent()
+        assertTrue("Recovery should return true when orphaned rollback is present and data is empty", recovered)
+
+        // dataDir must now exist and contain the recovered user data
+        assertTrue("dataDir should be restored", dataDir.exists())
+        val restoredCharFile = File(dataDir, "default-user/characters/hero.json")
+        assertTrue("Restored character file must exist", restoredCharFile.exists())
+        assertEquals("{\"name\":\"Hero\"}", restoredCharFile.readText())
+
+        // configFile must be restored
+        assertTrue("configFile should be restored", configFile.exists())
+        assertEquals("recoveredPort: 7777\n", configFile.readText())
+
+        // Orphaned rollback, config rollback, and staging directories must be purged
+        assertFalse("Orphaned rollback directory must be cleaned up", orphanedRollback.exists())
+        assertFalse("Orphaned config rollback must be cleaned up", configRollback.exists())
+        assertFalse("Orphaned staging directory must be purged", orphanedStaging.exists())
+    }
+
+    @Test
+    fun testRecoverOrphanedRollbackWhenDataAlreadyPopulatedDoesNotOverwrite() {
+        val (manager, paths) = createTestManager()
+        val (dataDir, _, _) = paths
+
+        val parentDir = dataDir.parentFile!!
+        dataDir.mkdirs()
+        val currentFile = File(dataDir, "current.txt").apply { writeText("current") }
+
+        val orphanedRollback = File(parentDir, ".data_rollback_${System.currentTimeMillis()}").apply { mkdirs() }
+        File(orphanedRollback, "stale.txt").writeText("stale")
+
+        val recovered = manager.recoverOrphanedRollbackIfPresent()
+        assertFalse("Recovery should return false when dataDir is not empty", recovered)
+        assertTrue("Existing file must remain", currentFile.exists())
+        assertFalse("Stale file should not be promoted", File(dataDir, "stale.txt").exists())
+        assertFalse("Stale rollback folder should be cleaned up", orphanedRollback.exists())
+    }
 }

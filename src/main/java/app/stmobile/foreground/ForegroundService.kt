@@ -33,7 +33,6 @@ class ForegroundService : Service() {
             wakeLockHelper.acquire()
             timeoutManager.pause()
             NodeController.updateGeneratingState(true)
-            updateNotification()
         },
         onAllEnded = {
             wakeLockHelper.release()
@@ -42,7 +41,6 @@ class ForegroundService : Service() {
                 timeoutManager.resume()
             }
             NodeController.updateGeneratingState(false)
-            updateNotification()
         },
     )
 
@@ -53,9 +51,9 @@ class ForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         wakeLockHelper = WakeLockHelper(this)
         ServiceNotificationHelper.createChannel(this)
+        instance = this
 
         serviceScope.launch {
             NodeController.status.collect { status ->
@@ -77,6 +75,7 @@ class ForegroundService : Service() {
         super.onDestroy()
         serviceScope.cancel()
         cleanupSession()
+        timeoutManager.shutdown()
         if (hasActiveSession) {
             hasActiveSession = false
             NodeController.forceStop()
@@ -157,9 +156,9 @@ class ForegroundService : Service() {
     }
 
     fun onProcessTerminated() = synchronized(lock) {
-        generationTracker.reset()
-        wakeLockHelper.forceRelease()
         timeoutManager.cancel()
+        generationTracker.reset(notify = false)
+        wakeLockHelper.forceRelease()
         NodeController.updateGeneratingState(false)
     }
 
@@ -172,6 +171,10 @@ class ForegroundService : Service() {
         if (NodeController.isRunning() || NodeController.status.value.isActive) {
             val appConfig = AppConfig(context)
             synchronized(lock) {
+                val sources = generationTracker.activeSources
+                if (sources == setOf("webview") && !sources.contains("ipc")) {
+                    generationTracker.clearSource("webview")
+                }
                 if (!generationTracker.isGenerating) {
                     timeoutManager.schedule(appConfig.backgroundTimeoutMinutes)
                 } else {
@@ -185,13 +188,15 @@ class ForegroundService : Service() {
     }
 
     private fun handleBackgroundTimeout() {
-        val isForeground = StApplication.instance?.isAppInForeground ?: false
-        val isGenerating = generationTracker.isGenerating
+        synchronized(lock) {
+            val isForeground = StApplication.instance?.isAppInForeground ?: false
+            val isGenerating = generationTracker.isGenerating
 
-        if (!isForeground && !isGenerating && (NodeController.isRunning() || NodeController.status.value.isActive)) {
-            AppConfig(applicationContext).wasRunningBeforeKill = false
-            cleanupSession()
-            NodeController.executeStop(applicationContext)
+            if (!isForeground && !isGenerating && (NodeController.isRunning() || NodeController.status.value.isActive)) {
+                AppConfig(applicationContext).wasRunningBeforeKill = false
+                cleanupSession()
+                NodeController.executeStop(applicationContext)
+            }
         }
     }
 
@@ -215,9 +220,9 @@ class ForegroundService : Service() {
 
     private fun cleanupSession() {
         synchronized(lock) {
-            generationTracker.reset()
-            wakeLockHelper.forceRelease()
             timeoutManager.cancel()
+            generationTracker.reset(notify = false)
+            wakeLockHelper.forceRelease()
         }
     }
 

@@ -105,6 +105,10 @@ class RemotePayloadSource(
                 throw CancellationException("Download cancelled during connection setup")
             }
 
+            if (!currentUrl.startsWith("https://")) {
+                throw SecurityException("Insecure URL rejected; HTTPS is required: $currentUrl")
+            }
+
             val conn = urlOpener(currentUrl)
             connection = conn
             conn.connect()
@@ -117,6 +121,10 @@ class RemotePayloadSource(
                     location
                 } else {
                     URL(URL(currentUrl), location).toString()
+                }
+                if (!currentUrl.startsWith("https://")) {
+                    conn.disconnect()
+                    throw SecurityException("Insecure redirect to non-HTTPS URL blocked: $currentUrl")
                 }
                 conn.disconnect()
                 redirectsFollowed++

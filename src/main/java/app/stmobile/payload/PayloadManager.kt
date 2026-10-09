@@ -336,6 +336,11 @@ class PayloadManager(
                 }
             }
 
+            if (source is RemotePayloadSource && source.expectedSha256.isNullOrBlank()) {
+                rawStream.close()
+                throw SecurityException("Remote payload source requires a valid non-empty SHA-256 checksum")
+            }
+
             rawStream.use { raw ->
                 val digestIn = DigestInputStream(raw, digest)
                 val buffered = BufferedInputStream(digestIn, 1 shl 16)
@@ -475,7 +480,7 @@ class PayloadManager(
             for (child in children) {
                 val dest = File(stagingDir, child.name)
                 if (!child.renameTo(dest)) {
-                    child.copyRecursively(dest, overwrite = true)
+                    copyRecursivelyNoFollow(child, dest)
                     safeDeleteRecursively(child)
                 }
             }
@@ -510,7 +515,7 @@ class PayloadManager(
             if (stagingDir.renameTo(stDir)) {
                 promoted = true
             } else {
-                stagingDir.copyRecursively(stDir, overwrite = true)
+                copyRecursivelyNoFollow(stagingDir, stDir)
                 safeDeleteRecursively(stagingDir)
                 promoted = true
             }
@@ -529,9 +534,13 @@ class PayloadManager(
     }
 
     private fun safeResolve(root: File, name: String): File {
-        val target = File(root, name)
-        val rootPath = root.canonicalPath + File.separator
-        if (!target.canonicalPath.startsWith(rootPath) && target.canonicalPath != root.canonicalPath) {
+        val normalized = name.replace('\\', '/').trim()
+        if (normalized.isEmpty() || normalized == "." || normalized.split('/').any { it == ".." }) {
+            throw IllegalStateException("Unsafe archive entry: $name")
+        }
+        val target = File(root, normalized).canonicalFile
+        val rootPath = root.canonicalPath.trimEnd(File.separatorChar) + File.separator
+        if (!target.path.startsWith(rootPath) || target.path == root.canonicalPath) {
             throw IllegalStateException("Unsafe archive entry: $name")
         }
         return target

@@ -27,7 +27,7 @@ class AppPaths(
     val defaultContentSettingsFile: File get() = File(stDir, "default/content/settings.json")
 
     val logsDir: File get() = File(filesDir, "logs")
-    val tmpDir: File get() = File(filesDir, "tmp")
+    val tmpDir: File get() = File(cacheDir, "tmp")
     val nodeTmpDir: File get() = File(cacheDir, "node_tmp")
     val scriptsDir: File get() = File(filesDir, "scripts")
     val generationHookFile: File get() = File(scriptsDir, "generation_hook.cjs")

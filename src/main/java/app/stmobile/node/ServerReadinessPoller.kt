@@ -2,6 +2,7 @@ package app.stmobile.node
 
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.TimeUnit
 
 enum class ReadinessStatus {
     READY,
@@ -24,9 +25,10 @@ object ServerReadinessPoller {
         isStopRequested: () -> Boolean = { false },
     ): ReadinessStatus {
         val probeUrl = URL("http://127.0.0.1:$port")
-        val startTime = System.currentTimeMillis()
+        val startNano = System.nanoTime()
+        val maxWaitNanos = TimeUnit.MILLISECONDS.toNanos(maxWaitMs)
 
-        while (System.currentTimeMillis() - startTime < maxWaitMs) {
+        while (System.nanoTime() - startNano < maxWaitNanos) {
             if (isStopRequested()) {
                 return ReadinessStatus.CANCELLED
             }
@@ -34,17 +36,30 @@ object ServerReadinessPoller {
                 return ReadinessStatus.PROCESS_EXITED
             }
 
+            var conn: HttpURLConnection? = null
             try {
-                val conn = probeUrl.openConnection() as HttpURLConnection
-                conn.connectTimeout = probeTimeoutMs
-                conn.readTimeout = probeTimeoutMs
+                conn = (probeUrl.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "HEAD"
+                    connectTimeout = probeTimeoutMs
+                    readTimeout = probeTimeoutMs
+                    instanceFollowRedirects = false
+                }
                 val code = conn.responseCode
-                conn.disconnect()
                 if (code in 200..499) {
                     return ReadinessStatus.READY
                 }
             } catch (_: Exception) {
                 // Endpoint not accepting connections yet
+            } finally {
+                try {
+                    conn?.inputStream?.close()
+                } catch (_: Exception) {}
+                try {
+                    conn?.errorStream?.close()
+                } catch (_: Exception) {}
+                try {
+                    conn?.disconnect()
+                } catch (_: Exception) {}
             }
 
             try {

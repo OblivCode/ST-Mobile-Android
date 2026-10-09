@@ -5,11 +5,26 @@ const http = require('node:http');
 const https = require('node:https');
 const net = require('node:net');
 
-const GEN_ROUTE_REGEX = /^\/api\/(backends\/[^/]+|azure|novelai|horde)\/generate(-text)?\/?(\?.*)?$/;
+const GEN_ROUTE_REGEX = /^\/api\/(backends\/[^/]+|azure|novelai|horde)\/generate(-text|-voice|-image|-video)?\/?(\?.*)?$/;
 
 let activeRequests = 0;
 let ipcSocket = null;
 const pendingQueue = [];
+
+function flushQueue() {
+    while (pendingQueue.length > 0 && ipcSocket && !ipcSocket.destroyed && ipcSocket.writable) {
+        const item = pendingQueue[0];
+        try {
+            const ok = ipcSocket.write(item);
+            pendingQueue.shift();
+            if (!ok) {
+                break;
+            }
+        } catch (_) {
+            break;
+        }
+    }
+}
 
 function connectIpc() {
     const port = parseInt(process.env.ST_GEN_PORT, 10);
@@ -18,15 +33,21 @@ function connectIpc() {
     try {
         const sock = net.connect({ host: '127.0.0.1', port }, () => {
             ipcSocket = sock;
-            while (pendingQueue.length > 0 && ipcSocket && !ipcSocket.destroyed && ipcSocket.writable) {
+            const token = process.env.ST_GEN_TOKEN;
+            if (token) {
                 try {
-                    ipcSocket.write(pendingQueue.shift());
+                    ipcSocket.write(`AUTH ${token}\n`);
                 } catch (_) {
-                    break;
+                    return;
                 }
             }
+            flushQueue();
         });
         sock.unref();
+
+        sock.on('drain', () => {
+            flushQueue();
+        });
 
         sock.on('error', () => {
             // Suppress socket errors to prevent unhandled exceptions crashing Node
