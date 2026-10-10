@@ -53,6 +53,7 @@ fun AppSettingsTab(
     appConfig: AppConfig,
     onPromptBattery: () -> Unit,
     modifier: Modifier = Modifier,
+    onCopyDiagnostics: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var autoStart by remember { mutableStateOf(appConfig.autoStartOnAppOpen) }
@@ -230,6 +231,13 @@ fun AppSettingsTab(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.settings_battery_exemption))
+        }
+
+        OutlinedButton(
+            onClick = onCopyDiagnostics,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_copy_diagnostics))
         }
     }
 

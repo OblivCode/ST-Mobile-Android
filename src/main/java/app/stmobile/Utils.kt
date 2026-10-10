@@ -13,6 +13,8 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.FileProvider
 
+import app.stmobile.logging.DiagnosticsSnapshot
+
 object Utils {
 
     fun toast(context: Context, message: String) {
@@ -57,28 +59,27 @@ object Utils {
 
     fun shareLogs(context: Context) {
         Thread {
-            val logs = AppPaths(context).logsDir.listFiles()?.filter { it.isFile }.orEmpty()
-            val latest = logs.maxByOrNull { it.lastModified() }
-            if (latest == null) {
-                toast(context, "No logs yet")
-                return@Thread
-            }
             try {
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", latest)
+                val bundle = DiagnosticsSnapshot.createLogBundle(context)
+                if (!bundle.exists() || bundle.length() == 0L) {
+                    toast(context, context.getString(R.string.toast_no_logs))
+                    return@Thread
+                }
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", bundle)
                 val send = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
+                    type = "application/zip"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     clipData = ClipData.newRawUri("logs", uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                val chooser = Intent.createChooser(send, "Share logs").apply {
+                val chooser = Intent.createChooser(send, context.getString(R.string.btn_export_logs)).apply {
                     if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 Handler(Looper.getMainLooper()).post {
                     context.startActivity(chooser)
                 }
             } catch (e: Exception) {
-                toast(context, "Failed to share logs: ${e.message}")
+                toast(context, context.getString(R.string.toast_export_logs_failed, e.message ?: "Unknown error"))
             }
         }.start()
     }

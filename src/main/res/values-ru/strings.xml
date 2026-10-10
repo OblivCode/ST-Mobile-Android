@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">пользовательский архив</string>
     <string name="toast_import_archive_failed">Не удалось импортировать архив: %1$s</string>
     <string name="toast_import_archive_success">Архив SillyTavern успешно установлен</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">Копировать диагностику и логи</string>
+    <string name="toast_diagnostics_copied">Диагностика скопирована в буфер обмена</string>
+    <string name="toast_export_logs_failed">Не удалось экспортировать логи: %1$s</string>
+    <string name="toast_no_logs">Логи отсутствуют</string>
 </resources>

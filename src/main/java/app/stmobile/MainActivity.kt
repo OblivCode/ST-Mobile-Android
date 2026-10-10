@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeState
 import app.stmobile.backup.BackupManager
+import app.stmobile.logging.DiagnosticsSnapshot
 import app.stmobile.payload.LocalArchivePayloadSource
 import app.stmobile.payload.PayloadManager
 import app.stmobile.payload.PayloadSource
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
                     },
                     onImportBackup = { importLauncher.launch(arrayOf("*/*")) },
                     onExportLogs = { Utils.shareLogs(this@MainActivity) },
+                    onCopyDiagnostics = { DiagnosticsSnapshot.copyToClipboard(this@MainActivity) },
                     onPromptBattery = { Utils.promptBatteryOptimization(this@MainActivity) },
                     onCheckForUpdates = { checkForUpdates() },
                     onUpdatePayload = { update -> performUpdate(update) },

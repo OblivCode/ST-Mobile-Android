@@ -9,6 +9,7 @@ import app.stmobile.models.NodeState
 import app.stmobile.models.NodeStatus
 import app.stmobile.models.StConfig
 import app.stmobile.payload.PayloadManager
+import app.stmobile.logging.AppLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -182,6 +183,7 @@ object NodeController {
         onIpcDisconnected: () -> Unit,
         onProcessTerminated: () -> Unit,
     ) {
+        AppLog.i("NodeController", "executeStart requested (explicitPort=$explicitPort, isRunning=${isRunning()})")
         if (isRunning() && !stopRequested && _status.value.state != NodeState.STOPPING) {
             sendStatus(NodeState.RUNNING, "Running", pid())
             return
@@ -208,6 +210,7 @@ object NodeController {
      * Executes server stop on background worker.
      */
     fun executeStop(context: Context, onStopped: (() -> Unit)? = null) {
+        AppLog.i("NodeController", "executeStop requested")
         AppConfig(context).wasRunningBeforeKill = false
         stopRequested = true
         activeStoppingExpected?.set(true)
@@ -219,6 +222,7 @@ object NodeController {
     }
 
     fun forceStop() {
+        AppLog.w("NodeController", "forceStop requested")
         stopRequested = true
         activeStoppingExpected?.set(true)
         stopServerInternal(forceImmediate = true)
@@ -279,6 +283,16 @@ object NodeController {
             rotateIfNeeded(spec.stderrFile)
             currentPort = spec.effectivePort
 
+            val safeCmd = spec.command.map { arg ->
+                if (arg.contains("=")) {
+                    val key = arg.substringBefore("=")
+                    if (key.contains("password", ignoreCase = true) || key.contains("token", ignoreCase = true)) {
+                        "$key=******"
+                    } else arg
+                } else arg
+            }
+            AppLog.i("NodeController", "Spawning Node server on port ${spec.effectivePort}: ${safeCmd.joinToString(" ")}")
+
             val pb = ProcessBuilder(spec.command)
             pb.directory(spec.directory)
             pb.environment().putAll(spec.environment)
@@ -287,6 +301,7 @@ object NodeController {
 
             val startedProcess = pb.start()
             this.process = startedProcess
+            AppLog.i("NodeController", "Node process spawned (PID=${pid()})")
 
             val isFallback = spec.effectivePort != targetPort
             val probeMsg = if (isFallback) {
@@ -304,8 +319,10 @@ object NodeController {
                 isProcessAlive = { isRunning() },
                 isStopRequested = { stopRequested },
             )
+            AppLog.i("NodeController", "Readiness polling finished with status: $readiness")
 
             if (readiness == ReadinessStatus.CANCELLED || stopRequested) {
+                AppLog.i("NodeController", "Startup cancelled or stop requested")
                 stopServerInternal()
                 sendStatus(NodeState.STOPPED, "Stopped")
                 return
@@ -317,6 +334,7 @@ object NodeController {
                 } else {
                     "Server failed to respond within 30 seconds"
                 }
+                AppLog.e("NodeController", "Server failed readiness check: $errorMsg")
                 stopServerInternal()
                 sendStatus(NodeState.ERROR, errorMsg)
                 onProcessTerminated()
@@ -326,6 +344,7 @@ object NodeController {
             AppConfig(context).wasRunningBeforeKill = true
             val runningMsg = if (isFallback) "Running (port ${spec.effectivePort})" else "Running"
             sendStatus(NodeState.RUNNING, runningMsg, pid())
+            AppLog.i("NodeController", "Server is ready and accepting requests on port ${spec.effectivePort}")
 
             val stoppingToken = AtomicBoolean(false)
             this.activeStoppingExpected = stoppingToken
@@ -345,6 +364,7 @@ object NodeController {
                 onProcessTerminated()
 
                 val wasStopping = stoppingToken.get() || stopRequested || _status.value.state == NodeState.STOPPING
+                AppLog.i("NodeController", "Node process terminated: exitCode=$exit, wasStopping=$wasStopping")
                 if (wasStopping) {
                     if (_status.value.state != NodeState.STARTING) {
                         sendStatus(NodeState.STOPPED, "Stopped")
@@ -360,11 +380,13 @@ object NodeController {
             supervisor.start()
 
         } catch (e: PortInUseException) {
+            AppLog.e("NodeController", "Port in use error during startup: ${e.message}", e)
             ipcServer?.stop()
             ipcServer = null
             sendStatus(NodeState.ERROR, e.message ?: "Port in use")
             onProcessTerminated()
         } catch (t: Throwable) {
+            AppLog.e("NodeController", "Unexpected error starting server: ${t.message}", t)
             ipcServer?.stop()
             ipcServer = null
             sendStatus(NodeState.ERROR, t.message ?: "Start failed")

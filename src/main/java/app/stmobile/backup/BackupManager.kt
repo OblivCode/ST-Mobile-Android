@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import app.stmobile.AppPaths
+import app.stmobile.logging.AppLog
 import app.stmobile.payload.PayloadManager
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
@@ -28,7 +29,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 
 /**
- * Single source of truth for SillyTavern user data export and import (PLAN.md §3.1, Phase F).
+ * Single source of truth for SillyTavern user data export and import.
  *
  * Manages persistent user state (`data/` and `config/config.yaml`), leaving the disposable
  * `st/` web root untouched. Supports unencrypted plain ZIPs and AES-256 password-encrypted
@@ -295,6 +296,7 @@ class BackupManager(
         password: String? = null,
         onProgress: (String) -> Unit = {},
     ): Result<Manifest> = runCatching {
+        AppLog.i("BackupManager", "Starting backup export to ${targetZipFile.name} (encrypted=${password?.isNotBlank() == true})")
         onProgress("Preparing archive…")
         targetZipFile.parentFile?.mkdirs()
 
@@ -359,8 +361,9 @@ class BackupManager(
         }
 
         onProgress("Backup complete")
+        AppLog.i("BackupManager", "Backup export complete: ${manifest.fileCount} files archived")
         manifest
-    }
+    }.onFailure { AppLog.e("BackupManager", "Backup export failed", it) }
 
     /**
      * Exports user state to a destination SAF Uri via staged temporary archive.
@@ -370,6 +373,7 @@ class BackupManager(
         password: String? = null,
         onProgress: (String) -> Unit = {},
     ): Result<Unit> = runCatching {
+        AppLog.i("BackupManager", "Starting staged backup export to destination Uri (encrypted=${password?.isNotBlank() == true})")
         val cr = contentResolver ?: throw IllegalStateException("ContentResolver required for Uri export")
         tmpDir.mkdirs()
         val staged = File(tmpDir, "staged_export_${System.currentTimeMillis()}.zip")
@@ -381,10 +385,11 @@ class BackupManager(
             out.use { os ->
                 FileInputStream(staged).use { fis -> fis.copyTo(os) }
             }
+            Unit
         } finally {
             if (staged.exists()) staged.delete()
         }
-    }
+    }.onFailure { AppLog.e("BackupManager", "Export to Uri failed", it) }
 
     /**
      * Restores user state from a local archive file according to the chosen strategy.
@@ -395,6 +400,7 @@ class BackupManager(
         strategy: Strategy = Strategy.CLEAN,
         onProgress: (String) -> Unit = {},
     ): Result<Int> = runCatching {
+        AppLog.i("BackupManager", "Starting backup restore from ${archiveFile.name} (strategy=$strategy, encrypted=${password?.isNotBlank() == true})")
         val inspection = inspectFile(archiveFile, password)
         if (!inspection.isValid) throw IllegalArgumentException(inspection.errorMessage ?: "Invalid archive")
         if (inspection.isEncrypted && !inspection.isUnlocked) {
@@ -409,13 +415,15 @@ class BackupManager(
         }
 
         val charPassword = password?.takeIf { it.isNotBlank() }?.toCharArray()
-        ZipFile(archiveFile, charPassword).use { zipFile ->
+        val count = ZipFile(archiveFile, charPassword).use { zipFile ->
             when (strategy) {
                 Strategy.CLEAN -> performCleanRestore(zipFile, onProgress)
                 Strategy.MERGE -> performMergeRestore(zipFile, onProgress)
             }
         }
-    }
+        AppLog.i("BackupManager", "Backup restore complete: $count files restored")
+        count
+    }.onFailure { AppLog.e("BackupManager", "Backup restore failed", it) }
 
     /**
      * Checks dataDir.parentFile for leftover rollback and staging directories.
@@ -441,6 +449,7 @@ class BackupManager(
         val isDataEmpty = !dataDir.exists() || (dataDir.isDirectory && dataDir.list().isNullOrEmpty())
         if (isDataEmpty) {
             val latest = rollbacks.first()
+            AppLog.w("BackupManager", "Recovering orphaned data rollback directory: ${latest.name}")
             if (dataDir.exists()) {
                 deleteRecursivelyNoFollow(dataDir)
             }

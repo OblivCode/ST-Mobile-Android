@@ -52,6 +52,7 @@ fun SillyTavernSettingsTab(
     onImportBackup: () -> Unit,
     modifier: Modifier = Modifier,
     onExportLogs: () -> Unit = {},
+    onCopyDiagnostics: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
@@ -368,6 +369,13 @@ fun SillyTavernSettingsTab(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.btn_export_logs))
+        }
+
+        OutlinedButton(
+            onClick = onCopyDiagnostics,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_copy_diagnostics))
         }
     }
 

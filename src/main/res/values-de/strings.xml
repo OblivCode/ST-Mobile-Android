@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">Benutzerdefiniertes Archiv</string>
     <string name="toast_import_archive_failed">Archiv konnte nicht importiert werden: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern-Archiv erfolgreich installiert</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">Diagnose &amp; Protokolle kopieren</string>
+    <string name="toast_diagnostics_copied">Diagnosedaten in die Zwischenablage kopiert</string>
+    <string name="toast_export_logs_failed">Fehler beim Exportieren der Protokolle: %1$s</string>
+    <string name="toast_no_logs">Keine Protokolle verfügbar</string>
 </resources>

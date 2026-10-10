@@ -9,6 +9,7 @@ import app.stmobile.StApplication
 import app.stmobile.models.AppConfig
 import app.stmobile.models.NodeState
 import app.stmobile.node.NodeController
+import app.stmobile.logging.AppLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,6 +52,7 @@ class ForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        AppLog.i("ForegroundService", "Service onCreate")
         wakeLockHelper = WakeLockHelper(this)
         ServiceNotificationHelper.createChannel(this)
         instance = this
@@ -73,6 +75,7 @@ class ForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        AppLog.i("ForegroundService", "Service onDestroy")
         serviceScope.cancel()
         cleanupSession()
         timeoutManager.shutdown()
@@ -86,6 +89,7 @@ class ForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        AppLog.i("ForegroundService", "onStartCommand: action=${intent?.action}, startId=$startId")
         when (intent?.action) {
             ACTION_START -> {
                 hasActiveSession = true
@@ -156,6 +160,7 @@ class ForegroundService : Service() {
     }
 
     fun onProcessTerminated() = synchronized(lock) {
+        AppLog.i("ForegroundService", "onProcessTerminated received; cleaning up background timers and wakelock")
         timeoutManager.cancel()
         generationTracker.reset(notify = false)
         wakeLockHelper.forceRelease()
@@ -163,6 +168,7 @@ class ForegroundService : Service() {
     }
 
     fun onAppForegrounded() = synchronized(lock) {
+        AppLog.d("ForegroundService", "onAppForegrounded; cancelling idle timeout")
         timeoutManager.cancel()
         updateNotification()
     }
@@ -170,6 +176,7 @@ class ForegroundService : Service() {
     fun onAppBackgrounded(context: Context) {
         if (NodeController.isRunning() || NodeController.status.value.isActive) {
             val appConfig = AppConfig(context)
+            AppLog.i("ForegroundService", "onAppBackgrounded (generating=${generationTracker.isGenerating}, timeoutMinutes=${appConfig.backgroundTimeoutMinutes})")
             synchronized(lock) {
                 val sources = generationTracker.activeSources
                 if (sources == setOf("webview") && !sources.contains("ipc")) {
@@ -192,6 +199,7 @@ class ForegroundService : Service() {
             val isForeground = StApplication.instance?.isAppInForeground ?: false
             val isGenerating = generationTracker.isGenerating
 
+            AppLog.w("ForegroundService", "handleBackgroundTimeout triggered (isForeground=$isForeground, isGenerating=$isGenerating)")
             if (!isForeground && !isGenerating && (NodeController.isRunning() || NodeController.status.value.isActive)) {
                 AppConfig(applicationContext).wasRunningBeforeKill = false
                 cleanupSession()

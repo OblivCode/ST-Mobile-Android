@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">自定义归档</string>
     <string name="toast_import_archive_failed">导入归档失败：%1$s</string>
     <string name="toast_import_archive_success">SillyTavern 归档安装成功</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">复制诊断与日志</string>
+    <string name="toast_diagnostics_copied">诊断信息已复制到剪贴板</string>
+    <string name="toast_export_logs_failed">导出日志失败：%1$s</string>
+    <string name="toast_no_logs">没有可用日志</string>
 </resources>

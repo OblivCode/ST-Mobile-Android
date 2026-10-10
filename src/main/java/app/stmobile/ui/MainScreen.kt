@@ -38,6 +38,7 @@ fun MainScreen(
     onUpdatePayload: (UpdateInfo) -> Unit,
     onReinstallPayload: () -> Unit,
     onImportArchive: () -> Unit = {},
+    onCopyDiagnostics: () -> Unit = {},
 ) {
     // Intercept hardware Back to cancel installation if active
     BackHandler(enabled = isInstalling) {
@@ -92,6 +93,7 @@ fun MainScreen(
                                 onStartServer = onStartServer,
                                 onStopServer = onStopServer,
                                 onOpenSillyTavern = { navController.navigateTo(ActiveScreen.WEBVIEW) },
+                                onCopyDiagnostics = onCopyDiagnostics,
                             )
                             ActiveScreen.UPDATES -> UpdatesScreen(
                                 installedInfo = installedInfo,
@@ -115,6 +117,7 @@ fun MainScreen(
                                 onExportBackup = onExportBackup,
                                 onImportBackup = onImportBackup,
                                 onExportLogs = onExportLogs,
+                                onCopyDiagnostics = onCopyDiagnostics,
                             )
                             ActiveScreen.WEBVIEW -> {
                                 // Handled in Layer 0

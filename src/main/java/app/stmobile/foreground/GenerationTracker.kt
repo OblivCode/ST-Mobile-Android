@@ -1,5 +1,7 @@
 package app.stmobile.foreground
 
+import app.stmobile.logging.AppLog
+
 /**
  * Thread-safe tracker for multi-source LLM generation sessions.
  * Manages active source tokens (e.g. "webview", "ipc") and fires
@@ -38,6 +40,7 @@ class GenerationTracker(
                 false
             }
         }
+        AppLog.d("GenerationTracker", "onStarted: source=$source (activeCount=$activeCount, edgeTransition=$edgeTransition)")
         if (shouldNotifyFirstStarted) {
             onFirstStarted()
         }
@@ -66,6 +69,7 @@ class GenerationTracker(
                 }
             }
         }
+        AppLog.d("GenerationTracker", "onEnded: source=$source (activeCount=$activeCount, edgeTransition=$edgeTransition)")
         if (shouldNotifyAllEnded) {
             onAllEnded()
         }
@@ -88,6 +92,7 @@ class GenerationTracker(
                 false
             }
         }
+        AppLog.d("GenerationTracker", "clearSource: source=$source (activeCount=$activeCount, edgeTransition=$edgeTransition)")
         if (shouldNotifyAllEnded) {
             onAllEnded()
         }
@@ -110,6 +115,7 @@ class GenerationTracker(
             }
             generating
         }
+        AppLog.d("GenerationTracker", "reset: notify=$notify (wasGenerating=$wasGenerating)")
         if (shouldNotifyAllEnded) {
             onAllEnded()
         }

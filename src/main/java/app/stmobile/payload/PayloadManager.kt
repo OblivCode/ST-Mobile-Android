@@ -3,6 +3,7 @@ package app.stmobile.payload
 import android.content.Context
 import android.content.SharedPreferences
 import app.stmobile.AppPaths
+import app.stmobile.logging.AppLog
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
@@ -235,6 +236,7 @@ class PayloadManager(
         isCancelled: () -> Boolean = { false },
         onProgress: (ExtractProgress) -> Unit,
     ): Layout {
+        AppLog.i("PayloadManager", "Starting payload extraction (source=${source.sourceDescription}, versionStamp=${source.versionStamp})")
         onProgress(ExtractProgress(stage = "Preparing extraction…", totalEstimate = 11000))
 
         extractFromSource(source, isCancelled, onProgress)
@@ -276,6 +278,7 @@ class PayloadManager(
 
         val hookFile = ensureGenerationHook()
 
+        AppLog.i("PayloadManager", "Payload extraction completed successfully (stVersion=$effectiveStVersion, commit=$effectiveCommit)")
         return Layout(
             launcher = paths.launcher,
             stDir = paths.stDir,
@@ -454,6 +457,7 @@ class PayloadManager(
                     "SillyTavern payload checksum mismatch (expected ${source.expectedSha256}, got $actualSha)"
                 )
             }
+            AppLog.i("PayloadManager", "Payload checksum verified ($actualSha)")
 
             // Normalize payload structure (promotes single root directory like SillyTavern-1.19.0/ if present)
             normalizePayloadTree(tmpNew)
@@ -461,6 +465,7 @@ class PayloadManager(
             // Atomic promotion: swap st/ safely using st_old, restoring if swap fails midway
             promoteStagingTree(tmpNew)
         } catch (t: Throwable) {
+            AppLog.e("PayloadManager", "Payload extraction failed", t)
             safeDeleteRecursively(tmpNew)
             throw t
         }
@@ -499,6 +504,7 @@ class PayloadManager(
      */
     private fun promoteStagingTree(stagingDir: File) {
         val stDir = paths.stDir
+        AppLog.i("PayloadManager", "Promoting staging tree to $stDir")
         val old = File(paths.tmpDir, "st_old")
         if (old.exists()) safeDeleteRecursively(old)
 

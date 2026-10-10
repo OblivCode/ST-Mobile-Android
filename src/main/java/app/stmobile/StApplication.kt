@@ -5,8 +5,11 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import app.stmobile.backup.BackupManager
 import app.stmobile.foreground.ForegroundService
+import app.stmobile.logging.AppLog
+import app.stmobile.logging.CrashHandler
 
 /**
  * Custom application class providing centralized activity lifecycle tracking
@@ -20,6 +23,7 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
     private val backgroundRunnable = Runnable {
         if (startedActivityCount == 0) {
             isAppInForeground = false
+            AppLog.i("StApplication", "App transitioned to background")
             ForegroundService.onAppBackgrounded(this)
         }
     }
@@ -34,6 +38,21 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        val paths = AppPaths(this)
+        AppLog.init(paths.logsDir) { level, tag, msg, tr ->
+            when (level) {
+                2 -> Log.v(tag, msg, tr)
+                3 -> Log.d(tag, msg, tr)
+                4 -> Log.i(tag, msg, tr)
+                5 -> Log.w(tag, msg, tr)
+                6 -> Log.e(tag, msg, tr)
+                else -> Log.i(tag, msg, tr)
+            }
+        }
+        CrashHandler.install(this, paths.logsDir)
+        AppLog.i("StApplication", "ST-Mobile application onCreate (flavor: ${BuildConfig.FLAVOR}, code: ${BuildConfig.VERSION_CODE})")
+
         registerActivityLifecycleCallbacks(this)
         BackupManager(this).recoverOrphanedRollbackIfPresent()
     }

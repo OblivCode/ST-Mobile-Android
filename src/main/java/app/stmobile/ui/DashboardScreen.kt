@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -45,6 +46,7 @@ fun DashboardScreen(
     onStartServer: () -> Unit,
     onStopServer: () -> Unit,
     onOpenSillyTavern: () -> Unit,
+    onCopyDiagnostics: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -261,6 +263,14 @@ fun DashboardScreen(
                                 Text(stringResource(R.string.dashboard_btn_start))
                             }
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = onCopyDiagnostics,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Text(stringResource(R.string.btn_copy_diagnostics))
                     }
                 }
             }

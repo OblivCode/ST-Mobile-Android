@@ -1,5 +1,6 @@
 package app.stmobile.foreground
 
+import app.stmobile.logging.AppLog
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -60,6 +61,7 @@ class BackgroundTimeoutManager(
         targetEpochMs = System.currentTimeMillis() + totalMs
         isScheduled = true
         isPaused = false
+        AppLog.d("BackgroundTimeoutManager", "Scheduled countdown: ${totalMs}ms (duration=$timeoutDuration $unit)")
 
         scheduledTask = scheduler.schedule({
             val shouldFire = synchronized(this) {
@@ -76,6 +78,7 @@ class BackgroundTimeoutManager(
                 }
             }
             if (shouldFire) {
+                AppLog.i("BackgroundTimeoutManager", "Background timeout expired; triggering callback")
                 onTimeout()
             }
         }, totalMs, TimeUnit.MILLISECONDS)
@@ -95,6 +98,7 @@ class BackgroundTimeoutManager(
         isPaused = true
         targetEpochMs = 0L
         targetMonotonicMs = 0L
+        AppLog.d("BackgroundTimeoutManager", "Paused countdown; remaining: ${savedRemainingMillis}ms")
     }
 
     /**
@@ -110,6 +114,7 @@ class BackgroundTimeoutManager(
         targetMonotonicMs = nowMono + durationMs
         targetEpochMs = System.currentTimeMillis() + durationMs
         isPaused = false
+        AppLog.d("BackgroundTimeoutManager", "Resumed countdown with remaining: ${durationMs}ms")
 
         scheduledTask = scheduler.schedule({
             val shouldFire = synchronized(this) {
@@ -126,6 +131,7 @@ class BackgroundTimeoutManager(
                 }
             }
             if (shouldFire) {
+                AppLog.i("BackgroundTimeoutManager", "Background timeout expired; triggering callback")
                 onTimeout()
             }
         }, durationMs, TimeUnit.MILLISECONDS)
@@ -154,6 +160,7 @@ class BackgroundTimeoutManager(
         targetEpochMs = 0L
         targetMonotonicMs = 0L
         savedRemainingMillis = 0L
+        AppLog.d("BackgroundTimeoutManager", "Cancelled countdown")
     }
 
     /**

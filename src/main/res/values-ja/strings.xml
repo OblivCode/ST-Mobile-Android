@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">カスタムアーカイブ</string>
     <string name="toast_import_archive_failed">アーカイブのインポートに失敗しました: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern アーカイブが正常にインストールされました</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">診断情報とログをコピー</string>
+    <string name="toast_diagnostics_copied">診断情報をクリップボードにコピーしました</string>
+    <string name="toast_export_logs_failed">ログのエクスポートに失敗しました: %1$s</string>
+    <string name="toast_no_logs">利用可能なログがありません</string>
 </resources>

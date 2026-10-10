@@ -2,6 +2,7 @@ package app.stmobile.foreground
 
 import android.content.Context
 import android.os.PowerManager
+import app.stmobile.logging.AppLog
 
 interface WakeLockAcquirer {
     fun acquire(timeoutMs: Long)
@@ -52,18 +53,21 @@ class WakeLockHelper(
 
     @Synchronized
     fun acquire(timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
+        AppLog.d("WakeLockHelper", "Acquiring PARTIAL_WAKE_LOCK (timeoutMs=$timeoutMs)")
         acquirer.acquire(timeoutMs)
     }
 
     @Synchronized
     fun release() {
         if (acquirer.isHeld) {
+            AppLog.d("WakeLockHelper", "Releasing PARTIAL_WAKE_LOCK")
             acquirer.release()
         }
     }
 
     @Synchronized
     fun forceRelease() {
+        AppLog.d("WakeLockHelper", "Force-releasing PARTIAL_WAKE_LOCK")
         try {
             acquirer.release()
         } catch (_: Exception) {}

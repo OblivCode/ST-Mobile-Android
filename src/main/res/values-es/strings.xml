@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">archivo personalizado</string>
     <string name="toast_import_archive_failed">Error al importar el archivo: %1$s</string>
     <string name="toast_import_archive_success">Archivo de SillyTavern instalado con éxito</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">Copiar diagnósticos y registros</string>
+    <string name="toast_diagnostics_copied">Diagnósticos copiados al portapapeles</string>
+    <string name="toast_export_logs_failed">Error al exportar registros: %1$s</string>
+    <string name="toast_no_logs">No hay registros disponibles</string>
 </resources>

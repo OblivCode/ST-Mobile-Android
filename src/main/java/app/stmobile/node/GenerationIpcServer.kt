@@ -1,5 +1,6 @@
 package app.stmobile.node
 
+import app.stmobile.logging.AppLog
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -49,6 +50,7 @@ class GenerationIpcServer(
         }
         serverSocket = ss
         running.set(true)
+        AppLog.i("GenerationIpcServer", "Started IPC server on 127.0.0.1:${ss.localPort} (authRequired=${authToken != null})")
 
         val th = Thread({
             while (running.get() && !ss.isClosed) {
@@ -63,6 +65,7 @@ class GenerationIpcServer(
                         }
                     }
                     if (!accepted) {
+                        AppLog.w("GenerationIpcServer", "Rejected concurrent client connection from ${client.remoteSocketAddress}")
                         try {
                             client.close()
                         } catch (_: Exception) {}
@@ -86,6 +89,7 @@ class GenerationIpcServer(
         val readerThread = Thread({
             var clientGenerating = false
             try {
+                AppLog.d("GenerationIpcServer", "Accepted client connection from ${client.remoteSocketAddress}")
                 client.soTimeout = 10_000
                 val input = client.getInputStream().buffered()
 
@@ -93,6 +97,7 @@ class GenerationIpcServer(
                     val authLine = readBoundedLine(input)?.trim()
                     if (authLine != "AUTH $authToken") {
                         // Reject and close connection immediately if invalid or missing
+                        AppLog.w("GenerationIpcServer", "Client authentication failed")
                         return@Thread
                     }
                 }
@@ -107,10 +112,12 @@ class GenerationIpcServer(
 
                     when (line.trim()) {
                         "GEN_START" -> {
+                            AppLog.d("GenerationIpcServer", "Received GEN_START from client")
                             clientGenerating = true
                             onGenerationStarted()
                         }
                         "GEN_END" -> {
+                            AppLog.d("GenerationIpcServer", "Received GEN_END from client")
                             clientGenerating = false
                             onGenerationEnded()
                         }
@@ -119,6 +126,7 @@ class GenerationIpcServer(
             } catch (_: Exception) {
                 // Client disconnection, line limit exceeded, or socket error
             } finally {
+                AppLog.d("GenerationIpcServer", "Client disconnected")
                 synchronized(clientSockets) {
                     clientSockets.remove(client)
                 }
@@ -164,6 +172,7 @@ class GenerationIpcServer(
     @Synchronized
     fun stop() {
         if (!running.getAndSet(false)) return
+        AppLog.i("GenerationIpcServer", "Stopped IPC server")
         try {
             serverSocket?.close()
         } catch (_: Exception) {}

@@ -194,4 +194,10 @@
     <string name="updates_custom_archive">custom archive</string>
     <string name="toast_import_archive_failed">Failed to import archive: %1$s</string>
     <string name="toast_import_archive_success">SillyTavern archive installed successfully</string>
+
+    <!-- Logging & Diagnostics -->
+    <string name="btn_copy_diagnostics">Copy Diagnostics &amp; Logs</string>
+    <string name="toast_diagnostics_copied">Diagnostics copied to clipboard</string>
+    <string name="toast_export_logs_failed">Failed to export logs: %1$s</string>
+    <string name="toast_no_logs">No logs available</string>
 </resources>

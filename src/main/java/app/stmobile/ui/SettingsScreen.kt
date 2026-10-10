@@ -29,6 +29,7 @@ fun SettingsScreen(
     onExportBackup: () -> Unit = {},
     onImportBackup: () -> Unit = {},
     onExportLogs: () -> Unit = {},
+    onCopyDiagnostics: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appConfig = remember { AppConfig(context) }
@@ -74,11 +75,13 @@ fun SettingsScreen(
             0 -> AppSettingsTab(
                 appConfig = appConfig,
                 onPromptBattery = onPromptBattery,
+                onCopyDiagnostics = onCopyDiagnostics,
             )
             1 -> SillyTavernSettingsTab(
                 onExportBackup = onExportBackup,
                 onImportBackup = onImportBackup,
                 onExportLogs = onExportLogs,
+                onCopyDiagnostics = onCopyDiagnostics,
             )
             2 -> NodeEngineSettingsTab()
         }
