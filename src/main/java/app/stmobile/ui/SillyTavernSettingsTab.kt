@@ -48,8 +48,6 @@ import kotlin.math.roundToInt
 
 @Composable
 fun SillyTavernSettingsTab(
-    onExportBackup: () -> Unit,
-    onImportBackup: () -> Unit,
     modifier: Modifier = Modifier,
     onExportLogs: () -> Unit = {},
     onCopyDiagnostics: () -> Unit = {},
@@ -95,7 +93,7 @@ fun SillyTavernSettingsTab(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // --- 1. User Settings (Phase N + Phase O) ---
+        // --- 1. User Settings ---
         Text(
             text = stringResource(R.string.st_settings_user_title),
             style = MaterialTheme.typography.titleMedium,
@@ -109,7 +107,7 @@ fun SillyTavernSettingsTab(
             color = Color(0xFF8A94A3),
         )
 
-        // UI Language (Phase O)
+        // UI Language
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -320,37 +318,7 @@ fun SillyTavernSettingsTab(
 
         Spacer(Modifier.height(8.dp))
 
-        // --- 2. Data & Backups ---
-        Text(
-            text = stringResource(R.string.st_settings_backups_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFD8DEE6),
-        )
-
-        Text(
-            text = stringResource(R.string.st_settings_backups_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF8A94A3),
-        )
-
-        Button(
-            onClick = onExportBackup,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.btn_export_backup))
-        }
-
-        OutlinedButton(
-            onClick = onImportBackup,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.btn_restore_backup))
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // --- 3. Diagnostics & Logs ---
+        // --- 2. Diagnostics & Logs ---
         Text(
             text = stringResource(R.string.st_settings_logs_title),
             style = MaterialTheme.typography.titleMedium,

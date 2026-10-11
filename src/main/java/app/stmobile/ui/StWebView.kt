@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -135,7 +136,8 @@ fun StWebView(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .imePadding(),
+            .background(Color(0xFF101418))
+            .safeDrawingPadding(),
     ) {
         AndroidView(
             factory = { ctx ->

@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * Two-way typed synchronization for SillyTavern's `settings.json` (Phase N).
+ * Two-way typed synchronization for SillyTavern's `settings.json`.
  * Backed by an internal [JSONObject] preserving all unknown root sections and
  * power_user configuration keys across read/write cycles.
  */

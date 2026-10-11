@@ -85,11 +85,7 @@
     <string name="st_settings_font_scale">Escala de fuente: %1$d%%</string>
     <string name="st_settings_font_scale_desc" formatted="false">Ajusta la legibilidad del texto en diferentes densidades de pantalla (50% – 150%).</string>
 
-    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
-    <string name="st_settings_backups_title">Datos y Copias de Seguridad</string>
-    <string name="st_settings_backups_desc">Exporta personajes, chats y configuraciones a un archivo (con cifrado AES-256 opcional) o restaura una copia existente.</string>
-    <string name="btn_export_backup">Exportar Copia</string>
-    <string name="btn_restore_backup">Restaurar Copia</string>
+    <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">Diagnóstico y Registros</string>
     <string name="st_settings_logs_desc">Comparte o exporta el archivo de registros para resolver problemas del servidor.</string>
     <string name="btn_export_logs">Exportar Registros</string>
@@ -142,18 +138,18 @@
     <string name="toast_save_settings_failed">Error al guardar ajustes: %1$s</string>
     <string name="toast_save_engine_failed">Error al guardar configuración del motor: %1$s</string>
 
-    <!-- Navigation (Phase L.1) -->
+    <!-- Navigation -->
     <string name="nav_updates">Actualizaciones</string>
     <string name="nav_backups">Copias de seguridad</string>
 
-    <!-- Dashboard Screen (Phase L.1) -->
+    <!-- Dashboard Screen -->
     <string name="status_not_installed">No instalado</string>
     <string name="dashboard_msg_not_installed">Los archivos principales de SillyTavern deben instalarse antes de comenzar.</string>
     <string name="dashboard_status_installing">Instalando SillyTavern…</string>
     <string name="dashboard_btn_install">Instalar SillyTavern</string>
     <string name="dashboard_msg_stopped">El servidor está detenido.</string>
 
-    <!-- Backups Screen (Phase L.1) -->
+    <!-- Backups Screen -->
     <string name="backups_title">Copias de seguridad y restauración</string>
     <string name="backups_export_title">Exportar copia de seguridad</string>
     <string name="backups_export_desc">Archiva todos los personajes, chats, ajustes y configuraciones en un archivo ZIP (con cifrado AES-256 opcional).</string>
@@ -162,7 +158,7 @@
     <string name="backups_safety_title">Seguridad de los datos</string>
     <string name="backups_safety_desc">Los datos del usuario se almacenan de forma independiente de los archivos principales del entorno. La reinstalación o actualización preservará sus copias de seguridad y personajes.</string>
 
-    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <!-- Updates Screen -->
     <string name="updates_title">Actualizaciones</string>
     <string name="updates_current_installation">INSTALACIÓN ACTUAL</string>
     <string name="updates_sillytavern_version">SillyTavern: %1$s</string>

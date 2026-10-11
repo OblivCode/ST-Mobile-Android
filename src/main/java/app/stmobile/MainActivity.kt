@@ -44,20 +44,20 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
- * SAF backup contracts, and in-app OTA lifecycle management (Phase D, Phase F, Phase L.1, Phase L.4).
+ * SAF backup contracts, and in-app OTA lifecycle management.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavigationController
 
-    // Installation and payload inspection state (Phase L.1, Phase L.4)
+    // Installation and payload inspection state
     private var installedInfo by mutableStateOf(PayloadManager.InstalledInfo(isInstalled = false))
     private var isInstalling by mutableStateOf(false)
     private var installProgress by mutableStateOf<PayloadManager.ExtractProgress?>(null)
     private var installErrorMessage by mutableStateOf<String?>(null)
     private var installJob: Job? = null
 
-    // OTA update checking state (Phase L.4)
+    // OTA update checking state
     private var isCheckingUpdates by mutableStateOf(false)
     private var updateCheckResult by mutableStateOf<UpdateCheckResult?>(null)
 

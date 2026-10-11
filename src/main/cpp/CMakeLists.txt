@@ -16,7 +16,7 @@ set_target_properties(node PROPERTIES IMPORTED_LOCATION
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
 
 # ---------------------------------------------------------------------------
-# Phase 1: standalone launcher. Built as an executable, named libstnode.so so
+# Standalone launcher. Built as an executable, named libstnode.so so
 # AGP extracts it as a native lib; the app exec()s it from nativeLibraryDir.
 # ---------------------------------------------------------------------------
 add_executable(stnode launcher.cpp)

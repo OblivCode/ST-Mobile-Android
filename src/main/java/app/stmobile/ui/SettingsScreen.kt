@@ -26,8 +26,6 @@ import app.stmobile.models.AppConfig
 fun SettingsScreen(
     onPromptBattery: () -> Unit,
     modifier: Modifier = Modifier,
-    onExportBackup: () -> Unit = {},
-    onImportBackup: () -> Unit = {},
     onExportLogs: () -> Unit = {},
     onCopyDiagnostics: () -> Unit = {},
 ) {
@@ -78,8 +76,6 @@ fun SettingsScreen(
                 onCopyDiagnostics = onCopyDiagnostics,
             )
             1 -> SillyTavernSettingsTab(
-                onExportBackup = onExportBackup,
-                onImportBackup = onImportBackup,
                 onExportLogs = onExportLogs,
                 onCopyDiagnostics = onCopyDiagnostics,
             )

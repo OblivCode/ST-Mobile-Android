@@ -134,7 +134,7 @@ class BackupManagerTest {
         val password = "StrongPassword456"
         manager.exportToFile(zip, password = password).getOrThrow()
 
-        // Phase 1: Inspect without password
+        // Step 1: Inspect without password
         val lockedInfo = manager.inspectFile(zip)
         assertTrue(lockedInfo.isValid)
         assertTrue(lockedInfo.isEncrypted)

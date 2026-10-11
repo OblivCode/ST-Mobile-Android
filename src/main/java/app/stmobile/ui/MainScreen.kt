@@ -114,8 +114,6 @@ fun MainScreen(
                             )
                             ActiveScreen.SETTINGS -> SettingsScreen(
                                 onPromptBattery = onPromptBattery,
-                                onExportBackup = onExportBackup,
-                                onImportBackup = onImportBackup,
                                 onExportLogs = onExportLogs,
                                 onCopyDiagnostics = onCopyDiagnostics,
                             )

@@ -85,11 +85,7 @@
     <string name="st_settings_font_scale">Масштаб шрифта: %1$d%%</string>
     <string name="st_settings_font_scale_desc" formatted="false">Настройка размера текста для различных экранов (50% – 150%).</string>
 
-    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
-    <string name="st_settings_backups_title">Данные и резервные копии</string>
-    <string name="st_settings_backups_desc">Экспорт персонажей, чатов и настроек в архив (с шифрованием AES-256) или восстановление бэкапа.</string>
-    <string name="btn_export_backup">Экспорт резервной копии</string>
-    <string name="btn_restore_backup">Восстановить резервную копию</string>
+    <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">Диагностика и логи</string>
     <string name="st_settings_logs_desc">Поделиться лог-файлом приложения или экспортировать его для диагностики работы сервера.</string>
     <string name="btn_export_logs">Экспорт логов</string>
@@ -142,18 +138,18 @@
     <string name="toast_save_settings_failed">Не удалось сохранить настройки: %1$s</string>
     <string name="toast_save_engine_failed">Не удалось сохранить параметры движка: %1$s</string>
 
-    <!-- Navigation (Phase L.1) -->
+    <!-- Navigation -->
     <string name="nav_updates">Обновления</string>
     <string name="nav_backups">Резервные копии</string>
 
-    <!-- Dashboard Screen (Phase L.1) -->
+    <!-- Dashboard Screen -->
     <string name="status_not_installed">Не установлено</string>
     <string name="dashboard_msg_not_installed">Основные файлы SillyTavern должны быть установлены перед запуском.</string>
     <string name="dashboard_status_installing">Установка SillyTavern…</string>
     <string name="dashboard_btn_install">Установить SillyTavern</string>
     <string name="dashboard_msg_stopped">Сервер остановлен.</string>
 
-    <!-- Backups Screen (Phase L.1) -->
+    <!-- Backups Screen -->
     <string name="backups_title">Резервное копирование и восстановление</string>
     <string name="backups_export_title">Экспорт резервной копии</string>
     <string name="backups_export_desc">Архивировать всех персонажей, чаты, настройки и конфигурации в ZIP-файл (с опциональным шифрованием AES-256).</string>
@@ -162,7 +158,7 @@
     <string name="backups_safety_title">Безопасность данных</string>
     <string name="backups_safety_desc">Пользовательские данные хранятся отдельно от файлов ядра среды выполнения. Переустановка или обновление сохранят ваши копии и персонажей.</string>
 
-    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <!-- Updates Screen -->
     <string name="updates_title">Обновления</string>
     <string name="updates_current_installation">ТЕКУЩАЯ УСТАНОВКА</string>
     <string name="updates_sillytavern_version">SillyTavern: %1$s</string>

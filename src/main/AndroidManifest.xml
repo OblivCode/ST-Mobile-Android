@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Phase 3: the local Node/SillyTavern server runs here so it survives
+        <!-- The local Node/SillyTavern server runs here so it survives
              the app being backgrounded. specialUse (not dataSync, which Android
              15 caps at 6 h/24 h). -->
         <service

@@ -42,7 +42,7 @@ import app.stmobile.R
 import app.stmobile.backup.BackupManager
 
 /**
- * Reusable dialogs for SillyTavern backup export and restore workflows (Phase F).
+ * Reusable dialogs for SillyTavern backup export and restore workflows.
  */
 
 /**

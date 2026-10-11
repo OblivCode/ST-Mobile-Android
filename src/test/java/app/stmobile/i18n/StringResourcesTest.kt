@@ -108,7 +108,11 @@ class StringResourcesTest {
             "setup_status_starting",
             "setup_status_restoring",
             "toast_payload_reset",
-            "dashboard_downloading_payload"
+            "dashboard_downloading_payload",
+            "st_settings_backups_title",
+            "st_settings_backups_desc",
+            "btn_export_backup",
+            "btn_restore_backup"
         )
 
         val presentDeadKeys = deadKeys.intersect(keys)

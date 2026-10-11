@@ -59,7 +59,7 @@ class StUserSettingsTest {
         assertEquals(false, settings.autoLoadChat)
         assertEquals("zh-cn", settings.uiLanguage)
 
-        // Mutate Phase N / O fields
+        // Mutate settings fields
         settings.autoLoadChat = true
         settings.autoConnect = true
         settings.compactInputArea = false
@@ -241,7 +241,7 @@ class StUserSettingsTest {
         val settings = StUserSettings.fromJson("""{ "username": "NoPowerUser" }""")
         assertFalse(settings.raw().has("power_user"))
 
-        // Mutating a Phase N property creates power_user
+        // Mutating a user settings property creates power_user
         settings.reducedMotion = true
         assertTrue(settings.raw().has("power_user"))
         assertTrue(settings.reducedMotion)

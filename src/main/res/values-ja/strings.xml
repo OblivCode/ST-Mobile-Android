@@ -85,11 +85,7 @@
     <string name="st_settings_font_scale">フォント倍率: %1$d%%</string>
     <string name="st_settings_font_scale_desc" formatted="false">画面密度に応じた文字の読みやすさを調整 (50% – 150%)。</string>
 
-    <!-- SillyTavern Settings Tab - Backups & Diagnostics -->
-    <string name="st_settings_backups_title">データとバックアップ</string>
-    <string name="st_settings_backups_desc">キャラクター、チャット、設定を ZIP アーカイブに書き出すか（AES-256 暗号化対応）、既存のバックアップを復元します。</string>
-    <string name="btn_export_backup">バックアップを書き出し</string>
-    <string name="btn_restore_backup">バックアップを復元</string>
+    <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">診断とログ</string>
     <string name="st_settings_logs_desc">サーバーの不具合調査のためにログファイルを共有・書き出します。</string>
     <string name="btn_export_logs">ログを書き出し</string>
@@ -142,18 +138,18 @@
     <string name="toast_save_settings_failed">設定の保存に失敗しました: %1$s</string>
     <string name="toast_save_engine_failed">エンジン設定の保存に失敗しました: %1$s</string>
 
-    <!-- Navigation (Phase L.1) -->
+    <!-- Navigation -->
     <string name="nav_updates">アップデート</string>
     <string name="nav_backups">バックアップ</string>
 
-    <!-- Dashboard Screen (Phase L.1) -->
+    <!-- Dashboard Screen -->
     <string name="status_not_installed">未インストール</string>
     <string name="dashboard_msg_not_installed">起動する前にSillyTavernのコアファイルをインストールする必要があります。</string>
     <string name="dashboard_status_installing">SillyTavernをインストール中…</string>
     <string name="dashboard_btn_install">SillyTavernをインストール</string>
     <string name="dashboard_msg_stopped">サーバーは停止しています。</string>
 
-    <!-- Backups Screen (Phase L.1) -->
+    <!-- Backups Screen -->
     <string name="backups_title">バックアップと復元</string>
     <string name="backups_export_title">バックアップをエクスポート</string>
     <string name="backups_export_desc">すべてのキャラクター、チャット、設定、構成をZIPファイルにアーカイブします（オプションでAES-256暗号化）。</string>
@@ -162,7 +158,7 @@
     <string name="backups_safety_title">データの安全性</string>
     <string name="backups_safety_desc">ユーザーデータはコアランタイムファイルとは独立して保存されます。再インストールまたは更新しても、バックアップとキャラクターは保持されます。</string>
 
-    <!-- Updates Screen (Phase L.1 / L.4) -->
+    <!-- Updates Screen -->
     <string name="updates_title">アップデート</string>
     <string name="updates_current_installation">現在のインストール情報</string>
     <string name="updates_sillytavern_version">SillyTavern: %1$s</string>
