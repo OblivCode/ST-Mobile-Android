@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -415,7 +416,7 @@ fun EdgeDockedMenuHandle(
                     .width(32.dp)
                     .height(handleHeight)
                     .background(
-                        color = Color(0xDD23303A),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
                         shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
                     )
                     .draggable(
@@ -445,7 +446,7 @@ fun EdgeDockedMenuHandle(
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = stringResource(R.string.cd_menu),
-                    tint = Color(0xFF7EC8A9),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -467,8 +468,8 @@ fun EdgeDockedMenuHandle(
                     topEnd = 0.dp,
                     bottomEnd = 0.dp,
                 ),
-                color = Color(0xF023303A),
-                contentColor = Color(0xFF7EC8A9),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+                contentColor = MaterialTheme.colorScheme.primary,
                 tonalElevation = 8.dp,
                 shadowElevation = 8.dp,
             ) {
@@ -486,7 +487,6 @@ fun EdgeDockedMenuHandle(
                         Icon(
                             imageVector = Icons.Default.Dashboard,
                             contentDescription = stringResource(R.string.cd_dashboard),
-                            tint = Color(0xFF7EC8A9),
                         )
                     }
                     IconButton(
@@ -498,7 +498,6 @@ fun EdgeDockedMenuHandle(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.cd_reload),
-                            tint = Color(0xFF7EC8A9),
                         )
                     }
                     IconButton(
@@ -511,7 +510,7 @@ fun EdgeDockedMenuHandle(
                         Icon(
                             imageVector = Icons.Default.Stop,
                             contentDescription = stringResource(R.string.dashboard_btn_stop),
-                            tint = Color(0xFFEF5350),
+                            tint = MaterialTheme.colorScheme.error,
                         )
                     }
                     IconButton(
@@ -523,7 +522,6 @@ fun EdgeDockedMenuHandle(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(R.string.cd_settings),
-                            tint = Color(0xFF7EC8A9),
                         )
                     }
                     IconButton(
@@ -534,7 +532,7 @@ fun EdgeDockedMenuHandle(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = stringResource(R.string.cd_close),
-                            tint = Color(0xFFB0BEC5),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

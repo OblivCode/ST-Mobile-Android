@@ -42,6 +42,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
+import androidx.compose.ui.graphics.Color
+
+val StDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF7EC8A9),
+    surface = Color(0xFF101418),
+    surfaceContainerHigh = Color(0xFF23303A),
+    surfaceContainer = Color(0xFF1A232A),
+    onSurface = Color(0xFFD8DEE6),
+    onSurfaceVariant = Color(0xFF8A94A3),
+    error = Color(0xFFEF5350),
+    onError = Color(0xFF101418),
+)
+
 /**
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
  * SAF backup contracts, and in-app OTA lifecycle management.
@@ -138,7 +151,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
+            MaterialTheme(colorScheme = StDarkColorScheme) {
                 val nodeStatus by NodeController.status.collectAsState()
 
                 LaunchedEffect(nodeStatus.state) {
