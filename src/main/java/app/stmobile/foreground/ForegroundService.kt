@@ -128,6 +128,8 @@ class ForegroundService : Service() {
                     explicitPort = port,
                     onIpcStarted = { onGenerationStarted("ipc") },
                     onIpcEnded = { onGenerationEnded("ipc") },
+                    onVectorStarted = { onVectorStarted() },
+                    onVectorEnded = { onVectorEnded() },
                     onIpcDisconnected = { onSourceDisconnected("ipc") },
                     onProcessTerminated = { onProcessTerminated() },
                 )
@@ -156,6 +158,8 @@ class ForegroundService : Service() {
                         explicitPort = port,
                         onIpcStarted = { onGenerationStarted("ipc") },
                         onIpcEnded = { onGenerationEnded("ipc") },
+                        onVectorStarted = { onVectorStarted() },
+                        onVectorEnded = { onVectorEnded() },
                         onIpcDisconnected = { onSourceDisconnected("ipc") },
                         onProcessTerminated = { onProcessTerminated() },
                     )

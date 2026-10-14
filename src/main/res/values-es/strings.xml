@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">Ejecuta el servidor local Node.js de SillyTavern</string>
     <string name="notification_channel_name">Servidor ST Mobile</string>
+    <string name="notification_alerts_channel_name">Alertas de finalización</string>
     <string name="notification_action_stop">Detener</string>
+    <string name="notification_completion_title">Respuesta lista</string>
+    <string name="notification_completion_msg">SillyTavern terminó de generar una respuesta</string>
+    <string name="notification_vector_completion_title">Vectorización completada</string>
+    <string name="notification_vector_completion_msg">Indexación de contexto e incrustaciones terminadas</string>
     <string name="btn_cancel">Cancelar</string>
     <string name="btn_close">Cerrar</string>
     <string name="btn_change">Cambiar</string>
@@ -26,6 +31,7 @@
     <string name="status_running">En ejecución</string>
     <string name="status_running_countdown">En ejecución • Se detiene en %1$s</string>
     <string name="status_generating">Generando respuesta…</string>
+    <string name="status_vectorizing">Vectorizando contexto…</string>
     <string name="status_starting">Iniciando…</string>
     <string name="status_restarting">Reiniciando…</string>
     <string name="status_stopping">Deteniendo…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">Mostrar accesos directos al Panel, Recargar y Ajustes en lugar de salir directamente</string>
     <string name="settings_bg_timeout">Tiempo de espera en segundo plano (minutos, 0 para desactivar)</string>
     <string name="settings_battery_exemption">Solicitar exención de optimización de batería</string>
+    <string name="settings_battery_warning">Restricciones de batería activas: Android puede cerrar ST-Mobile antes de su tiempo de espera de %1$d min. Toque para configurar en \'Sin restricciones\'.</string>
+    <string name="settings_notify_completion">Alertas emergentes de finalización</string>
+    <string name="settings_notify_completion_desc">Mostrar una notificación flotante cuando finalice la generación o vectorización en segundo plano</string>
     <string name="settings_auto_sync_lang">Sincronizar idioma de SillyTavern con la app</string>
     <string name="settings_auto_sync_lang_desc">Mantener el idioma de SillyTavern sincronizado con la interfaz de la aplicación</string>
     <string name="settings_app_language">Idioma de la aplicación</string>

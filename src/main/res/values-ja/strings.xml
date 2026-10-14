@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">ローカル SillyTavern Node.js サーバーを実行</string>
     <string name="notification_channel_name">ST Mobile サーバー</string>
+    <string name="notification_alerts_channel_name">完了通知</string>
     <string name="notification_action_stop">停止</string>
+    <string name="notification_completion_title">応答の準備ができました</string>
+    <string name="notification_completion_msg">SillyTavernの応答生成が完了しました</string>
+    <string name="notification_vector_completion_title">ベクトル化完了</string>
+    <string name="notification_vector_completion_msg">コンテキストのインデックス登録と埋め込みが完了しました</string>
     <string name="btn_cancel">キャンセル</string>
     <string name="btn_close">閉じる</string>
     <string name="btn_change">変更</string>
@@ -26,6 +31,7 @@
     <string name="status_running">実行中</string>
     <string name="status_running_countdown">実行中 • %1$s後に停止</string>
     <string name="status_generating">応答を生成中…</string>
+    <string name="status_vectorizing">コンテキストをベクトル化中…</string>
     <string name="status_starting">起動中…</string>
     <string name="status_restarting">再起動中…</string>
     <string name="status_stopping">停止中…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">直接戻る代わりにダッシュボード・リロード・設定のドックを表示します</string>
     <string name="settings_bg_timeout">バックグラウンド待機タイムアウト（分、0で無効）</string>
     <string name="settings_battery_exemption">バッテリー最適化の免除をリクエスト</string>
+    <string name="settings_battery_warning">バッテリー制限が有効です: %1$d分のタイムアウト前にST-Mobileが終了される可能性があります。タップして「制限なし」に設定してください。</string>
+    <string name="settings_notify_completion">完了ポップアップ通知</string>
+    <string name="settings_notify_completion_desc">バックグラウンドでの生成やベクトル化の完了時に通知を表示します</string>
     <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>
     <string name="settings_auto_sync_lang_desc">SillyTavern のインターフェース言語をアプリ言語と同期させます</string>
     <string name="settings_app_language">アプリ言語</string>

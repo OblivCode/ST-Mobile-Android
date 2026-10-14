@@ -180,6 +180,8 @@ object NodeController {
         explicitPort: Int?,
         onIpcStarted: () -> Unit,
         onIpcEnded: () -> Unit,
+        onVectorStarted: () -> Unit = {},
+        onVectorEnded: () -> Unit = {},
         onIpcDisconnected: () -> Unit,
         onProcessTerminated: () -> Unit,
     ) {
@@ -200,6 +202,8 @@ object NodeController {
                 explicitPort = explicitPort,
                 onIpcStarted = onIpcStarted,
                 onIpcEnded = onIpcEnded,
+                onVectorStarted = onVectorStarted,
+                onVectorEnded = onVectorEnded,
                 onIpcDisconnected = onIpcDisconnected,
                 onProcessTerminated = onProcessTerminated,
             )
@@ -244,6 +248,8 @@ object NodeController {
         explicitPort: Int?,
         onIpcStarted: () -> Unit,
         onIpcEnded: () -> Unit,
+        onVectorStarted: () -> Unit,
+        onVectorEnded: () -> Unit,
         onIpcDisconnected: () -> Unit,
         onProcessTerminated: () -> Unit,
     ) {
@@ -272,6 +278,8 @@ object NodeController {
                 authToken = genToken,
                 onGenerationStarted = onIpcStarted,
                 onGenerationEnded = onIpcEnded,
+                onVectorStarted = onVectorStarted,
+                onVectorEnded = onVectorEnded,
                 onClientDisconnected = onIpcDisconnected,
             )
             ipc.start()

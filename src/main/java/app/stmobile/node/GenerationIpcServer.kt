@@ -20,6 +20,8 @@ class GenerationIpcServer(
     private val authToken: String? = null,
     private val onGenerationStarted: () -> Unit,
     private val onGenerationEnded: () -> Unit,
+    private val onVectorStarted: () -> Unit = {},
+    private val onVectorEnded: () -> Unit = {},
     private val onClientDisconnected: () -> Unit,
 ) {
 
@@ -31,6 +33,8 @@ class GenerationIpcServer(
         authToken = null,
         onGenerationStarted = onGenerationStarted,
         onGenerationEnded = onGenerationEnded,
+        onVectorStarted = {},
+        onVectorEnded = {},
         onClientDisconnected = onClientDisconnected,
     )
 
@@ -88,6 +92,7 @@ class GenerationIpcServer(
     private fun handleClient(client: Socket) {
         val readerThread = Thread({
             var clientGenerating = false
+            var clientVectorizing = false
             try {
                 AppLog.d("GenerationIpcServer", "Accepted client connection from ${client.remoteSocketAddress}")
                 client.soTimeout = 10_000
@@ -121,6 +126,16 @@ class GenerationIpcServer(
                             clientGenerating = false
                             onGenerationEnded()
                         }
+                        "VECTOR_START" -> {
+                            AppLog.d("GenerationIpcServer", "Received VECTOR_START from client")
+                            clientVectorizing = true
+                            onVectorStarted()
+                        }
+                        "VECTOR_END" -> {
+                            AppLog.d("GenerationIpcServer", "Received VECTOR_END from client")
+                            clientVectorizing = false
+                            onVectorEnded()
+                        }
                     }
                 }
             } catch (_: Exception) {
@@ -137,6 +152,12 @@ class GenerationIpcServer(
                     clientGenerating = false
                     try {
                         onGenerationEnded()
+                    } catch (_: Exception) {}
+                }
+                if (clientVectorizing) {
+                    clientVectorizing = false
+                    try {
+                        onVectorEnded()
                     } catch (_: Exception) {}
                 }
                 onClientDisconnected()

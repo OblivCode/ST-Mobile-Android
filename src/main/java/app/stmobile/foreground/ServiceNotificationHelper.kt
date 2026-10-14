@@ -21,7 +21,9 @@ import app.stmobile.models.NodeStatus
 object ServiceNotificationHelper {
 
     const val CHANNEL_ID = "st_mobile_node"
+    const val ALERTS_CHANNEL_ID = "st_mobile_alerts"
     const val NOTIFICATION_ID = 1001
+    const val COMPLETION_NOTIFICATION_ID = 2002
 
     fun createChannel(context: Context) {
         val channel = NotificationChannel(
@@ -33,7 +35,40 @@ object ServiceNotificationHelper {
             enableVibration(false)
             setSound(null, null)
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val alertsChannel = NotificationChannel(
+            ALERTS_CHANNEL_ID,
+            context.getString(R.string.notification_alerts_channel_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            setShowBadge(true)
+            enableVibration(true)
+        }
+        val nm = context.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
+        nm.createNotificationChannel(alertsChannel)
+    }
+
+    fun showCompletionNotification(context: Context, title: String, message: String) {
+        val openIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
+        val builder = Notification.Builder(context, ALERTS_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setAutoCancel(true)
+            .setContentIntent(openIntent)
+
+        try {
+            context.getSystemService(NotificationManager::class.java)
+                .notify(COMPLETION_NOTIFICATION_ID, builder.build())
+        } catch (_: SecurityException) {
+            // Ignored if POST_NOTIFICATIONS runtime permission revoked
+        }
     }
 
     fun formatRemainingDuration(remainingMs: Long): String {
@@ -52,6 +87,7 @@ object ServiceNotificationHelper {
         context: Context,
         status: NodeStatus,
         isGenerating: Boolean = false,
+        isVectorizing: Boolean = false,
         idleTargetEpochMs: Long = 0L,
         customText: String? = null,
     ): Notification {
@@ -69,12 +105,13 @@ object ServiceNotificationHelper {
         )
 
         val remainingMs = idleTargetEpochMs - System.currentTimeMillis()
-        val isCountdownActive = status.state == NodeState.RUNNING && !isGenerating && idleTargetEpochMs > 0L && remainingMs > 0L
+        val isCountdownActive = status.state == NodeState.RUNNING && !isGenerating && !isVectorizing && idleTargetEpochMs > 0L && remainingMs > 0L
 
         val displayText = when {
             customText != null -> customText
             status.state == NodeState.STOPPING -> context.getString(R.string.status_stopping)
             status.state == NodeState.STARTING -> context.getString(R.string.status_starting)
+            isVectorizing -> context.getString(R.string.status_vectorizing)
             isGenerating -> context.getString(R.string.status_generating)
             isCountdownActive -> context.getString(
                 R.string.status_running_countdown,

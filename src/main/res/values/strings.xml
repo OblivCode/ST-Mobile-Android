@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">Runs the local SillyTavern Node.js server</string>
     <string name="notification_channel_name">ST Mobile server</string>
+    <string name="notification_alerts_channel_name">Completion alerts</string>
     <string name="notification_action_stop">Stop</string>
+    <string name="notification_completion_title">Response ready</string>
+    <string name="notification_completion_msg">SillyTavern finished generating a response</string>
+    <string name="notification_vector_completion_title">Vectorizing complete</string>
+    <string name="notification_vector_completion_msg">Context indexing and embeddings finished</string>
     <string name="btn_cancel">Cancel</string>
     <string name="btn_close">Close</string>
     <string name="btn_change">Change</string>
@@ -26,6 +31,7 @@
     <string name="status_running">Running</string>
     <string name="status_running_countdown">Running • Stops in %1$s</string>
     <string name="status_generating">Generating response…</string>
+    <string name="status_vectorizing">Vectorizing context…</string>
     <string name="status_starting">Starting…</string>
     <string name="status_restarting">Restarting…</string>
     <string name="status_stopping">Stopping…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">Show a dock with Dashboard, Reload, and Settings shortcuts instead of immediately returning to Dashboard</string>
     <string name="settings_bg_timeout">Background idle timeout (minutes, 0 to disable)</string>
     <string name="settings_battery_exemption">Request Battery Optimization Exemption</string>
+    <string name="settings_battery_warning">Battery Restrictions Active: Android may terminate ST-Mobile before your %1$d-minute timeout. Tap to set Battery Saver to \'No restrictions\'.</string>
+    <string name="settings_notify_completion">Completion pop-up alerts</string>
+    <string name="settings_notify_completion_desc">Show a heads-up notification when generation or vector indexing finishes in background</string>
     <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>
     <string name="settings_auto_sync_lang_desc">Keep SillyTavern interface language synchronized with the app shell</string>
     <string name="settings_app_language">App Shell Language</string>

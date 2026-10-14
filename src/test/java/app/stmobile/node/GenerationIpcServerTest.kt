@@ -90,4 +90,67 @@ class GenerationIpcServerTest {
             server.stop()
         }
     }
+
+    @Test
+    fun testVectorEventsDispatchedOverTcp() {
+        val startLatch = CountDownLatch(1)
+        val endLatch = CountDownLatch(1)
+
+        val server = GenerationIpcServer(
+            onGenerationStarted = {},
+            onGenerationEnded = {},
+            onVectorStarted = { startLatch.countDown() },
+            onVectorEnded = { endLatch.countDown() },
+            onClientDisconnected = {},
+        )
+
+        try {
+            server.start()
+            val client = Socket("127.0.0.1", server.port)
+            val writer = client.getOutputStream().bufferedWriter(Charsets.UTF_8)
+
+            writer.write("VECTOR_START\n")
+            writer.flush()
+            assertTrue("VECTOR_START must trigger onVectorStarted", startLatch.await(2, TimeUnit.SECONDS))
+
+            writer.write("VECTOR_END\n")
+            writer.flush()
+            assertTrue("VECTOR_END must trigger onVectorEnded", endLatch.await(2, TimeUnit.SECONDS))
+
+            client.close()
+        } finally {
+            server.stop()
+        }
+    }
+
+    @Test
+    fun testAbruptSocketDropMidVectorizingTriggersDisconnectionCleanup() {
+        val startLatch = CountDownLatch(1)
+        val endLatch = CountDownLatch(1)
+
+        val server = GenerationIpcServer(
+            onGenerationStarted = {},
+            onGenerationEnded = {},
+            onVectorStarted = { startLatch.countDown() },
+            onVectorEnded = { endLatch.countDown() },
+            onClientDisconnected = {},
+        )
+
+        try {
+            server.start()
+            val client = Socket("127.0.0.1", server.port)
+            val writer = client.getOutputStream().bufferedWriter(Charsets.UTF_8)
+
+            writer.write("VECTOR_START\n")
+            writer.flush()
+            assertTrue("VECTOR_START must trigger onVectorStarted", startLatch.await(2, TimeUnit.SECONDS))
+
+            client.setSoLinger(true, 0)
+            client.close()
+
+            assertTrue("Socket drop mid-vectorizing must trigger onVectorEnded", endLatch.await(2, TimeUnit.SECONDS))
+        } finally {
+            server.stop()
+        }
+    }
 }

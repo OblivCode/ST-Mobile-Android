@@ -6,8 +6,10 @@ const https = require('node:https');
 const net = require('node:net');
 
 const GEN_ROUTE_REGEX = /^\/api\/(backends\/[^/]+|azure|novelai|horde)\/generate(-text|-voice|-image|-video)?\/?(\?.*)?$/;
+const VECTOR_ROUTE_REGEX = /^\/api\/(vector\/[a-zA-Z0-9_-]+|backends\/[^/]+\/embed(dings)?|openrouter\/models\/embedding)\/?(\?.*)?$/;
 
 let activeRequests = 0;
+let activeVectorRequests = 0;
 let ipcSocket = null;
 const pendingQueue = [];
 
@@ -82,25 +84,46 @@ function sendEvent(cmd) {
 
 function handleIncomingRequest(req, res) {
     const url = req.url || '';
-    if (req.method === 'POST' && GEN_ROUTE_REGEX.test(url)) {
-        activeRequests++;
-        if (activeRequests === 1) {
-            sendEvent('GEN_START');
-        }
-
-        let finished = false;
-        const onEnd = () => {
-            if (finished) return;
-            finished = true;
-            activeRequests = Math.max(0, activeRequests - 1);
-            if (activeRequests === 0) {
-                sendEvent('GEN_END');
+    if (req.method === 'POST') {
+        if (GEN_ROUTE_REGEX.test(url)) {
+            activeRequests++;
+            if (activeRequests === 1) {
+                sendEvent('GEN_START');
             }
-        };
 
-        res.once('finish', onEnd);
-        res.once('close', onEnd);
-        res.once('error', onEnd);
+            let finished = false;
+            const onEnd = () => {
+                if (finished) return;
+                finished = true;
+                activeRequests = Math.max(0, activeRequests - 1);
+                if (activeRequests === 0) {
+                    sendEvent('GEN_END');
+                }
+            };
+
+            res.once('finish', onEnd);
+            res.once('close', onEnd);
+            res.once('error', onEnd);
+        } else if (VECTOR_ROUTE_REGEX.test(url)) {
+            activeVectorRequests++;
+            if (activeVectorRequests === 1) {
+                sendEvent('VECTOR_START');
+            }
+
+            let finished = false;
+            const onEnd = () => {
+                if (finished) return;
+                finished = true;
+                activeVectorRequests = Math.max(0, activeVectorRequests - 1);
+                if (activeVectorRequests === 0) {
+                    sendEvent('VECTOR_END');
+                }
+            };
+
+            res.once('finish', onEnd);
+            res.once('close', onEnd);
+            res.once('error', onEnd);
+        }
     }
 }
 

@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">Запуск локального сервера SillyTavern Node.js</string>
     <string name="notification_channel_name">Сервер ST Mobile</string>
+    <string name="notification_alerts_channel_name">Уведомления о завершении</string>
     <string name="notification_action_stop">Остановить</string>
+    <string name="notification_completion_title">Ответ готов</string>
+    <string name="notification_completion_msg">SillyTavern завершил генерацию ответа</string>
+    <string name="notification_vector_completion_title">Векторизация завершена</string>
+    <string name="notification_vector_completion_msg">Индексация контекста и эмбеддинги завершены</string>
     <string name="btn_cancel">Отмена</string>
     <string name="btn_close">Закрыть</string>
     <string name="btn_change">Изменить</string>
@@ -26,6 +31,7 @@
     <string name="status_running">Работает</string>
     <string name="status_running_countdown">Работает • Остановка через %1$s</string>
     <string name="status_generating">Генерация ответа…</string>
+    <string name="status_vectorizing">Векторизация контекста…</string>
     <string name="status_starting">Запуск…</string>
     <string name="status_restarting">Перезапуск…</string>
     <string name="status_stopping">Остановка…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">Показывать всплывающую панель с быстрыми кнопками вместо прямого возврата на главную</string>
     <string name="settings_bg_timeout">Тайм-аут простоя в фоне (минут, 0 для отключения)</string>
     <string name="settings_battery_exemption">Запросить исключение из оптимизации батареи</string>
+    <string name="settings_battery_warning">Ограничения батареи активны: Android может закрыть ST-Mobile до истечения %1$d мин. Нажмите, чтобы выбрать \'Без ограничений\'.</string>
+    <string name="settings_notify_completion">Всплывающие уведомления о завершении</string>
+    <string name="settings_notify_completion_desc">Показывать всплывающее уведомление, когда генерация или векторизация завершается в фоновом режиме</string>
     <string name="settings_auto_sync_lang">Синхронизировать язык SillyTavern с приложением</string>
     <string name="settings_auto_sync_lang_desc">Поддерживать язык интерфейса SillyTavern в соответствии с языком приложения</string>
     <string name="settings_app_language">Язык приложения</string>

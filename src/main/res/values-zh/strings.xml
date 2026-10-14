@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">运行本地 SillyTavern Node.js 服务</string>
     <string name="notification_channel_name">ST Mobile 服务</string>
+    <string name="notification_alerts_channel_name">完成提醒</string>
     <string name="notification_action_stop">停止</string>
+    <string name="notification_completion_title">回复已就绪</string>
+    <string name="notification_completion_msg">SillyTavern 已完成生成回复</string>
+    <string name="notification_vector_completion_title">向量化完成</string>
+    <string name="notification_vector_completion_msg">上下文索引与嵌入向量处理已完成</string>
     <string name="btn_cancel">取消</string>
     <string name="btn_close">关闭</string>
     <string name="btn_change">更改</string>
@@ -26,6 +31,7 @@
     <string name="status_running">运行中</string>
     <string name="status_running_countdown">运行中 • %1$s后停止</string>
     <string name="status_generating">正在生成回复…</string>
+    <string name="status_vectorizing">正在向量化上下文…</string>
     <string name="status_starting">启动中…</string>
     <string name="status_restarting">重启中…</string>
     <string name="status_stopping">停止中…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">显示包含仪表盘、刷新和设置快捷方式的快捷栏，而不是直接返回仪表盘</string>
     <string name="settings_bg_timeout">后台空闲超时（分钟，0为禁用）</string>
     <string name="settings_battery_exemption">请求忽略电池优化</string>
+    <string name="settings_battery_warning">电池优化限制生效中：Android 可能会在 %1$d 分钟超时前终止 ST-Mobile。点击以设置为“无限制”。</string>
+    <string name="settings_notify_completion">完成弹出通知</string>
+    <string name="settings_notify_completion_desc">在后台生成或向量化完成时显示浮动通知</string>
     <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>
     <string name="settings_auto_sync_lang_desc">使 SillyTavern 界面语言与原生应用语言保持同步</string>
     <string name="settings_app_language">应用界面语言</string>

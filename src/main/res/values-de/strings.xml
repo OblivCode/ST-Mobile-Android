@@ -4,7 +4,12 @@
     <string name="app_name">ST Mobile</string>
     <string name="fgs_special_use_subtype">Führt den lokalen SillyTavern Node.js-Server aus</string>
     <string name="notification_channel_name">ST Mobile Server</string>
+    <string name="notification_alerts_channel_name">Abschlussbenachrichtigungen</string>
     <string name="notification_action_stop">Stoppen</string>
+    <string name="notification_completion_title">Antwort bereit</string>
+    <string name="notification_completion_msg">SillyTavern hat die Antwort generiert</string>
+    <string name="notification_vector_completion_title">Vektorisierung abgeschlossen</string>
+    <string name="notification_vector_completion_msg">Kontextindizierung und Einbettungen abgeschlossen</string>
     <string name="btn_cancel">Abbrechen</string>
     <string name="btn_close">Schließen</string>
     <string name="btn_change">Ändern</string>
@@ -26,6 +31,7 @@
     <string name="status_running">Läuft</string>
     <string name="status_running_countdown">Wird ausgeführt • Stoppt in %1$s</string>
     <string name="status_generating">Antwort wird generiert…</string>
+    <string name="status_vectorizing">Kontext wird vektorisiert…</string>
     <string name="status_starting">Startet…</string>
     <string name="status_restarting">Neustart…</string>
     <string name="status_stopping">Stoppt…</string>
@@ -46,6 +52,9 @@
     <string name="settings_quick_toolbar_desc">Dockleiste mit Dashboard, Neu laden und Einstellungen anstelle direkter Rückkehr anzeigen</string>
     <string name="settings_bg_timeout">Hintergrund-Inaktivitäts-Timeout (Minuten, 0 zum Deaktivieren)</string>
     <string name="settings_battery_exemption">Ausnahme von der Akkuoptimierung anfordern</string>
+    <string name="settings_battery_warning">Akku-Einschränkungen aktiv: Android kann ST-Mobile vor Ablauf des %1$d-Minuten-Timeouts beenden. Tippen, um auf \'Keine Beschränkungen\' zu stellen.</string>
+    <string name="settings_notify_completion">Pop-up-Abschlussbenachrichtigungen</string>
+    <string name="settings_notify_completion_desc">Heads-up-Benachrichtigung anzeigen, wenn Generierung oder Vektorisierung im Hintergrund endet</string>
     <string name="settings_auto_sync_lang">SillyTavern-Sprache automatisch mit App synchronisieren</string>
     <string name="settings_auto_sync_lang_desc">Hält die Sprache der SillyTavern-Benutzeroberfläche mit der App synchron</string>
     <string name="settings_app_language">App-Sprache</string>

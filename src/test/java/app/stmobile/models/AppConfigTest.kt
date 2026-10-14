@@ -24,6 +24,7 @@ class AppConfigTest {
         assertFalse("wasRunningBeforeKill default should be false", config.wasRunningBeforeKill)
         assertTrue("webViewMenuQuickToolbar default should be true", config.webViewMenuQuickToolbar)
         assertTrue("autoSyncLanguage default should be true", config.autoSyncLanguage)
+        assertTrue("notifyOnCompletion default should be true", config.notifyOnCompletion)
     }
 
     @Test
@@ -42,6 +43,7 @@ class AppConfigTest {
         config.wasRunningBeforeKill = true
         config.webViewMenuQuickToolbar = false
         config.autoSyncLanguage = false
+        config.notifyOnCompletion = false
 
         // Verify on instance
         assertTrue(config.autoStartOnAppOpen)
@@ -55,6 +57,7 @@ class AppConfigTest {
         assertTrue(config.wasRunningBeforeKill)
         assertFalse(config.webViewMenuQuickToolbar)
         assertFalse(config.autoSyncLanguage)
+        assertFalse(config.notifyOnCompletion)
 
         // Verify across independent AppConfig instance on the same SharedPreferences
         val reloaded = AppConfig(prefs)
@@ -69,6 +72,7 @@ class AppConfigTest {
         assertTrue(reloaded.wasRunningBeforeKill)
         assertFalse(reloaded.webViewMenuQuickToolbar)
         assertFalse(reloaded.autoSyncLanguage)
+        assertFalse(reloaded.notifyOnCompletion)
     }
 
     @Test
