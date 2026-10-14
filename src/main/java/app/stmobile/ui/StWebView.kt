@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -92,6 +93,7 @@ fun StWebView(
     visible: Boolean = true,
     onNavigateToSettings: () -> Unit = {},
     onBackToDashboard: () -> Unit = onNavigateToDashboard,
+    onStopServer: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
@@ -313,6 +315,7 @@ fun StWebView(
                 webViewInstance = webViewInstance,
                 onNavigateToDashboard = onNavigateToDashboard,
                 onNavigateToSettings = onNavigateToSettings,
+                onStopServer = onStopServer,
             )
         }
     }
@@ -323,6 +326,7 @@ fun EdgeDockedMenuHandle(
     webViewInstance: WebView?,
     onNavigateToDashboard: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onStopServer: () -> Unit = {},
     modifier: Modifier = Modifier,
     initialOffsetY: Dp? = null,
     onOffsetYChange: ((Dp) -> Unit)? = null,
@@ -495,6 +499,19 @@ fun EdgeDockedMenuHandle(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = stringResource(R.string.cd_reload),
                             tint = Color(0xFF7EC8A9),
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            isExpanded = false
+                            onStopServer()
+                            onNavigateToDashboard()
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = stringResource(R.string.dashboard_btn_stop),
+                            tint = Color(0xFFEF5350),
                         )
                     }
                     IconButton(

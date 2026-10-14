@@ -143,4 +143,47 @@ class BackgroundTimeoutManagerTest {
         val terminated = customExecutor.awaitTermination(200, TimeUnit.MILLISECONDS)
         assertTrue("Scheduler threads must terminate cleanly", terminated)
     }
+
+    @Test
+    fun testOnTickInvokedPeriodicallyAndStopsOnCancel() {
+        val tickCount = AtomicInteger(0)
+        val tickLatch = CountDownLatch(3)
+        val manager = BackgroundTimeoutManager(
+            tickIntervalMs = 20L,
+            onTick = {
+                tickCount.incrementAndGet()
+                tickLatch.countDown()
+            },
+            onTimeout = {},
+        )
+
+        try {
+            manager.schedule(5, TimeUnit.MINUTES)
+            val ticksFired = tickLatch.await(500, TimeUnit.MILLISECONDS)
+            assertTrue("onTick should fire periodically while scheduled", ticksFired)
+            assertTrue("onTick should have fired at least 3 times", tickCount.get() >= 3)
+
+            manager.cancel()
+            val countAfterCancel = tickCount.get()
+            Thread.sleep(80)
+            assertEquals("onTick must not continue after cancel", countAfterCancel, tickCount.get())
+        } finally {
+            manager.shutdown()
+        }
+    }
+
+    @Test
+    fun testFormatRemainingDuration() {
+        assertEquals("0s", ServiceNotificationHelper.formatRemainingDuration(0L))
+        assertEquals("0s", ServiceNotificationHelper.formatRemainingDuration(-500L))
+        assertEquals("1s", ServiceNotificationHelper.formatRemainingDuration(1L))
+        assertEquals("1s", ServiceNotificationHelper.formatRemainingDuration(999L))
+        assertEquals("1s", ServiceNotificationHelper.formatRemainingDuration(1000L))
+        assertEquals("2s", ServiceNotificationHelper.formatRemainingDuration(1001L))
+        assertEquals("59s", ServiceNotificationHelper.formatRemainingDuration(59000L))
+        assertEquals("1m", ServiceNotificationHelper.formatRemainingDuration(60000L))
+        assertEquals("1m 5s", ServiceNotificationHelper.formatRemainingDuration(64001L))
+        assertEquals("9m 30s", ServiceNotificationHelper.formatRemainingDuration(569001L))
+        assertEquals("10m", ServiceNotificationHelper.formatRemainingDuration(600000L))
+    }
 }

@@ -27,13 +27,17 @@ class ForegroundService : Service() {
     private val lock = Any()
 
     private lateinit var wakeLockHelper: WakeLockHelper
-    private val timeoutManager = BackgroundTimeoutManager { handleBackgroundTimeout() }
+    private val timeoutManager = BackgroundTimeoutManager(
+        onTick = { updateNotification() },
+        onTimeout = { handleBackgroundTimeout() },
+    )
 
     private val generationTracker = GenerationTracker(
         onFirstStarted = {
             wakeLockHelper.acquire()
             timeoutManager.pause()
             NodeController.updateGeneratingState(true)
+            updateNotification()
         },
         onAllEnded = {
             wakeLockHelper.release()
@@ -42,6 +46,7 @@ class ForegroundService : Service() {
                 timeoutManager.resume()
             }
             NodeController.updateGeneratingState(false)
+            updateNotification()
         },
     )
 
@@ -210,16 +215,19 @@ class ForegroundService : Service() {
 
     private fun updateNotification() {
         if (!hasActiveSession) return
-        val isGenerating = generationTracker.isGenerating
-        val targetEpoch = if (!isGenerating && timeoutManager.isScheduled && !timeoutManager.isPaused) {
-            timeoutManager.targetEpochMs
-        } else {
-            0L
+        val (isGenerating, targetEpoch, currentStatus) = synchronized(lock) {
+            val generating = generationTracker.isGenerating
+            val epoch = if (!generating && timeoutManager.isScheduled && !timeoutManager.isPaused) {
+                timeoutManager.targetEpochMs
+            } else {
+                0L
+            }
+            Triple(generating, epoch, NodeController.status.value)
         }
 
         val notification = ServiceNotificationHelper.buildNotification(
             context = this,
-            status = NodeController.status.value,
+            status = currentStatus,
             isGenerating = isGenerating,
             idleTargetEpochMs = targetEpoch,
         )

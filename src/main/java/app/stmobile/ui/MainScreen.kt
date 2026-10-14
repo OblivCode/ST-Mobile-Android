@@ -60,6 +60,7 @@ fun MainScreen(
                 onNavigateToDashboard = { navController.navigateTo(ActiveScreen.DASHBOARD) },
                 onBackToDashboard = { navController.exitWebViewToDashboard() },
                 onNavigateToSettings = { navController.navigateTo(ActiveScreen.SETTINGS) },
+                onStopServer = onStopServer,
             )
         }
 

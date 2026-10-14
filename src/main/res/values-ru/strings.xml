@@ -24,6 +24,7 @@
     <string name="dashboard_btn_stop">Остановить сервер</string>
     <string name="dashboard_btn_open">Открыть SillyTavern</string>
     <string name="status_running">Работает</string>
+    <string name="status_running_countdown">Работает • Остановка через %1$s</string>
     <string name="status_generating">Генерация ответа…</string>
     <string name="status_starting">Запуск…</string>
     <string name="status_restarting">Перезапуск…</string>

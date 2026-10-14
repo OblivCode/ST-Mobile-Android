@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tier 2 Artifact Verification Script (Phase H + Phase L.3)
+# Tier 2 Artifact Verification Script
 # Inspects built APK archives without requiring physical devices or emulators.
 # Validates both slim (runner) and full (offline) product flavor invariants.
 set -euo pipefail

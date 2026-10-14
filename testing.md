@@ -19,8 +19,8 @@ Robolectric simulates the Android OS on host JVMs by downloading multi-hundred-m
 ```mermaid
 flowchart TD
     subgraph Tier1["Tier 1: Host JVM Unit Tests (Gradle)"]
-        T1_Desc["Target: Logic, Contracts, Serialization, State Machines<br/>Environment: Pure Host JVM (Linux/macOS/Windows)<br/>Execution: ~500 ms (90 tests across 10 classes)<br/>Gate: Every commit / PR (`./gradlew testDebugUnitTest`)"]
-        T1_Classes["PayloadManagerTest (10)<br/>ProcessLaunchContractTest (5)<br/>ReadinessPollingTest (6)<br/>PortResolverTest (9)<br/>BackgroundTimeoutManagerTest (6)<br/>BackupManagerTest (15)<br/>StConfigTest (8) / NodeConfigTest (6) / AppConfigTest (6)<br/>NavigationTest (19: NavigationController + routing)"]
+        T1_Desc["Target: Logic, Contracts, Serialization, State Machines<br/>Environment: Pure Host JVM (Linux/macOS/Windows)<br/>Execution: ~1.5 s (195 tests across 20 classes)<br/>Gate: Every commit / PR (`./gradlew testFullDebugUnitTest`)"]
+        T1_Classes["BackupManagerTest (33)<br/>PayloadManagerTest (34) / UpdateCheckerTest (10)<br/>Foreground & Generation Suites (20)<br/>Logging & Crash Reporting Suites (12)<br/>Node Contracts & Port Resolvers (24)<br/>Models & Config Suites (38)<br/>NavigationTest (21) / StringResourcesTest (3)"]
     end
 
     subgraph Tier2["Tier 2: Static APK Artifact Inspection (ci/check_apk.sh)"]
@@ -40,26 +40,41 @@ flowchart TD
 
 ## 2. Tier 1: Host JVM Unit Tests Breakdown
 
-Tier 1 executes via `./gradlew testDebugUnitTest`. All tests reside in `src/test/java/app/stmobile/`.
+Tier 1 executes via `./gradlew testFullDebugUnitTest`. All tests reside in `src/test/java/app/stmobile/`.
 
 ```
 src/test/java/app/stmobile/
+├── backup/
+│   └── BackupManagerTest.kt            (33 tests)
+├── foreground/
+│   ├── BackgroundTimeoutManagerTest.kt (8 tests)
+│   ├── GenerationTrackerTest.kt        (6 tests)
+│   └── WakeLockHelperTest.kt           (6 tests)
+├── i18n/
+│   └── StringResourcesTest.kt          (3 tests)
+├── logging/
+│   ├── AppLogTest.kt                   (5 tests)
+│   ├── CrashHandlerTest.kt             (2 tests)
+│   └── DiagnosticsSnapshotTest.kt      (5 tests)
 ├── models/
-│   ├── AppConfigTest.kt           (6 tests)
-│   ├── NodeConfigTest.kt          (6 tests)
-│   └── StConfigTest.kt            (8 tests)
+│   ├── AppConfigTest.kt                (6 tests)
+│   ├── NodeConfigTest.kt               (6 tests)
+│   ├── StConfigTest.kt                 (8 tests)
+│   ├── StLocalesTest.kt                (8 tests)
+│   └── StUserSettingsTest.kt           (10 tests)
 ├── node/
-│   ├── BackgroundTimeoutManagerTest.kt (6 tests)
-│   ├── PortResolverTest.kt        (9 tests)
-│   ├── ProcessLaunchContractTest.kt    (5 tests)
-│   └── ReadinessPollingTest.kt    (6 tests)
-├── sillytavern/
-│   ├── BackupManagerTest.kt       (15 tests)
-│   └── PayloadManagerTest.kt      (10 tests)
+│   ├── GenerationIpcServerTest.kt      (3 tests)
+│   ├── PortResolverTest.kt             (9 tests)
+│   ├── ProcessLaunchContractTest.kt    (6 tests)
+│   └── ReadinessPollingTest.kt         (6 tests)
+├── payload/
+│   ├── PayloadManagerTest.kt           (34 tests)
+│   └── UpdateCheckerTest.kt            (10 tests)
 ├── testutils/
-│   └── FakeSharedPreferences.kt   (Architectural test double)
+│   ├── FakeHttpURLConnection.kt        (Architectural test double)
+│   └── FakeSharedPreferences.kt        (Architectural test double)
 └── ui/
-    └── NavigationTest.kt          (19 tests)
+    └── NavigationTest.kt               (21 tests)
 ```
 
 ### 2.1 `sillytavern/PayloadManagerTest.kt` (10 tests)
@@ -327,7 +342,7 @@ flowchart TD
 Script: [`ci/check_apk.sh`](file:///home/seb/drive1/Projects/ST-Mobile/app-native/ci/check_apk.sh)  
 Run: `bash ci/check_apk.sh [path/to/apk]`
 
-Operates directly on the built APK without an attached device or emulator across 7 phases:
+Operates directly on the built APK without an attached device or emulator across 7 verification steps:
 
 1. **ZIP Archive Integrity:** Validates archive structure with `unzip -tq`.
 2. **Bundled Native Binaries:** Confirms `libstnode.so`, `libnode.so`, and `libc++_shared.so` exist in `lib/arm64-v8a/`.

@@ -18,11 +18,16 @@ class BackgroundTimeoutManager(
         // Purges canceled timer tasks from memory immediately
         removeOnCancelPolicy = true
     },
+    private val tickIntervalMs: Long = DEFAULT_TICK_INTERVAL_MS,
+    private val onTick: (() -> Unit)? = null,
     private val onTimeout: () -> Unit,
 ) {
 
     @Volatile
     private var scheduledTask: ScheduledFuture<*>? = null
+
+    @Volatile
+    private var scheduledTickTask: ScheduledFuture<*>? = null
 
     @Volatile
     var isScheduled: Boolean = false
@@ -44,6 +49,30 @@ class BackgroundTimeoutManager(
     private var targetMonotonicMs: Long = 0L
 
     private fun nowMonotonicMs(): Long = System.nanoTime() / 1_000_000L
+
+    private fun startTickTask() {
+        scheduledTickTask?.cancel(false)
+        scheduledTickTask = null
+        if (onTick != null && tickIntervalMs > 0L) {
+            scheduledTickTask = scheduler.scheduleWithFixedDelay({
+                val shouldTick = synchronized(this) {
+                    isScheduled && !isPaused
+                }
+                if (shouldTick) {
+                    try {
+                        onTick.invoke()
+                    } catch (t: Throwable) {
+                        AppLog.e("BackgroundTimeoutManager", "Uncaught exception in onTick callback", t)
+                    }
+                }
+            }, tickIntervalMs, tickIntervalMs, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    private fun cancelTickTask() {
+        scheduledTickTask?.cancel(false)
+        scheduledTickTask = null
+    }
 
     /**
      * Schedules the background timeout countdown.
@@ -74,6 +103,7 @@ class BackgroundTimeoutManager(
                     targetMonotonicMs = 0L
                     savedRemainingMillis = 0L
                     scheduledTask = null
+                    cancelTickTask()
                     true
                 }
             }
@@ -82,6 +112,8 @@ class BackgroundTimeoutManager(
                 onTimeout()
             }
         }, totalMs, TimeUnit.MILLISECONDS)
+
+        startTickTask()
     }
 
     /**
@@ -95,6 +127,7 @@ class BackgroundTimeoutManager(
         savedRemainingMillis = maxOf(0L, targetMonotonicMs - currentMonoMs)
         scheduledTask?.cancel(false)
         scheduledTask = null
+        cancelTickTask()
         isPaused = true
         targetEpochMs = 0L
         targetMonotonicMs = 0L
@@ -127,6 +160,7 @@ class BackgroundTimeoutManager(
                     targetMonotonicMs = 0L
                     savedRemainingMillis = 0L
                     scheduledTask = null
+                    cancelTickTask()
                     true
                 }
             }
@@ -135,6 +169,8 @@ class BackgroundTimeoutManager(
                 onTimeout()
             }
         }, durationMs, TimeUnit.MILLISECONDS)
+
+        startTickTask()
     }
 
     /**
@@ -155,6 +191,7 @@ class BackgroundTimeoutManager(
     fun cancel() {
         scheduledTask?.cancel(false)
         scheduledTask = null
+        cancelTickTask()
         isScheduled = false
         isPaused = false
         targetEpochMs = 0L
@@ -170,5 +207,9 @@ class BackgroundTimeoutManager(
     fun shutdown() {
         cancel()
         scheduler.shutdownNow()
+    }
+
+    companion object {
+        const val DEFAULT_TICK_INTERVAL_MS = 15_000L
     }
 }

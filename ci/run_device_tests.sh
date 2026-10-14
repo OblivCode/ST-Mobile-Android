@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tier 3 Physical Device Test Runner (Phase H)
+# Tier 3 Physical Device Test Runner
 # Executes on-device instrumentation tests against real ARM64 hardware (e.g. Snapdragon 8 Elite).
 set -euo pipefail
 

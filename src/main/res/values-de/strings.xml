@@ -24,6 +24,7 @@
     <string name="dashboard_btn_stop">Server stoppen</string>
     <string name="dashboard_btn_open">SillyTavern öffnen</string>
     <string name="status_running">Läuft</string>
+    <string name="status_running_countdown">Wird ausgeführt • Stoppt in %1$s</string>
     <string name="status_generating">Antwort wird generiert…</string>
     <string name="status_starting">Startet…</string>
     <string name="status_restarting">Neustart…</string>

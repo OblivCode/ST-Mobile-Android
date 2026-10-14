@@ -36,6 +36,18 @@ object ServiceNotificationHelper {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
+    fun formatRemainingDuration(remainingMs: Long): String {
+        if (remainingMs <= 0L) return "0s"
+        val totalSecs = (remainingMs + 999L) / 1000L
+        val mins = totalSecs / 60L
+        val secs = totalSecs % 60L
+        return when {
+            mins > 0L && secs > 0L -> "${mins}m ${secs}s"
+            mins > 0L -> "${mins}m"
+            else -> "${secs}s"
+        }
+    }
+
     fun buildNotification(
         context: Context,
         status: NodeStatus,
@@ -56,12 +68,19 @@ object ServiceNotificationHelper {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+        val remainingMs = idleTargetEpochMs - System.currentTimeMillis()
+        val isCountdownActive = status.state == NodeState.RUNNING && !isGenerating && idleTargetEpochMs > 0L && remainingMs > 0L
+
         val displayText = when {
             customText != null -> customText
-            isGenerating -> context.getString(R.string.status_generating)
-            idleTargetEpochMs > System.currentTimeMillis() -> context.getString(R.string.status_running)
             status.state == NodeState.STOPPING -> context.getString(R.string.status_stopping)
             status.state == NodeState.STARTING -> context.getString(R.string.status_starting)
+            isGenerating -> context.getString(R.string.status_generating)
+            isCountdownActive -> context.getString(
+                R.string.status_running_countdown,
+                formatRemainingDuration(remainingMs),
+            )
+            status.state == NodeState.RUNNING -> context.getString(R.string.status_running)
             status.message.isNotBlank() -> status.message
             else -> status.state.name
         }
@@ -81,7 +100,6 @@ object ServiceNotificationHelper {
                 ).build()
             )
 
-        val isCountdownActive = !isGenerating && idleTargetEpochMs > System.currentTimeMillis()
         if (isCountdownActive) {
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)

@@ -19,17 +19,20 @@ A Jetpack Compose shell hosts the UI and a WebView pointed at the local server.
 | :--- | :--- |
 | `app.stmobile` | `MainActivity` (lifecycle coordinator and backup file contracts), `StApplication` (foreground/background tracking), `AppPaths` (every filesystem path), `Utils` (battery prompt, notification permission, log sharing). |
 | `models` | Typed configuration and state: `AppConfig` (app settings), `StConfig` (SillyTavern `config.yaml`), `StUserSettings` (SillyTavern `settings.json` client preferences), `NodeConfig` (V8 and environment options), `NodeStatus` (lifecycle state). |
-| `node` | Process supervision: `NodeService` (foreground service and status flow), `NodeController` (launches and stops the process), `PortResolver` (port probing and fallback), `BackgroundTimeoutManager` (idle shutdown). |
-| `sillytavern` | `PayloadManager` (unpacks the bundled SillyTavern) and `BackupManager` (export, import, restore of user data). |
-| `ui` | Compose screens: setup, dashboard, modular settings (`AppSettingsTab`, `SillyTavernSettingsTab`, `NodeEngineSettingsTab`), WebView host with edge-docked quick toolbar and gesture exclusion, backup dialogs, and navigation state machine (`computeNextScreen`, `computeBackScreen`). |
+| `foreground` | Service supervision: `ForegroundService` (specialUse Android foreground service), `WakeLockHelper` (dynamic CPU PARTIAL_WAKE_LOCK), `BackgroundTimeoutManager` (idle countdown timer with periodic notification ticks), `GenerationTracker`, `ServiceNotificationHelper`. |
+| `node` | Process execution: `NodeController` (process spawning and state flow), `PortResolver` (port probing and fallback), `ServerReadinessPoller` (readiness loop), `GenerationIpcServer` (Node hook HTTP request IPC). |
+| `payload` | `PayloadManager` (unpacks bundled SillyTavern and payload promotion), `PayloadSource`, `UpdateChecker`. |
+| `backup` | `BackupManager` (export, import, preflight inspection, AES-256 encryption, non-dereferencing symlink safety, rollback recovery). |
+| `logging` | `AppLog` (rotating file logger with Logcat mirroring), `CrashHandler` (global uncaught exception handler), `DiagnosticsSnapshot` (telemetry collection & clipboard export). |
+| `ui` | Compose screens: setup, dashboard, updates, backups, modular settings (`AppSettingsTab`, `SillyTavernSettingsTab`, `NodeEngineSettingsTab`), WebView host with edge-docked quick toolbar (Dashboard, Reload, Stop, Settings, Close), and `NavigationController`. |
 
 ### Dependency rules
 
 1. `models` is a leaf: it depends on nothing else in the app.
-2. `sillytavern` depends only on `AppPaths` and the Android framework.
-3. `node` orchestrates `models` and `sillytavern` to launch and supervise the server. It exposes a
-   process-level `StateFlow<NodeStatus>`, so the UI never binds to the service.
-4. `ui` and `MainActivity` observe that flow and read or write settings through the `models` classes.
+2. `payload`, `backup`, and `logging` depend only on `AppPaths` and the Android framework.
+3. `node` orchestrates low-level process execution and exposes a process-level `StateFlow<NodeStatus>`.
+4. `foreground` supervises the active service lifecycle, managing power wake locks, timeouts, and system notifications.
+5. `ui` and `MainActivity` observe state flows and interact with the server through `NodeController` and `ForegroundService`.
 
 ## 3. Key lifecycles
 
@@ -40,28 +43,28 @@ sequenceDiagram
     autonumber
     actor User
     participant Activity as MainActivity
-    participant Service as NodeService (Worker Thread)
+    participant Service as ForegroundService
     participant PM as PayloadManager
     participant Controller as NodeController
     participant Resolver as PortResolver
     participant Node as Subprocess (libstnode.so)
 
     User->>Activity: Open App / Tap Start
-    Activity->>Service: NodeService.start(context)
+    Activity->>Service: ForegroundService.start(context)
     Service->>Service: startForeground(specialUse, "Starting…")
-    Service->>PM: getExistingLayout()
-    PM-->>Service: Layout
-    Service->>Controller: start(layout, stConfig, nodeConfig, appConfig)
+    Service->>Controller: executeStart(context)
+    Controller->>PM: getExistingLayout()
+    PM-->>Controller: Layout
     Controller->>Resolver: resolvePort(targetPort, autoPortFallback)
     Resolver-->>Controller: effectivePort
     Controller->>Node: ProcessBuilder.start()
     Controller-->>Service: LaunchResult(Process, effectivePort)
     loop Up to 30s (250ms intervals)
-        Service->>Node: HTTP GET http://127.0.0.1:<effectivePort>
-        Node-->>Service: HTTP 200..499 (Ready)
+        Controller->>Node: HTTP GET http://127.0.0.1:<effectivePort>
+        Node-->>Controller: HTTP 200..499 (Ready)
     end
-    Service->>Service: _status.value = RUNNING (effectivePort, pid)
-    Activity->>Service: Collect StateFlow(RUNNING)
+    Controller->>Controller: _status.value = RUNNING (effectivePort, pid)
+    Activity->>Controller: Collect StateFlow(RUNNING)
     Activity->>Activity: Render StWebView / Enable Controls
 ```
 
@@ -72,7 +75,7 @@ sequenceDiagram
     autonumber
     actor User
     participant App as StApplication (Main Thread)
-    participant Service as NodeService
+    participant Service as ForegroundService
     participant Timeout as BackgroundTimeoutManager (Daemon)
     participant Controller as NodeController
 
@@ -81,16 +84,16 @@ sequenceDiagram
     Note over App: If user returns within 1000ms, debounce cancels
     App->>Service: onAppBackgrounded(context)
     Service->>Timeout: schedule(backgroundTimeoutMinutes)
-    Note over Timeout: Countdown running on ScheduledThreadPoolExecutor
+    Note over Timeout: Countdown running with 15s periodic tick
     alt User returns before timeout
         User->>App: onActivityStarted
         App->>Service: onAppForegrounded()
         Service->>Timeout: cancel()
     else Timeout expires
         Timeout->>Service: onTimeout() -> handleBackgroundTimeout()
-        Service->>Controller: stop()
+        Service->>Controller: executeStop(context)
         Controller->>Controller: Destroy process
-        Service->>Service: _status.value = STOPPED
+        Controller->>Controller: _status.value = STOPPED
         Service->>Service: stopForeground(STOP_FOREGROUND_REMOVE) & stopSelf()
     end
 ```
@@ -113,7 +116,7 @@ as a merge. `StConfig` edits `config.yaml` without dropping keys it does not kno
 
 ST Mobile employs a rigorous three-tier testing strategy designed to provide rapid developer feedback, enforce native artifact invariants in CI, and verify execution integrity on physical ARM64 hardware without compromising user data:
 
-- **Tier 1: Host JVM Unit Tests** (`src/test/java/app/stmobile/`): 90 pure JVM tests across 10 classes executed in ~500ms via `./gradlew testDebugUnitTest`. Tests run completely isolated from Android runtime dependencies using inverted dependency constructors, covering payload extraction transactions, launch specs, readiness polling, non-destructive YAML parsing, navigation routing, and backup cryptography.
+- **Tier 1: Host JVM Unit Tests** (`src/test/java/app/stmobile/`): 195 pure JVM tests across 20 classes executed in ~1.5s via `./gradlew testFullDebugUnitTest`. Tests run completely isolated from Android runtime dependencies using inverted dependency constructors, covering payload extraction transactions, launch specs, readiness polling, non-destructive YAML parsing, navigation routing, and backup cryptography.
 - **Tier 2: Static Native APK Inspection** (`ci/check_apk.sh`): 7 automated APK auditing checks verifying that native libraries (`libstnode.so`, `libnode.so`, `libc++_shared.so`) match ELF64/AArch64 targets, DT_NEEDED dependencies are strictly satisfied, ELF load segments meet Android 15 16 KB page alignment, payload assets match SHA-256 manifests, and DEX bytecode is free of unstripped development strings.
 - **Tier 3: Physical Device Smoke Tests** (`src/androidTest/java/app/stmobile/`): 4 hardware instrumentation tests across 3 classes executed via `ci/run_device_tests.sh` on connected ARM64 devices (or via wireless ADB). Tests exercise sandboxed payload extraction, native Node.js process execution under Android SELinux / W^X constraints, and loopback HTTP socket readiness and restart recovery.
 

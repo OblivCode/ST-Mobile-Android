@@ -51,7 +51,7 @@ android {
         targetSdk = 35
         versionCode = envOrProp("VERSION_CODE")?.toIntOrNull()
             ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1)
-        // Versioning Stance (Phase G): Omit versionName for now and rely strictly
+        // Versioning Stance: Omit versionName for now and rely strictly
         // on versionCode until an official public release milestone is reached.
         envOrProp("VERSION_NAME")?.let { versionName = it }
 
@@ -155,16 +155,16 @@ android {
 }
 
 dependencies {
-    // YAML two-way sync for SillyTavern config.yaml (Phase B)
+    // YAML two-way sync for SillyTavern config.yaml
     implementation("org.yaml:snakeyaml:2.2")
 
     // Streaming tar extraction for the bundled SillyTavern payload.
     implementation("org.apache.commons:commons-compress:1.26.2")
 
-    // Standard and AES-256 ZIP archive management (Phase F)
+    // Standard and AES-256 ZIP archive management
     implementation("net.lingala.zip4j:zip4j:2.11.5")
 
-    // Phase 4 UI shell (D7: Kotlin + Jetpack Compose).
+    // UI shell (Kotlin + Jetpack Compose).
     implementation(platform("androidx.compose:compose-bom:2024.09.03"))
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.compose.ui:ui")
