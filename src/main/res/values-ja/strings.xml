@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">バックグラウンド待機タイムアウト（分、0で無効）</string>
     <string name="settings_battery_exemption">バッテリー最適化の免除をリクエスト</string>
     <string name="settings_battery_warning">バッテリー制限が有効です: %1$d分のタイムアウト前にST-Mobileが終了される可能性があります。タップして「制限なし」に設定してください。</string>
+    <string name="settings_battery_unrestricted_title">バッテリーセーバー: 制限なし（有効）</string>
+    <string name="settings_battery_unrestricted_desc">バックグラウンドの待機タイマーと推論タスクはシステムの終了から保護されています。</string>
     <string name="settings_notify_completion">完了ポップアップ通知</string>
     <string name="settings_notify_completion_desc">バックグラウンドでの生成やベクトル化の完了時に通知を表示します</string>
     <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>

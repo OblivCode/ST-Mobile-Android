@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">Tiempo de espera en segundo plano (minutos, 0 para desactivar)</string>
     <string name="settings_battery_exemption">Solicitar exención de optimización de batería</string>
     <string name="settings_battery_warning">Restricciones de batería activas: Android puede cerrar ST-Mobile antes de su tiempo de espera de %1$d min. Toque para configurar en \'Sin restricciones\'.</string>
+    <string name="settings_battery_unrestricted_title">Ahorro de batería: Sin restricciones activo</string>
+    <string name="settings_battery_unrestricted_desc">El temporizador de fondo y las tareas de inferencia están protegidos de la gestión de energía.</string>
     <string name="settings_notify_completion">Alertas emergentes de finalización</string>
     <string name="settings_notify_completion_desc">Mostrar una notificación flotante cuando finalice la generación o vectorización en segundo plano</string>
     <string name="settings_auto_sync_lang">Sincronizar idioma de SillyTavern con la app</string>

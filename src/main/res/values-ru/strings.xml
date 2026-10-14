@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">Тайм-аут простоя в фоне (минут, 0 для отключения)</string>
     <string name="settings_battery_exemption">Запросить исключение из оптимизации батареи</string>
     <string name="settings_battery_warning">Ограничения батареи активны: Android может закрыть ST-Mobile до истечения %1$d мин. Нажмите, чтобы выбрать \'Без ограничений\'.</string>
+    <string name="settings_battery_unrestricted_title">Контроль активности: Без ограничений</string>
+    <string name="settings_battery_unrestricted_desc">Фоновый таймер ожидания и задачи генерации защищены от завершения системой.</string>
     <string name="settings_notify_completion">Всплывающие уведомления о завершении</string>
     <string name="settings_notify_completion_desc">Показывать всплывающее уведомление, когда генерация или векторизация завершается в фоновом режиме</string>
     <string name="settings_auto_sync_lang">Синхронизировать язык SillyTavern с приложением</string>

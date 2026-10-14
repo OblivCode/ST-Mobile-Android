@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">后台空闲超时（分钟，0为禁用）</string>
     <string name="settings_battery_exemption">请求忽略电池优化</string>
     <string name="settings_battery_warning">电池优化限制生效中：Android 可能会在 %1$d 分钟超时前终止 ST-Mobile。点击以设置为“无限制”。</string>
+    <string name="settings_battery_unrestricted_title">省电策略：无限制（已生效）</string>
+    <string name="settings_battery_unrestricted_desc">后台倒计时和推理任务已受保护，系统不会因电池优化将其终止。</string>
     <string name="settings_notify_completion">完成弹出通知</string>
     <string name="settings_notify_completion_desc">在后台生成或向量化完成时显示浮动通知</string>
     <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>

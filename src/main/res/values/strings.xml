@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">Background idle timeout (minutes, 0 to disable)</string>
     <string name="settings_battery_exemption">Request Battery Optimization Exemption</string>
     <string name="settings_battery_warning">Battery Restrictions Active: Android may terminate ST-Mobile before your %1$d-minute timeout. Tap to set Battery Saver to \'No restrictions\'.</string>
+    <string name="settings_battery_unrestricted_title">Battery Saver: No restrictions active</string>
+    <string name="settings_battery_unrestricted_desc">Background idle countdown and inference tasks are protected from Android power management.</string>
     <string name="settings_notify_completion">Completion pop-up alerts</string>
     <string name="settings_notify_completion_desc">Show a heads-up notification when generation or vector indexing finishes in background</string>
     <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>

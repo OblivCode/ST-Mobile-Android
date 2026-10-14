@@ -37,8 +37,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,11 +83,25 @@ fun AppSettingsTab(
         mutableStateOf(powerManager?.isIgnoringBatteryOptimizations(context.packageName) == false)
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    fun checkBatteryStatus() {
+        val current = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == false
+        if (isBatteryOptimized != current) {
+            isBatteryOptimized = current
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                isBatteryOptimized = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == false
+                checkBatteryStatus()
+                coroutineScope.launch {
+                    listOf(300L, 800L, 1800L, 3000L).forEach { delayMs ->
+                        delay(delayMs)
+                        checkBatteryStatus()
+                    }
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -280,15 +297,60 @@ fun AppSettingsTab(
         )
 
         val currentTimeout = bgTimeout.toIntOrNull() ?: appConfig.backgroundTimeoutMinutes
-        if (currentTimeout > 0 && isBatteryOptimized) {
+        if (isBatteryOptimized) {
+            if (currentTimeout > 0) {
+                Card(
+                    onClick = {
+                        checkBatteryStatus()
+                        onPromptBattery()
+                    },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(
+                            text = "⚠️",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_battery_warning, currentTimeout),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = {
+                    checkBatteryStatus()
+                    onPromptBattery()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.settings_battery_exemption))
+            }
+        } else {
             Card(
-                onClick = onPromptBattery,
+                onClick = {
+                    checkBatteryStatus()
+                    onPromptBattery()
+                },
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                    containerColor = Color(0xFF7EC8A9).copy(alpha = 0.12f),
                     contentColor = MaterialTheme.colorScheme.onSurface,
                 ),
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, Color(0xFF7EC8A9).copy(alpha = 0.5f)),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
@@ -297,23 +359,29 @@ fun AppSettingsTab(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = "⚠️",
+                        text = "✓",
                         style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF7EC8A9),
+                        fontWeight = FontWeight.Bold,
                     )
-                    Text(
-                        text = stringResource(R.string.settings_battery_warning, currentTimeout),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.settings_battery_unrestricted_title),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF7EC8A9),
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_battery_unrestricted_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF8A94A3),
+                        )
+                    }
                 }
             }
-        }
-
-        Button(
-            onClick = onPromptBattery,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.settings_battery_exemption))
         }
 
         OutlinedButton(

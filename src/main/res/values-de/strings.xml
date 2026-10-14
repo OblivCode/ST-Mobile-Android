@@ -54,6 +54,8 @@
     <string name="settings_bg_timeout">Hintergrund-Inaktivitäts-Timeout (Minuten, 0 zum Deaktivieren)</string>
     <string name="settings_battery_exemption">Ausnahme von der Akkuoptimierung anfordern</string>
     <string name="settings_battery_warning">Akku-Einschränkungen aktiv: Android kann ST-Mobile vor Ablauf des %1$d-Minuten-Timeouts beenden. Tippen, um auf \'Keine Beschränkungen\' zu stellen.</string>
+    <string name="settings_battery_unrestricted_title">Energiesparmodus: Keine Einschränkungen aktiv</string>
+    <string name="settings_battery_unrestricted_desc">Hintergrund-Timer und Generierungsaufgaben sind vor vorzeitiger Beendigung geschützt.</string>
     <string name="settings_notify_completion">Pop-up-Abschlussbenachrichtigungen</string>
     <string name="settings_notify_completion_desc">Heads-up-Benachrichtigung anzeigen, wenn Generierung oder Vektorisierung im Hintergrund endet</string>
     <string name="settings_auto_sync_lang">SillyTavern-Sprache automatisch mit App synchronisieren</string>
