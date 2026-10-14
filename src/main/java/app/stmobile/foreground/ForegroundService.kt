@@ -29,7 +29,6 @@ class ForegroundService : Service() {
 
     private lateinit var wakeLockHelper: WakeLockHelper
     private val timeoutManager = BackgroundTimeoutManager(
-        onTick = { updateNotification() },
         onTimeout = { handleBackgroundTimeout() },
     )
 

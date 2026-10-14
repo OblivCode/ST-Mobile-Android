@@ -113,10 +113,7 @@ object ServiceNotificationHelper {
             status.state == NodeState.STARTING -> context.getString(R.string.status_starting)
             isVectorizing -> context.getString(R.string.status_vectorizing)
             isGenerating -> context.getString(R.string.status_generating)
-            isCountdownActive -> context.getString(
-                R.string.status_running_countdown,
-                formatRemainingDuration(remainingMs),
-            )
+            isCountdownActive -> context.getString(R.string.status_idle)
             status.state == NodeState.RUNNING -> context.getString(R.string.status_running)
             status.message.isNotBlank() -> status.message
             else -> status.state.name

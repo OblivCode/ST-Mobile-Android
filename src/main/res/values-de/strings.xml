@@ -29,6 +29,7 @@
     <string name="dashboard_btn_stop">Server stoppen</string>
     <string name="dashboard_btn_open">SillyTavern öffnen</string>
     <string name="status_running">Läuft</string>
+    <string name="status_idle">Inaktiv</string>
     <string name="status_running_countdown">Wird ausgeführt • Stoppt in %1$s</string>
     <string name="status_generating">Antwort wird generiert…</string>
     <string name="status_vectorizing">Kontext wird vektorisiert…</string>

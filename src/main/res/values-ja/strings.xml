@@ -29,6 +29,7 @@
     <string name="dashboard_btn_stop">サーバー停止</string>
     <string name="dashboard_btn_open">SillyTavern を開く</string>
     <string name="status_running">実行中</string>
+    <string name="status_idle">待機中</string>
     <string name="status_running_countdown">実行中 • %1$s後に停止</string>
     <string name="status_generating">応答を生成中…</string>
     <string name="status_vectorizing">コンテキストをベクトル化中…</string>

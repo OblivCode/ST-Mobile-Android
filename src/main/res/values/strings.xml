@@ -29,6 +29,7 @@
     <string name="dashboard_btn_stop">Stop Server</string>
     <string name="dashboard_btn_open">Open SillyTavern</string>
     <string name="status_running">Running</string>
+    <string name="status_idle">Idle</string>
     <string name="status_running_countdown">Running • Stops in %1$s</string>
     <string name="status_generating">Generating response…</string>
     <string name="status_vectorizing">Vectorizing context…</string>

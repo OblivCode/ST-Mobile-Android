@@ -88,7 +88,6 @@ class StringResourcesTest {
 
         val deadKeys = setOf(
             "btn_reset",
-            "status_idle",
             "settings_app_language_desc",
             "dialog_reset_payload_title",
             "dialog_reset_payload_msg",
