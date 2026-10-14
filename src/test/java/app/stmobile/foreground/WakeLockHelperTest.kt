@@ -105,4 +105,50 @@ class WakeLockHelperTest {
         // forceRelease should safely absorb the exception without propagating it
         helper.forceRelease()
     }
+
+    @Test
+    fun testMultiTokenIndependentRelease() {
+        val fake = FakeWakeLockAcquirer()
+        val helper = WakeLockHelper(fake)
+
+        helper.acquireToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT, 600_000L)
+        assertTrue(helper.isHeld)
+        assertTrue(helper.hasToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT))
+        assertEquals(1, fake.acquireCount)
+
+        // Acquire second token for inference
+        helper.acquireToken(WakeLockHelper.TOKEN_INFERENCE, 900_000L)
+        assertTrue(helper.isHeld)
+        assertTrue(helper.hasToken(WakeLockHelper.TOKEN_INFERENCE))
+        assertEquals(2, fake.acquireCount)
+
+        // Release inference token: idle_timeout is still active, so fake lock must remain held!
+        helper.releaseToken(WakeLockHelper.TOKEN_INFERENCE)
+        assertTrue(helper.isHeld)
+        assertFalse(helper.hasToken(WakeLockHelper.TOKEN_INFERENCE))
+        assertTrue(helper.hasToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT))
+        assertEquals(0, fake.releaseCount)
+
+        // Release idle_timeout: all tokens gone, so fake lock must be released!
+        helper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
+        assertFalse(helper.isHeld)
+        assertFalse(helper.hasToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT))
+        assertEquals(1, fake.releaseCount)
+    }
+
+    @Test
+    fun testForceReleaseClearsAllTokens() {
+        val fake = FakeWakeLockAcquirer()
+        val helper = WakeLockHelper(fake)
+
+        helper.acquireToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT, 600_000L)
+        helper.acquireToken(WakeLockHelper.TOKEN_VECTOR, 300_000L)
+        assertTrue(helper.isHeld)
+
+        helper.forceRelease()
+        assertFalse(helper.isHeld)
+        assertFalse(helper.hasToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT))
+        assertFalse(helper.hasToken(WakeLockHelper.TOKEN_VECTOR))
+        assertEquals(1, fake.releaseCount)
+    }
 }

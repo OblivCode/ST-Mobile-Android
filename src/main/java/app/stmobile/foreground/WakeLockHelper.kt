@@ -39,41 +39,92 @@ class AndroidWakeLockAcquirer(context: Context) : WakeLockAcquirer {
 }
 
 /**
- * Manages CPU wakefulness during active LLM inference.
- * Acquires PowerManager.PARTIAL_WAKE_LOCK strictly during active generation,
- * with a 15-minute maximum timeout safety cap.
+ * Manages CPU wakefulness during active LLM inference, vector indexing,
+ * and background idle countdowns.
+ * Uses named token holders so releasing one token does not prematurely release
+ * the wake lock if other tokens are still active.
  */
 class WakeLockHelper(
     private val acquirer: WakeLockAcquirer,
 ) {
     constructor(context: Context) : this(AndroidWakeLockAcquirer(context.applicationContext))
 
+    private val activeTokens = mutableMapOf<String, Long>()
+
     val isHeld: Boolean
+        @Synchronized
         get() = acquirer.isHeld
 
+    /**
+     * Backward-compatible acquire for a default inference token.
+     */
     @Synchronized
     fun acquire(timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
-        AppLog.d("WakeLockHelper", "Acquiring PARTIAL_WAKE_LOCK (timeoutMs=$timeoutMs)")
-        acquirer.acquire(timeoutMs)
+        acquireToken(TOKEN_INFERENCE, timeoutMs)
     }
 
+    /**
+     * Backward-compatible release for the default inference token.
+     */
     @Synchronized
     fun release() {
-        if (acquirer.isHeld) {
-            AppLog.d("WakeLockHelper", "Releasing PARTIAL_WAKE_LOCK")
-            acquirer.release()
+        releaseToken(TOKEN_INFERENCE)
+    }
+
+    /**
+     * Acquires or renews a named wake lock token with a specific timeout.
+     */
+    @Synchronized
+    fun acquireToken(token: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
+        AppLog.d("WakeLockHelper", "Acquiring token '$token' (timeoutMs=$timeoutMs)")
+        activeTokens[token] = timeoutMs
+        val maxTimeout = activeTokens.values.maxOrNull() ?: timeoutMs
+        acquirer.acquire(maxTimeout)
+    }
+
+    /**
+     * Releases a named wake lock token.
+     * The underlying wake lock is released only when no active tokens remain.
+     */
+    @Synchronized
+    fun releaseToken(token: String) {
+        val removed = activeTokens.remove(token)
+        if (removed != null) {
+            AppLog.d("WakeLockHelper", "Released token '$token'; remaining active tokens: ${activeTokens.keys}")
+        }
+        if (activeTokens.isEmpty()) {
+            if (acquirer.isHeld) {
+                AppLog.d("WakeLockHelper", "All tokens released; releasing underlying PARTIAL_WAKE_LOCK")
+                acquirer.release()
+            }
+        } else {
+            val remainingMax = activeTokens.values.maxOrNull() ?: DEFAULT_TIMEOUT_MS
+            acquirer.acquire(remainingMax)
         }
     }
 
+    /**
+     * Returns true if a specific token is currently active.
+     */
+    @Synchronized
+    fun hasToken(token: String): Boolean = activeTokens.containsKey(token)
+
+    /**
+     * Releases all tokens and forces the underlying wake lock to release.
+     */
     @Synchronized
     fun forceRelease() {
-        AppLog.d("WakeLockHelper", "Force-releasing PARTIAL_WAKE_LOCK")
+        AppLog.d("WakeLockHelper", "Force-releasing all tokens and PARTIAL_WAKE_LOCK")
+        activeTokens.clear()
         try {
             acquirer.release()
         } catch (_: Exception) {}
     }
 
     companion object {
+        const val TOKEN_INFERENCE = "inference"
+        const val TOKEN_IDLE_TIMEOUT = "idle_timeout"
+        const val TOKEN_VECTOR = "vector"
         const val DEFAULT_TIMEOUT_MS = 15 * 60 * 1000L // 15 minutes
     }
 }
