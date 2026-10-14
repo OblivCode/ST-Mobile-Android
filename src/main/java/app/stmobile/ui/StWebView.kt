@@ -204,7 +204,7 @@ fun StWebView(
                             if (!didInitialReload) {
                                 didInitialReload = true
                                 view?.postDelayed({
-                                    if (view != null && view.isAttachedToWindow && webViewInstance == view) {
+                                    if (view.isAttachedToWindow && webViewInstance == view) {
                                         view.loadUrl(finishedUrl ?: "about:blank")
                                     }
                                 }, 250)

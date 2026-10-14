@@ -64,10 +64,10 @@ object ServiceNotificationHelper {
             .setContentIntent(openIntent)
 
         try {
-            context.getSystemService(NotificationManager::class.java)
-                .notify(COMPLETION_NOTIFICATION_ID, builder.build())
-        } catch (_: SecurityException) {
-            // Ignored if POST_NOTIFICATIONS runtime permission revoked
+            val nm = context.getSystemService(NotificationManager::class.java)
+            nm?.notify(COMPLETION_NOTIFICATION_ID, builder.build())
+        } catch (_: Exception) {
+            // Ignored if notifications permission revoked or OS service unavailable
         }
     }
 
