@@ -63,6 +63,10 @@ class AppConfig(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_NOTIFY_ON_COMPLETION, DEFAULT_NOTIFY_ON_COMPLETION)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ON_COMPLETION, value).apply()
 
+    var webViewMenuVerticalFraction: Float
+        get() = prefs.getFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION)
+        set(value) = prefs.edit().putFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, value.coerceIn(0f, 1f)).apply()
+
     private fun migrateLegacySettings(context: Context) {
         val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
         if (legacy.all.isEmpty()) return
@@ -105,6 +109,7 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val DEFAULT_WEBVIEW_MENU_QUICK_TOOLBAR = true
         const val DEFAULT_AUTO_SYNC_LANGUAGE = true
         const val DEFAULT_NOTIFY_ON_COMPLETION = true
+        const val DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION = 0.5f
 
         private const val KEY_AUTO_START = "auto_start_on_app_open"
         private const val KEY_AUTO_LAUNCH_WEBVIEW = "auto_launch_webview_on_start"
@@ -118,5 +123,6 @@ class AppConfig(private val prefs: SharedPreferences) {
         private const val KEY_WEBVIEW_MENU_QUICK_TOOLBAR = "webview_menu_quick_toolbar"
         private const val KEY_AUTO_SYNC_LANGUAGE = "auto_sync_language"
         private const val KEY_NOTIFY_ON_COMPLETION = "notify_on_completion"
+        private const val KEY_WEBVIEW_MENU_VERTICAL_FRACTION = "webview_menu_vertical_fraction"
     }
 }

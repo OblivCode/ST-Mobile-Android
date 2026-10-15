@@ -8,6 +8,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Color
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import app.stmobile.MainActivity
 import app.stmobile.R
@@ -21,7 +24,7 @@ import app.stmobile.models.NodeStatus
 object ServiceNotificationHelper {
 
     const val CHANNEL_ID = "st_mobile_node"
-    const val ALERTS_CHANNEL_ID = "st_mobile_alerts"
+    const val ALERTS_CHANNEL_ID = "st_mobile_alerts_v2"
     const val NOTIFICATION_ID = 1001
     const val COMPLETION_NOTIFICATION_ID = 2002
 
@@ -40,8 +43,20 @@ object ServiceNotificationHelper {
             context.getString(R.string.notification_alerts_channel_name),
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
+            description = context.getString(R.string.notification_alerts_channel_desc)
             setShowBadge(true)
             enableVibration(true)
+            vibrationPattern = longArrayOf(0, 250, 150, 250)
+            enableLights(true)
+            lightColor = Color.GREEN
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
         }
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(channel)
@@ -60,14 +75,29 @@ object ServiceNotificationHelper {
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setOngoing(false)
             .setAutoCancel(true)
+            .setTimeoutAfter(10_000L)
             .setContentIntent(openIntent)
+            .setPriority(Notification.PRIORITY_MAX)
+            .setCategory(Notification.CATEGORY_MESSAGE)
+            .setDefaults(Notification.DEFAULT_ALL)
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
 
         try {
             val nm = context.getSystemService(NotificationManager::class.java)
             nm?.notify(COMPLETION_NOTIFICATION_ID, builder.build())
         } catch (_: Exception) {
             // Ignored if notifications permission revoked or OS service unavailable
+        }
+    }
+
+    fun cancelCompletionNotification(context: Context) {
+        try {
+            val nm = context.getSystemService(NotificationManager::class.java)
+            nm?.cancel(COMPLETION_NOTIFICATION_ID)
+        } catch (_: Exception) {
+            // Ignored if OS service unavailable
         }
     }
 

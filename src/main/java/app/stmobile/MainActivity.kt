@@ -26,6 +26,7 @@ import app.stmobile.payload.UpdateChecker
 import app.stmobile.payload.UpdateCheckResult
 import app.stmobile.payload.UpdateInfo
 import app.stmobile.foreground.ForegroundService
+import app.stmobile.foreground.ServiceNotificationHelper
 import app.stmobile.node.NodeController
 import app.stmobile.ui.ActiveScreen
 import app.stmobile.ui.ExportBackupDialog
@@ -130,6 +131,11 @@ class MainActivity : AppCompatActivity() {
     private val showImportPasswordDialog = mutableStateOf(false)
     private val importPasswordError = mutableStateOf<String?>(null)
     private val showImportStrategyDialog = mutableStateOf(false)
+
+    override fun onResume() {
+        super.onResume()
+        ServiceNotificationHelper.cancelCompletionNotification(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

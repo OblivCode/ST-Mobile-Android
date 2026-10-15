@@ -35,14 +35,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.material.icons.Icons
@@ -140,7 +143,9 @@ fun StWebView(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF101418))
-            .safeDrawingPadding(),
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.exclude(WindowInsets.ime)
+            ),
     ) {
         AndroidView(
             factory = { ctx ->
@@ -369,9 +374,17 @@ fun EdgeDockedMenuHandle(
 
         val minBoundPx = with(density) { minBoundDp.toPx() }
         val maxBoundPx = with(density) { maxBoundDp.toPx() }
-        val defaultYPx = with(density) { (initialOffsetY ?: ((maxHeight - handleHeight) / 2)).toPx() }
 
-        var offsetYPx by rememberSaveable {
+        var currentFraction by rememberSaveable {
+            mutableFloatStateOf(appConfig.webViewMenuVerticalFraction)
+        }
+
+        var offsetYPx by remember(minBoundPx, maxBoundPx) {
+            val defaultYPx = if (initialOffsetY != null) {
+                with(density) { initialOffsetY.toPx() }
+            } else {
+                minBoundPx + currentFraction * (maxBoundPx - minBoundPx)
+            }
             mutableFloatStateOf(defaultYPx.coerceIn(minBoundPx, maxBoundPx))
         }
 
@@ -427,6 +440,11 @@ fun EdgeDockedMenuHandle(
                         onDragStarted = { isDragging = true },
                         onDragStopped = {
                             isDragging = false
+                            val newFraction = if (maxBoundPx > minBoundPx) {
+                                ((offsetYPx - minBoundPx) / (maxBoundPx - minBoundPx)).coerceIn(0f, 1f)
+                            } else 0.5f
+                            currentFraction = newFraction
+                            appConfig.webViewMenuVerticalFraction = newFraction
                             onOffsetYChange?.invoke(with(density) { offsetYPx.toDp() })
                         },
                     )

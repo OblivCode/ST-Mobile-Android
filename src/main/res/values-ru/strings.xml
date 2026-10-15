@@ -5,6 +5,7 @@
     <string name="fgs_special_use_subtype">Запуск локального сервера SillyTavern Node.js</string>
     <string name="notification_channel_name">Сервер ST Mobile</string>
     <string name="notification_alerts_channel_name">Уведомления о завершении</string>
+    <string name="notification_alerts_channel_desc">Всплывающие уведомления о завершении генерации ответов или индексации векторов в SillyTavern</string>
     <string name="notification_action_stop">Остановить</string>
     <string name="notification_completion_title">Ответ готов</string>
     <string name="notification_completion_msg">SillyTavern завершил генерацию ответа</string>
@@ -58,6 +59,7 @@
     <string name="settings_battery_unrestricted_desc">Фоновый таймер ожидания и задачи генерации защищены от завершения системой.</string>
     <string name="settings_notify_completion">Всплывающие уведомления о завершении</string>
     <string name="settings_notify_completion_desc">Показывать всплывающее уведомление, когда генерация или векторизация завершается в фоновом режиме</string>
+    <string name="btn_configure_floating_notifications">Настроить всплывающие уведомления в системе</string>
     <string name="settings_auto_sync_lang">Синхронизировать язык SillyTavern с приложением</string>
     <string name="settings_auto_sync_lang_desc">Поддерживать язык интерфейса SillyTavern в соответствии с языком приложения</string>
     <string name="settings_app_language">Язык приложения</string>

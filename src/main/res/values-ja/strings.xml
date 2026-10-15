@@ -5,6 +5,7 @@
     <string name="fgs_special_use_subtype">ローカル SillyTavern Node.js サーバーを実行</string>
     <string name="notification_channel_name">ST Mobile サーバー</string>
     <string name="notification_alerts_channel_name">完了通知</string>
+    <string name="notification_alerts_channel_desc">SillyTavern の応答生成または埋め込みインデックス完了時のヘッドアップ通知</string>
     <string name="notification_action_stop">停止</string>
     <string name="notification_completion_title">応答の準備ができました</string>
     <string name="notification_completion_msg">SillyTavernの応答生成が完了しました</string>
@@ -58,6 +59,7 @@
     <string name="settings_battery_unrestricted_desc">バックグラウンドの待機タイマーと推論タスクはシステムの終了から保護されています。</string>
     <string name="settings_notify_completion">完了ポップアップ通知</string>
     <string name="settings_notify_completion_desc">バックグラウンドでの生成やベクトル化の完了時に通知を表示します</string>
+    <string name="btn_configure_floating_notifications">システムのフローティング通知設定を開く</string>
     <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>
     <string name="settings_auto_sync_lang_desc">SillyTavern のインターフェース言語をアプリ言語と同期させます</string>
     <string name="settings_app_language">アプリ言語</string>

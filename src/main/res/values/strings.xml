@@ -5,6 +5,7 @@
     <string name="fgs_special_use_subtype">Runs the local SillyTavern Node.js server</string>
     <string name="notification_channel_name">ST Mobile server</string>
     <string name="notification_alerts_channel_name">Completion alerts</string>
+    <string name="notification_alerts_channel_desc">Heads-up alerts when SillyTavern finishes generating responses or indexing embeddings</string>
     <string name="notification_action_stop">Stop</string>
     <string name="notification_completion_title">Response ready</string>
     <string name="notification_completion_msg">SillyTavern finished generating a response</string>
@@ -58,6 +59,7 @@
     <string name="settings_battery_unrestricted_desc">Background idle countdown and inference tasks are protected from Android power management.</string>
     <string name="settings_notify_completion">Completion pop-up alerts</string>
     <string name="settings_notify_completion_desc">Show a heads-up notification when generation or vector indexing finishes in background</string>
+    <string name="btn_configure_floating_notifications">Configure System Pop-up / Floating Alerts</string>
     <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>
     <string name="settings_auto_sync_lang_desc">Keep SillyTavern interface language synchronized with the app shell</string>
     <string name="settings_app_language">App Shell Language</string>

@@ -221,6 +221,7 @@ class ForegroundService : Service() {
         AppLog.d("ForegroundService", "onAppForegrounded; cancelling idle timeout and releasing idle wakelock")
         timeoutManager.cancel()
         wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
+        ServiceNotificationHelper.cancelCompletionNotification(this)
         updateNotification()
     }
 

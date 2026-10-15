@@ -5,6 +5,7 @@
     <string name="fgs_special_use_subtype">运行本地 SillyTavern Node.js 服务</string>
     <string name="notification_channel_name">ST Mobile 服务</string>
     <string name="notification_alerts_channel_name">完成提醒</string>
+    <string name="notification_alerts_channel_desc">SillyTavern 完成回复生成或向量索引时的浮动横幅通知</string>
     <string name="notification_action_stop">停止</string>
     <string name="notification_completion_title">回复已就绪</string>
     <string name="notification_completion_msg">SillyTavern 已完成生成回复</string>
@@ -58,6 +59,7 @@
     <string name="settings_battery_unrestricted_desc">后台倒计时和推理任务已受保护，系统不会因电池优化将其终止。</string>
     <string name="settings_notify_completion">完成弹出通知</string>
     <string name="settings_notify_completion_desc">在后台生成或向量化完成时显示浮动通知</string>
+    <string name="btn_configure_floating_notifications">配置系统浮动通知权限</string>
     <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>
     <string name="settings_auto_sync_lang_desc">使 SillyTavern 界面语言与原生应用语言保持同步</string>
     <string name="settings_app_language">应用界面语言</string>

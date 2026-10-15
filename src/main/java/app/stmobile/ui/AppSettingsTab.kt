@@ -49,7 +49,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import app.stmobile.Utils
 import app.stmobile.foreground.ForegroundService
+import app.stmobile.foreground.ServiceNotificationHelper
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -225,6 +227,17 @@ fun AppSettingsTab(
                     appConfig.notifyOnCompletion = it
                 },
             )
+        }
+
+        if (notifyOnCompletion) {
+            OutlinedButton(
+                onClick = {
+                    Utils.openChannelNotificationSettings(context, ServiceNotificationHelper.ALERTS_CHANNEL_ID)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_configure_floating_notifications))
+            }
         }
 
         // Language & Localization Settings

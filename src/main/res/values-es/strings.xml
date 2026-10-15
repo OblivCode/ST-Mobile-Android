@@ -5,6 +5,7 @@
     <string name="fgs_special_use_subtype">Ejecuta el servidor local Node.js de SillyTavern</string>
     <string name="notification_channel_name">Servidor ST Mobile</string>
     <string name="notification_alerts_channel_name">Alertas de finalización</string>
+    <string name="notification_alerts_channel_desc">Alertas flotantes cuando SillyTavern finaliza la generación de respuestas o indexación de vectores</string>
     <string name="notification_action_stop">Detener</string>
     <string name="notification_completion_title">Respuesta lista</string>
     <string name="notification_completion_msg">SillyTavern terminó de generar una respuesta</string>
@@ -58,6 +59,7 @@
     <string name="settings_battery_unrestricted_desc">El temporizador de fondo y las tareas de inferencia están protegidos de la gestión de energía.</string>
     <string name="settings_notify_completion">Alertas emergentes de finalización</string>
     <string name="settings_notify_completion_desc">Mostrar una notificación flotante cuando finalice la generación o vectorización en segundo plano</string>
+    <string name="btn_configure_floating_notifications">Configurar permisos de alertas flotantes</string>
     <string name="settings_auto_sync_lang">Sincronizar idioma de SillyTavern con la app</string>
     <string name="settings_auto_sync_lang_desc">Mantener el idioma de SillyTavern sincronizado con la interfaz de la aplicación</string>
     <string name="settings_app_language">Idioma de la aplicación</string>
