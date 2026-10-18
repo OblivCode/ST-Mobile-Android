@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -71,7 +70,7 @@ fun ExportBackupDialog(
                 Text(
                     text = stringResource(R.string.dialog_export_desc),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFD8DEE6),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 Row(
@@ -88,7 +87,7 @@ fun ExportBackupDialog(
                     Text(
                         text = stringResource(R.string.dialog_export_encrypt),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFD8DEE6),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -172,7 +171,7 @@ fun ImportPasswordDialog(
                 Text(
                     text = stringResource(R.string.dialog_import_pwd_desc),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFD8DEE6),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 OutlinedTextField(
@@ -240,7 +239,7 @@ fun ImportStrategyDialog(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 ) {
                     Column(
                         modifier = Modifier
@@ -252,24 +251,24 @@ fun ImportStrategyDialog(
                             text = stringResource(R.string.dialog_restore_archive_details),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF7EC8A9),
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         val stVer = info.manifest?.stVersion ?: stringResource(R.string.restore_legacy_external)
                         Text(
                             text = stringResource(R.string.dialog_restore_st_version, stVer),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = stringResource(R.string.dialog_restore_files_count, info.fileCount),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         info.manifest?.createdAt?.let { created ->
                             Text(
                                 text = stringResource(R.string.dialog_restore_created, created.take(19).replace('T', ' ')),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF8A94A3),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -279,7 +278,7 @@ fun ImportStrategyDialog(
                 Text(
                     text = stringResource(R.string.dialog_restore_strategy_title),
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(0xFFD8DEE6),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 // Clean Restore Option
@@ -298,12 +297,12 @@ fun ImportStrategyDialog(
                         Text(
                             text = stringResource(R.string.dialog_restore_clean_title),
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = stringResource(R.string.dialog_restore_clean_desc),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -324,12 +323,12 @@ fun ImportStrategyDialog(
                         Text(
                             text = stringResource(R.string.dialog_restore_merge_title),
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = stringResource(R.string.dialog_restore_merge_desc),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

@@ -128,6 +128,11 @@
     <string name="engine_extra_options_placeholder">z. B. --no-warnings</string>
     <string name="engine_restart_notice">Server neustarten, um Laufzeitänderungen anzuwenden</string>
     <string name="btn_restart_server">Server neustarten</string>
+    <string name="engine_node_env_title">Node-Umgebung auswählen</string>
+    <string name="engine_node_env_prod">Produktion (Empfohlen)</string>
+    <string name="engine_node_env_prod_desc">Aktiviert Vorlagen-Caching und Routenoptimierung für beste mobile Leistung</string>
+    <string name="engine_node_env_dev">Entwicklung</string>
+    <string name="engine_node_env_dev_desc">Deaktiviert Caching für Hot-Reloading und detaillierte Fehlerdiagnosen</string>
 
     <!-- WebView Settings Tab -->
     <string name="webview_category_rendering">Anzeige &amp; Rendering</string>

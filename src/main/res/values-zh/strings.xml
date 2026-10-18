@@ -128,6 +128,11 @@
     <string name="engine_extra_options_placeholder">例如 --no-warnings</string>
     <string name="engine_restart_notice">重启服务器以应用运行时更改</string>
     <string name="btn_restart_server">重启服务器</string>
+    <string name="engine_node_env_title">选择 Node 运行环境</string>
+    <string name="engine_node_env_prod">生产环境（推荐）</string>
+    <string name="engine_node_env_prod_desc">启用模板缓存与路由优化以获得最佳移动性能</string>
+    <string name="engine_node_env_dev">开发环境</string>
+    <string name="engine_node_env_dev_desc">禁用缓存以允许热重载与详细错误调试跟踪</string>
 
     <!-- WebView Settings Tab -->
     <string name="webview_category_rendering">显示与渲染</string>

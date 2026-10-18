@@ -128,6 +128,11 @@
     <string name="engine_extra_options_placeholder">ej. --no-warnings</string>
     <string name="engine_restart_notice">Reinicia el servidor para aplicar cambios de tiempo de ejecución</string>
     <string name="btn_restart_server">Reiniciar servidor</string>
+    <string name="engine_node_env_title">Seleccionar entorno de Node</string>
+    <string name="engine_node_env_prod">Producción (Recomendado)</string>
+    <string name="engine_node_env_prod_desc">Habilita caché de plantillas y optimización de rutas para mejor rendimiento móvil</string>
+    <string name="engine_node_env_dev">Desarrollo</string>
+    <string name="engine_node_env_dev_desc">Deshabilita caché para recarga en caliente y depuración detallada de errores</string>
 
     <!-- WebView Settings Tab -->
     <string name="webview_category_rendering">Pantalla y renderizado</string>

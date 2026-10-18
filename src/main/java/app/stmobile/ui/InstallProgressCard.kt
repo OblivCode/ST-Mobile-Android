@@ -17,7 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,7 +44,7 @@ fun InstallProgressCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Column(
             modifier = Modifier
@@ -57,13 +56,13 @@ fun InstallProgressCard(
                 text = stringResource(R.string.dashboard_status_installing),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFE5C07B),
+                color = MaterialTheme.colorScheme.tertiary,
             )
 
             Text(
                 text = progress?.stage ?: stringResource(R.string.dashboard_status_installing),
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFFD8DEE6),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(Modifier.height(4.dp))
@@ -89,19 +88,19 @@ fun InstallProgressCard(
                         Text(
                             text = "%.1f MB / %.1f MB%s".format(currentMb, totalMb, speedText),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         Text(
                             text = "${progress!!.filesProcessed} / ${progress.totalEstimate} files",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A94A3),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Text(
                         text = "${(pct * 100).toInt()}%",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -116,7 +115,7 @@ fun InstallProgressCard(
                 Text(
                     text = currentFile,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B7685),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -129,8 +128,8 @@ fun InstallProgressCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A2525),
-                        contentColor = Color(0xFFFFB4AB),
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
                 ) {
                     Text(stringResource(R.string.btn_cancel))

@@ -128,6 +128,11 @@
     <string name="engine_extra_options_placeholder">e.g. --no-warnings</string>
     <string name="engine_restart_notice">Restart server to apply runtime changes</string>
     <string name="btn_restart_server">Restart Server</string>
+    <string name="engine_node_env_title">Select Node Environment</string>
+    <string name="engine_node_env_prod">Production (Recommended)</string>
+    <string name="engine_node_env_prod_desc">Enables template caching, route optimization, and minimal I/O for best mobile performance</string>
+    <string name="engine_node_env_dev">Development</string>
+    <string name="engine_node_env_dev_desc">Disables caching to allow hot reloading and verbose error traces for debugging</string>
 
     <!-- WebView Settings Tab -->
     <string name="webview_category_rendering">Display &amp; Rendering</string>

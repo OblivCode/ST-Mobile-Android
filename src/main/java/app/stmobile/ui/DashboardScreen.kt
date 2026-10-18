@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,7 +51,7 @@ fun DashboardScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp),
     ) {
         Column(
@@ -75,7 +74,7 @@ fun DashboardScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     ) {
                         Column(
                             modifier = Modifier
@@ -87,13 +86,13 @@ fun DashboardScreen(
                                 text = stringResource(R.string.status_not_installed),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8A94A3),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
 
                             Text(
                                 text = stringResource(R.string.dashboard_msg_not_installed),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFD8DEE6),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
 
                             if (installErrorMessage != null) {
@@ -101,7 +100,7 @@ fun DashboardScreen(
                                 Text(
                                     text = installErrorMessage,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFE06C75),
+                                    color = MaterialTheme.colorScheme.error,
                                 )
                             }
                         }
@@ -120,11 +119,11 @@ fun DashboardScreen(
                 // 3. Installed state with server lifecycle
                 else -> {
                     val stateColor = when (status.state) {
-                        NodeState.RUNNING -> Color(0xFF7EC8A9)
-                        NodeState.STARTING -> Color(0xFFE5C07B)
-                        NodeState.STOPPING -> Color(0xFFD19A66)
-                        NodeState.STOPPED -> Color(0xFF8A94A3)
-                        NodeState.ERROR -> Color(0xFFE06C75)
+                        NodeState.RUNNING -> MaterialTheme.colorScheme.primary
+                        NodeState.STARTING -> MaterialTheme.colorScheme.tertiary
+                        NodeState.STOPPING -> MaterialTheme.colorScheme.secondary
+                        NodeState.STOPPED -> MaterialTheme.colorScheme.onSurfaceVariant
+                        NodeState.ERROR -> MaterialTheme.colorScheme.error
                     }
 
                     val stateLabel = when {
@@ -141,7 +140,7 @@ fun DashboardScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     ) {
                         Column(
                             modifier = Modifier
@@ -163,7 +162,7 @@ fun DashboardScreen(
                                     Text(
                                         text = stringResource(R.string.dashboard_port, status.port),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF8A94A3),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -175,7 +174,7 @@ fun DashboardScreen(
                                     if (status.state == NodeState.STOPPED) stringResource(R.string.dashboard_msg_stopped) else ""
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFD8DEE6),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
 
                             if (status.pid != null) {
@@ -183,7 +182,7 @@ fun DashboardScreen(
                                 Text(
                                     text = stringResource(R.string.dashboard_pid, status.pid),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF8A94A3),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -233,8 +232,8 @@ fun DashboardScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2E5A44),
-                                        contentColor = Color(0xFFB5EAD0),
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                     ),
                                 ) {
                                     Text(stringResource(R.string.dashboard_btn_open))
@@ -245,8 +244,8 @@ fun DashboardScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF4A2525),
-                                        contentColor = Color(0xFFFFB4AB),
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
                                     ),
                                 ) {
                                     Text(stringResource(R.string.dashboard_btn_stop))

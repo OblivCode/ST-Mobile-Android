@@ -128,6 +128,11 @@
     <string name="engine_extra_options_placeholder">напр. --no-warnings</string>
     <string name="engine_restart_notice">Перезапустите сервер для применения настроек</string>
     <string name="btn_restart_server">Перезапустить сервер</string>
+    <string name="engine_node_env_title">Выбор среды Node</string>
+    <string name="engine_node_env_prod">Продакшн (Рекомендуется)</string>
+    <string name="engine_node_env_prod_desc">Включает кэширование шаблонов и оптимизацию маршрутов для лучшей производительности</string>
+    <string name="engine_node_env_dev">Разработка</string>
+    <string name="engine_node_env_dev_desc">Отключает кэширование для быстрой перезагрузки и отладки ошибок</string>
 
     <!-- WebView Settings Tab -->
     <string name="webview_category_rendering">Отображение и рендеринг</string>

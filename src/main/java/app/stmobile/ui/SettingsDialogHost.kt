@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import app.stmobile.R
 import app.stmobile.models.AppConfig
+import app.stmobile.models.NodeConfig
 import app.stmobile.models.StLocales
 import app.stmobile.models.StUserSettings
 import app.stmobile.ui.theme.ThemeMode
@@ -44,6 +46,7 @@ enum class SettingsDialogType {
     SEND_ON_ENTER,
     AVATAR_STYLE,
     NOTIFICATION_TIMEOUT,
+    NODE_ENV,
 }
 
 @Composable
@@ -56,6 +59,8 @@ fun SettingsDialogHost(
     currentAppTag: String,
     effectiveStLocaleCode: String,
     onThemeChanged: (ThemeMode) -> Unit,
+    nodeConfig: NodeConfig? = null,
+    onSaveNodeConfig: ((NodeConfig) -> Unit)? = null,
     context: Context = LocalContext.current,
 ) {
     when (activeDialog) {
@@ -411,6 +416,67 @@ fun SettingsDialogHost(
                     }
                 },
             )
+        }
+
+        SettingsDialogType.NODE_ENV -> {
+            if (nodeConfig != null && onSaveNodeConfig != null) {
+                val envs = listOf(
+                    Pair("production", Pair(stringResource(R.string.engine_node_env_prod), stringResource(R.string.engine_node_env_prod_desc))),
+                    Pair("development", Pair(stringResource(R.string.engine_node_env_dev), stringResource(R.string.engine_node_env_dev_desc))),
+                )
+                AlertDialog(
+                    onDismissRequest = onDismiss,
+                    title = { Text(stringResource(R.string.engine_node_env_title)) },
+                    text = {
+                        Column(
+                            modifier = Modifier.verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            envs.forEach { (envKey, labels) ->
+                                val (title, desc) = labels
+                                val isSelected = nodeConfig.nodeEnv.equals(envKey, ignoreCase = true)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onSaveNodeConfig(nodeConfig.copy(nodeEnv = envKey))
+                                            onDismiss()
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = {
+                                            onSaveNodeConfig(nodeConfig.copy(nodeEnv = envKey))
+                                            onDismiss()
+                                        },
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = title,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = desc,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {},
+                    dismissButton = {
+                        TextButton(onClick = onDismiss) {
+                            Text(stringResource(R.string.btn_cancel))
+                        }
+                    },
+                )
+            }
         }
     }
 }

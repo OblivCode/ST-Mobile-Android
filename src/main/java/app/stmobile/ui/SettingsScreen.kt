@@ -1,5 +1,7 @@
 package app.stmobile.ui
 
+import android.app.ActivityManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,6 +46,7 @@ import androidx.core.app.LocaleManagerCompat
 import app.stmobile.R
 import app.stmobile.Utils
 import app.stmobile.models.AppConfig
+import app.stmobile.models.NodeConfig
 import app.stmobile.models.StLocales
 import app.stmobile.models.StUserSettings
 import app.stmobile.ui.theme.ThemeMode
@@ -62,12 +65,33 @@ fun SettingsScreen(
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
     val userSettings = remember(context) { StUserSettings.load(context) }
+    var nodeConfig by remember(context) { mutableStateOf(NodeConfig.load(context)) }
+
+    val deviceCores = remember { Runtime.getRuntime().availableProcessors().coerceIn(2, 16) }
+    val totalRamMb = remember {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val memInfo = ActivityManager.MemoryInfo()
+        am?.getMemoryInfo(memInfo)
+        (memInfo.totalMem / (1024L * 1024L)).toInt()
+    }
+    val safeMaxHeapMb = remember(totalRamMb) {
+        (totalRamMb * 0.5f).toInt().coerceIn(512, NodeConfig.MAX_OLD_SPACE_SIZE_MB)
+    }
 
     fun saveUserSettings() {
         runCatching {
             userSettings.save()
         }.onFailure { e ->
             Utils.toast(context, context.getString(R.string.toast_save_settings_failed, e.message ?: ""))
+        }
+    }
+
+    fun saveNodeConfig(updated: NodeConfig) {
+        nodeConfig = updated
+        runCatching {
+            NodeConfig.save(context, updated)
+        }.onFailure { e ->
+            Utils.toast(context, context.getString(R.string.toast_save_engine_failed, e.message ?: ""))
         }
     }
 
@@ -482,6 +506,74 @@ fun SettingsScreen(
                                         },
                                     )
                                 }
+                                "node_max_heap" -> {
+                                    var heap by remember(nodeConfig.maxOldSpaceSizeMb) { mutableIntStateOf(nodeConfig.maxOldSpaceSizeMb) }
+                                    SettingSliderRow(
+                                        title = stringResource(R.string.engine_max_heap, heap),
+                                        desc = item.description,
+                                        value = heap.toFloat(),
+                                        range = 256f..safeMaxHeapMb.toFloat(),
+                                        steps = ((safeMaxHeapMb - 256) / 256).coerceAtLeast(0),
+                                        onValueChange = { heap = (round(it / 256f) * 256f).toInt().coerceIn(256, safeMaxHeapMb) },
+                                        onValueChangeFinished = {
+                                            saveNodeConfig(nodeConfig.copy(maxOldSpaceSizeMb = heap))
+                                        },
+                                    )
+                                }
+                                "node_young_gen" -> {
+                                    var semi by remember(nodeConfig.maxSemiSpaceSizeMb) { mutableIntStateOf(nodeConfig.maxSemiSpaceSizeMb) }
+                                    SettingSliderRow(
+                                        title = stringResource(R.string.engine_young_gen, semi),
+                                        desc = item.description,
+                                        value = semi.toFloat(),
+                                        range = 8f..64f,
+                                        steps = 6,
+                                        onValueChange = { semi = (round(it / 8f) * 8f).toInt().coerceIn(8, 64) },
+                                        onValueChangeFinished = {
+                                            saveNodeConfig(nodeConfig.copy(maxSemiSpaceSizeMb = semi))
+                                        },
+                                    )
+                                }
+                                "node_optimize_size" -> {
+                                    var optSize by remember(nodeConfig.optimizeForSize) { mutableStateOf(nodeConfig.optimizeForSize) }
+                                    SettingSwitchRow(
+                                        title = item.title,
+                                        desc = item.description,
+                                        checked = optSize,
+                                        onCheckedChange = {
+                                            optSize = it
+                                            saveNodeConfig(nodeConfig.copy(optimizeForSize = it))
+                                        },
+                                    )
+                                }
+                                "node_threadpool" -> {
+                                    var threads by remember(nodeConfig.uvThreadPoolSize) { mutableIntStateOf(nodeConfig.uvThreadPoolSize) }
+                                    SettingSliderRow(
+                                        title = stringResource(R.string.engine_threadpool, threads),
+                                        desc = item.description,
+                                        value = threads.toFloat(),
+                                        range = 1f..deviceCores.toFloat(),
+                                        steps = (deviceCores - 2).coerceAtLeast(0),
+                                        onValueChange = { threads = round(it).toInt().coerceIn(1, deviceCores) },
+                                        onValueChangeFinished = {
+                                            saveNodeConfig(nodeConfig.copy(uvThreadPoolSize = threads))
+                                        },
+                                    )
+                                }
+                                "node_env" -> {
+                                    val envLabel = if (nodeConfig.nodeEnv.equals("production", ignoreCase = true)) {
+                                        stringResource(R.string.engine_node_env_prod)
+                                    } else {
+                                        stringResource(R.string.engine_node_env_dev)
+                                    }
+                                    SettingPickerRow(
+                                        title = item.title,
+                                        desc = item.description,
+                                        currentValueText = envLabel,
+                                        buttonText = stringResource(R.string.btn_change),
+                                        onClick = { activeDialog = SettingsDialogType.NODE_ENV },
+                                    )
+                                }
                                 else -> {
                                     // Fallback info row with action if matched
                                     Text(
@@ -552,7 +644,11 @@ fun SettingsScreen(
                     effectiveStLocaleCode = effectiveStLocaleCode,
                     currentAppStCode = currentAppStCode,
                 )
-                2 -> NodeEngineSettingsTab()
+                2 -> NodeEngineSettingsTab(
+                    nodeConfig = nodeConfig,
+                    onSaveNodeConfig = { saveNodeConfig(it) },
+                    onRequestDialog = { activeDialog = it },
+                )
                 3 -> WebViewSettingsTab(appConfig = appConfig)
             }
         }
@@ -568,5 +664,7 @@ fun SettingsScreen(
         currentAppTag = currentAppTag,
         effectiveStLocaleCode = effectiveStLocaleCode,
         onThemeChanged = onThemeChanged,
+        nodeConfig = nodeConfig,
+        onSaveNodeConfig = { saveNodeConfig(it) },
     )
 }

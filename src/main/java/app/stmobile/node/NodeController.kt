@@ -85,6 +85,7 @@ object NodeController {
         homeDir: File,
         ipcPort: Int? = null,
         ipcToken: String? = null,
+        effectiveMaxOldSpaceMb: Int = nodeConfig.clampedMaxOldSpaceSizeMb,
     ): ProcessLaunchSpec {
         val stdout = File(layout.logsDir, "node_stdout.log")
         val stderr = File(layout.logsDir, "node_stderr.log")
@@ -97,7 +98,7 @@ object NodeController {
         cmd.add(layout.launcher.absolutePath)
 
         // 2. Node/V8 runtime options strictly BEFORE script entry point
-        cmd.add("--max-old-space-size=${nodeConfig.clampedMaxOldSpaceSizeMb}")
+        cmd.add("--max-old-space-size=$effectiveMaxOldSpaceMb")
         cmd.add("--max-semi-space-size=${nodeConfig.clampedMaxSemiSpaceSizeMb}")
         cmd.add("--concurrent-turbofan-max-threads=2")
         cmd.add("--concurrent-marking-max-worker-num=2")
@@ -293,7 +294,8 @@ object NodeController {
             this.ipcServer = ipc
 
             sendStatus(NodeState.STARTING, "Launching server on port $targetPort…")
-            val spec = buildLaunchSpec(layout, stConfig, nodeConfig, appConfig, paths.filesDir, ipc.port, genToken)
+            val effectiveMaxOldSpace = nodeConfig.resolveEffectiveMaxOldSpace(context)
+            val spec = buildLaunchSpec(layout, stConfig, nodeConfig, appConfig, paths.filesDir, ipc.port, genToken, effectiveMaxOldSpace)
             rotateIfNeeded(spec.stdoutFile)
             rotateIfNeeded(spec.stderrFile)
             currentPort = spec.effectivePort

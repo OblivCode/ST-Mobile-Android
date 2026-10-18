@@ -29,6 +29,15 @@ data class NodeConfig(
         get() = uvThreadPoolSize.coerceIn(1, 16)
 
     /**
+     * Resolves the effective V8 max old space size, dynamically bounded by the device's
+     * physical RAM to prevent Out-Of-Memory (LMK) termination on budget hardware.
+     */
+    fun resolveEffectiveMaxOldSpace(context: Context): Int {
+        val safeCeiling = calculateSafeMaxHeapMb(context)
+        return minOf(clampedMaxOldSpaceSizeMb, safeCeiling)
+    }
+
+    /**
      * Formats additional node options for NODE_OPTIONS.
      * Note: Core memory limits are passed directly via argv CLI to guarantee acceptance.
      */
@@ -43,6 +52,16 @@ data class NodeConfig(
         const val MIN_OLD_SPACE_SIZE_MB = 256
         const val MAX_OLD_SPACE_SIZE_MB = 4096
         const val DEFAULT_NODE_ENV = "production"
+
+        fun calculateSafeMaxHeapMb(context: Context): Int {
+            return runCatching {
+                val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                val memInfo = android.app.ActivityManager.MemoryInfo()
+                am?.getMemoryInfo(memInfo)
+                val totalMb = (memInfo.totalMem / (1024L * 1024L)).toInt()
+                (totalMb * 0.5f).toInt().coerceIn(512, MAX_OLD_SPACE_SIZE_MB)
+            }.getOrDefault(MAX_OLD_SPACE_SIZE_MB)
+        }
 
         const val DEFAULT_OPTIMIZE_FOR_SIZE = false
         const val DEFAULT_MAX_SEMI_SPACE_SIZE_MB = 16

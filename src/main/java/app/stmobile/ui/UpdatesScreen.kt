@@ -42,7 +42,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -96,28 +95,28 @@ fun UpdatesScreen(
 
     // Dynamic status text and tint
     val (statusText, statusColor) = when {
-        isInstalling -> Pair(stringResource(R.string.dashboard_status_installing), Color(0xFFE5C07B))
-        isCheckingUpdates -> Pair(stringResource(R.string.updates_status_checking), Color(0xFF61AFEF))
+        isInstalling -> Pair(stringResource(R.string.dashboard_status_installing), MaterialTheme.colorScheme.tertiary)
+        isCheckingUpdates -> Pair(stringResource(R.string.updates_status_checking), MaterialTheme.colorScheme.secondary)
         updateCheckResult is UpdateCheckResult.UpdateAvailable -> Pair(
             stringResource(R.string.updates_status_update_available, "v${updateCheckResult.update.stVersion}"),
-            Color(0xFF7EC8A9),
+            MaterialTheme.colorScheme.primary,
         )
         updateCheckResult is UpdateCheckResult.Error -> Pair(
             stringResource(R.string.updates_status_check_failed, updateCheckResult.message),
-            Color(0xFFE06C75),
+            MaterialTheme.colorScheme.error,
         )
         updateCheckResult is UpdateCheckResult.UpToDate -> Pair(
             stringResource(R.string.updates_status_up_to_date),
-            Color(0xFF7EC8A9),
+            MaterialTheme.colorScheme.primary,
         )
-        installedInfo.isInstalled -> Pair(stringResource(R.string.updates_status_up_to_date), Color(0xFF7EC8A9))
-        else -> Pair(stringResource(R.string.status_not_installed), Color(0xFFE5C07B))
+        installedInfo.isInstalled -> Pair(stringResource(R.string.updates_status_up_to_date), MaterialTheme.colorScheme.primary)
+        else -> Pair(stringResource(R.string.status_not_installed), MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp),
     ) {
         Column(
@@ -130,14 +129,14 @@ fun UpdatesScreen(
                 text = stringResource(R.string.updates_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFD8DEE6),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             // Current Installation Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             ) {
                 Column(
                     modifier = Modifier
@@ -149,14 +148,14 @@ fun UpdatesScreen(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = Color(0xFF7EC8A9),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.updates_current_installation),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
@@ -165,26 +164,26 @@ fun UpdatesScreen(
                     Text(
                         text = stringResource(R.string.updates_sillytavern_version, stVersionDisplay),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFD8DEE6),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
 
                     val flavorName = app.stmobile.BuildConfig.FLAVOR.replaceFirstChar { it.uppercase() }
                     Text(
                         text = stringResource(R.string.updates_build_flavor, "$flavorName ($primaryAbi)"),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Text(
                         text = stringResource(R.string.updates_node_engine, nodeEngineDisplay),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Text(
                         text = stringResource(R.string.updates_channel, channelText),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Text(
@@ -210,7 +209,7 @@ fun UpdatesScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF162520)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 ) {
                     Column(
                         modifier = Modifier
@@ -222,14 +221,14 @@ fun UpdatesScreen(
                             Icon(
                                 imageVector = Icons.Default.SystemUpdate,
                                 contentDescription = null,
-                                tint = Color(0xFF7EC8A9),
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = stringResource(R.string.updates_available_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF7EC8A9),
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
 
@@ -237,7 +236,7 @@ fun UpdatesScreen(
                             text = stringResource(R.string.updates_available_version, "v${updateAvailable.stVersion}"),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
 
                         if (updateAvailable.bundleSize > 0) {
@@ -245,7 +244,7 @@ fun UpdatesScreen(
                             Text(
                                 text = stringResource(R.string.updates_available_size, "%.1f MB".format(sizeMb)),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF8A94A3),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -253,7 +252,7 @@ fun UpdatesScreen(
                             Text(
                                 text = stringResource(R.string.updates_available_published, updateAvailable.publishedAt.take(10)),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF8A94A3),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
 
@@ -264,8 +263,8 @@ fun UpdatesScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E5A44),
-                                contentColor = Color(0xFFB5EAD0),
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -294,7 +293,7 @@ fun UpdatesScreen(
                         if (isCheckingUpdates) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
-                                color = Color(0xFFD8DEE6),
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp,
                             )
                             Spacer(Modifier.width(8.dp))
@@ -333,8 +332,8 @@ fun UpdatesScreen(
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isInstalling,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A2525),
-                        contentColor = Color(0xFFFFB4AB),
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

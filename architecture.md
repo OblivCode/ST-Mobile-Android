@@ -122,3 +122,13 @@ ST Mobile employs a rigorous three-tier testing strategy designed to provide rap
 
 For complete test inventories, architectural seams, failure simulation details, and execution instructions, see the dedicated [Testing Architecture & Verification Guide](testing.md).
 
+## 6. Modular UI & design system
+
+- **Theme package** (`app.stmobile.ui.theme`): `StTheme`, `ThemeMode` (System/Light/Dark) and `Color.kt` hold every color scheme. Screens never define their own palette.
+- **Zero raw hex rule**: composables take colors only from `MaterialTheme.colorScheme` roles (or semantic helpers such as the node-state colors). This keeps Light and Dark themes consistent across Dashboard, Updates, Backups and dialogs.
+- **Row primitives** (`SettingsComponents.kt`): `SettingSliderRow`, `SettingSwitchRow`, `SettingPickerRow` and `SettingSearchCard` are the only way settings controls are rendered, so every tab looks and behaves the same.
+- **Hoisted dialogs**: `SettingsDialogHost` owns all picker dialogs (theme, language, send-on-enter, avatar style, notification timeout, Node environment). Tabs only request a dialog type.
+- **Search**: `SettingsSearchEngine` indexes settings across all tabs; search rows edit the same underlying config objects as the tabs.
+- **Dynamic hardware limits**: Node Engine slider bounds (threadpool, V8 heap) derive from runtime CPU core count and total RAM, never from a specific device. `NodeController.buildLaunchSpec` takes the resolved heap as a plain parameter so JVM tests stay Android-free.
+- **Upstream defaults**: SillyTavern styling defaults are kept vanilla; mobile tuning lives in app settings.
+

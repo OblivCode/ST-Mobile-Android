@@ -174,7 +174,7 @@ fun StWebView(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.surface)
             .windowInsetsPadding(webViewInsets),
     ) {
         AndroidView(
