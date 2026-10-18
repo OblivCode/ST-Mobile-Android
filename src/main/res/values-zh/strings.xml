@@ -47,37 +47,40 @@
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">打开应用时自动启动服务</string>
-    <string name="settings_auto_launch">自动打开 SillyTavern</string>
-    <string name="settings_auto_launch_desc">服务运行就绪后自动切换至 SillyTavern 界面</string>
+    <string name="settings_auto_launch">自动打开网页视图</string>
+    <string name="settings_auto_launch_desc">服务启动时自动打开网页视图</string>
     <string name="settings_auto_port_fallback">端口占用时自动后退备用端口</string>
-    <string name="settings_quick_toolbar">WebView 悬浮菜单快捷工具栏</string>
-    <string name="settings_quick_toolbar_desc">显示包含仪表盘、刷新和设置快捷方式的快捷栏，而不是直接返回仪表盘</string>
+    <string name="settings_quick_toolbar">悬浮菜单胶囊</string>
+    <string name="settings_quick_toolbar_desc">在网页视图中显示悬浮菜单胶囊</string>
     <string name="settings_bg_timeout">后台空闲超时（分钟，0为禁用）</string>
     <string name="settings_battery_exemption">请求忽略电池优化</string>
     <string name="settings_battery_warning">电池优化限制生效中：Android 可能会在 %1$d 分钟超时前终止 ST-Mobile。点击以设置为“无限制”。</string>
     <string name="settings_battery_unrestricted_title">省电策略：无限制（已生效）</string>
     <string name="settings_battery_unrestricted_desc">后台倒计时和推理任务已受保护，系统不会因电池优化将其终止。</string>
-    <string name="settings_notify_completion">完成弹出通知</string>
-    <string name="settings_notify_completion_desc">在后台生成或向量化完成时显示浮动通知</string>
-    <string name="btn_configure_floating_notifications">配置系统浮动通知权限</string>
-    <string name="settings_auto_sync_lang">自动与应用语言同步 SillyTavern 语言</string>
-    <string name="settings_auto_sync_lang_desc">使 SillyTavern 界面语言与原生应用语言保持同步</string>
-    <string name="settings_app_language">应用界面语言</string>
+    <string name="settings_notify_completion">完成通知提示</string>
+    <string name="settings_notify_completion_desc">后台任务完成时显示提示</string>
+    <string name="btn_configure_floating_notifications">通知渠道设置</string>
+    <string name="settings_auto_sync_lang">自动与 SillyTavern 同步</string>
+    <string name="settings_auto_sync_lang_desc">继承 SillyTavern 界面语言</string>
+    <string name="settings_app_language">应用语言</string>
     <string name="btn_match_st_language">匹配 SillyTavern 语言 (%1$s)</string>
     <string name="btn_open_system_locale">系统语言设置</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_category_language">语言</string>
     <string name="st_settings_user_title">用户偏好设置</string>
-    <string name="st_settings_user_desc">设置直接同步至 SillyTavern 的 settings.json。刷新页面（通过悬浮菜单 🔄 按钮）或重启服务后生效。</string>
+    <string name="st_settings_user_desc">已与 SillyTavern settings.json 同步。</string>
+    <string name="st_settings_subheader_chat_input">聊天与输入</string>
+    <string name="st_settings_subheader_display">显示与动画</string>
     <string name="st_settings_ui_language">界面语言</string>
     <string name="st_settings_lang_synced">已与应用同步 (%1$s)</string>
     <string name="btn_sync_app_language">同步为应用语言 (%1$s)</string>
     <string name="st_settings_auto_load_chat">自动加载最后对话</string>
-    <string name="st_settings_auto_load_chat_desc">打开时自动恢复当前角色与聊天记录，无需重新挑选角色</string>
+    <string name="st_settings_auto_load_chat_desc">打开时恢复最后对话</string>
     <string name="st_settings_auto_connect">自动连接 API</string>
-    <string name="st_settings_auto_connect_desc">启动时自动连接预设后端接口</string>
+    <string name="st_settings_auto_connect_desc">启动时自动连接后端</string>
     <string name="st_settings_compact_input">紧凑输入框模式</string>
-    <string name="st_settings_compact_input_desc">单行消息输入框，以便虚拟键盘弹出时保留聊天记录可见性</string>
+    <string name="st_settings_compact_input_desc">键盘打开时保持单行输入</string>
     <string name="st_settings_send_on_enter">回车键发送消息</string>
     <string name="st_settings_send_auto">自动（外接键盘发送，软键盘换行）</string>
     <string name="st_settings_send_disabled">禁用（回车始终换行）</string>
@@ -93,12 +96,12 @@
     <string name="dialog_send_enabled_desc">回车键始终直接发送消息</string>
 
     <!-- SillyTavern Settings Tab - Performance & Display -->
-    <string name="st_settings_fast_ui">快速界面模式 (Fast UI)</string>
-    <string name="st_settings_fast_ui_desc">禁用高耗能 GPU 模糊效果与滤镜，提供更流畅的滚动体验并节省电量</string>
+    <string name="st_settings_fast_ui">Fast UI</string>
+    <string name="st_settings_fast_ui_desc">禁用模糊效果以提高流畅度</string>
     <string name="st_settings_reduced_motion">减弱动态效果</string>
-    <string name="st_settings_reduced_motion_desc">禁用界面过渡动画，让导航与抽屉开合更迅速</string>
+    <string name="st_settings_reduced_motion_desc">禁用界面过渡动画</string>
     <string name="st_settings_font_scale">字体缩放：%1$d%%</string>
-    <string name="st_settings_font_scale_desc" formatted="false">调节文本大小以适应不同设备屏幕 DPI (50% – 150%)。</string>
+    <string name="st_settings_font_scale_desc" formatted="false">调节字体缩放大小 (50% – 150%)</string>
 
     <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">诊断与日志</string>
@@ -106,8 +109,9 @@
     <string name="btn_export_logs">导出日志</string>
 
     <!-- Node Engine Settings Tab -->
+    <string name="engine_category_memory">内存</string>
     <string name="engine_max_heap">V8 最大堆内存大小：%1$d MB</string>
-    <string name="engine_max_heap_desc">分配 V8 引擎最大 old space 内存空间 (--max-old-space-size)。下次启动服务生效。</string>
+    <string name="engine_max_heap_desc">V8 引擎老生代最大内存限制</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">导出备份</string>
@@ -213,20 +217,20 @@
     <string name="toast_no_logs">没有可用日志</string>
 
     <!-- Settings Subsections -->
-    <string name="settings_category_server">服务器与生命周期</string>
-    <string name="settings_category_power">后台与电源管理</string>
-    <string name="settings_category_notifications">完成悬浮弹窗提示</string>
-    <string name="settings_category_webview">WebView 与导航</string>
-    <string name="settings_category_localization">语言与界面</string>
-    <string name="settings_category_diagnostics">诊断与故障排查</string>
-    <string name="settings_notify_text">对话回复生成完成</string>
-    <string name="settings_notify_text_desc">当后台完成 LLM 消息生成时显示悬浮弹窗提示</string>
-    <string name="settings_notify_vector">向量与嵌入索引完成</string>
-    <string name="settings_notify_vector_desc">当后台完成上下文向量化时显示悬浮弹窗提示</string>
-    <string name="settings_notification_timeout">弹窗自动关闭时长</string>
-    <string name="settings_notification_timeout_never">直到手动点击 / 清除</string>
+    <string name="settings_category_localization">语言</string>
+    <string name="settings_category_server">服务器</string>
+    <string name="settings_category_power">电源</string>
+    <string name="settings_category_notifications">通知</string>
+    <string name="settings_category_webview">导航</string>
+    <string name="settings_category_diagnostics">诊断</string>
+    <string name="settings_notify_text">文本生成</string>
+    <string name="settings_notify_text_desc">文本生成完成时弹出提示</string>
+    <string name="settings_notify_vector">向量索引</string>
+    <string name="settings_notify_vector_desc">向量索引完成时弹出提示</string>
+    <string name="settings_notification_timeout">自动关闭时长</string>
+    <string name="settings_notification_timeout_never">直到手动关闭</string>
     <string name="settings_notification_timeout_seconds">%1$d 秒</string>
-    <string name="btn_reset_pill_position">重置菜单悬浮按钮至居中</string>
+    <string name="btn_reset_pill_position">重置胶囊位置</string>
     <string name="toast_pill_position_reset">菜单悬浮按钮位置已重置至居中</string>
-    <string name="settings_diagnostics_desc">导出完整的应用程序与服务器日志压缩包，或复制系统诊断数据以供排查问题。</string>
+    <string name="settings_diagnostics_desc">导出日志或复制系统诊断数据</string>
 </resources>

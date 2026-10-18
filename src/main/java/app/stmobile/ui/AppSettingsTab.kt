@@ -77,7 +77,6 @@ fun AppSettingsTab(
     var autoPortFallback by remember { mutableStateOf(appConfig.autoPortFallback) }
     var quickToolbar by remember { mutableStateOf(appConfig.webViewMenuQuickToolbar) }
     var autoSyncLanguage by remember { mutableStateOf(appConfig.autoSyncLanguage) }
-    var notifyOnCompletion by remember { mutableStateOf(appConfig.notifyOnCompletion) }
     var notifyOnText by remember { mutableStateOf(appConfig.notifyOnTextCompletion) }
     var notifyOnVector by remember { mutableStateOf(appConfig.notifyOnVectorCompletion) }
     var notificationTimeoutSeconds by remember { mutableIntStateOf(appConfig.notificationTimeoutSeconds) }
@@ -139,7 +138,66 @@ fun AppSettingsTab(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // =====================================================================
-        // Subsection 1: Server & Lifecycle
+        // Subsection 1: Language
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_localization))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_auto_sync_lang), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_auto_sync_lang_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = autoSyncLanguage,
+                onCheckedChange = {
+                    autoSyncLanguage = it
+                    appConfig.autoSyncLanguage = it
+                },
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showAppLanguageDialog = true },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_app_language), color = Color(0xFFD8DEE6))
+                Text(
+                    currentAppLocaleName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7EC8A9),
+                )
+            }
+            OutlinedButton(onClick = { showAppLanguageDialog = true }) {
+                Text(stringResource(R.string.btn_change))
+            }
+        }
+
+        if (canMatchStLanguage) {
+            OutlinedButton(
+                onClick = {
+                    val targetLocales = if (stMappedTag.isNullOrEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(stMappedTag)
+                    AppCompatDelegate.setApplicationLocales(targetLocales)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_match_st_language, stLocaleDisplay))
+            }
+        }
+
+        // =====================================================================
+        // Subsection 2: Server
         // =====================================================================
         SettingsCategoryHeader(stringResource(R.string.settings_category_server))
 
@@ -196,7 +254,7 @@ fun AppSettingsTab(
         }
 
         // =====================================================================
-        // Subsection 2: Background & Power Management
+        // Subsection 3: Power
         // =====================================================================
         SettingsCategoryHeader(stringResource(R.string.settings_category_power))
 
@@ -303,7 +361,7 @@ fun AppSettingsTab(
         }
 
         // =====================================================================
-        // Subsection 3: Completion Pop-up Alerts
+        // Subsection 4: Notifications
         // =====================================================================
         SettingsCategoryHeader(stringResource(R.string.settings_category_notifications))
 
@@ -313,72 +371,49 @@ fun AppSettingsTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_notify_completion), color = Color(0xFFD8DEE6))
+                Text(stringResource(R.string.settings_notify_text), color = Color(0xFFD8DEE6))
                 Text(
-                    stringResource(R.string.settings_notify_completion_desc),
+                    stringResource(R.string.settings_notify_text_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A94A3),
                 )
             }
             Switch(
-                checked = notifyOnCompletion,
+                checked = notifyOnText,
                 onCheckedChange = {
-                    notifyOnCompletion = it
-                    appConfig.notifyOnCompletion = it
+                    notifyOnText = it
+                    appConfig.notifyOnTextCompletion = it
                 },
             )
         }
 
-        if (notifyOnCompletion) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                    Text(stringResource(R.string.settings_notify_text), color = Color(0xFFD8DEE6))
-                    Text(
-                        stringResource(R.string.settings_notify_text_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8A94A3),
-                    )
-                }
-                Switch(
-                    checked = notifyOnText,
-                    onCheckedChange = {
-                        notifyOnText = it
-                        appConfig.notifyOnTextCompletion = it
-                    },
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_notify_vector), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_notify_vector_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
                 )
             }
+            Switch(
+                checked = notifyOnVector,
+                onCheckedChange = {
+                    notifyOnVector = it
+                    appConfig.notifyOnVectorCompletion = it
+                },
+            )
+        }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                    Text(stringResource(R.string.settings_notify_vector), color = Color(0xFFD8DEE6))
-                    Text(
-                        stringResource(R.string.settings_notify_vector_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8A94A3),
-                    )
-                }
-                Switch(
-                    checked = notifyOnVector,
-                    onCheckedChange = {
-                        notifyOnVector = it
-                        appConfig.notifyOnVectorCompletion = it
-                    },
-                )
-            }
-
+        if (notifyOnText || notifyOnVector) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showTimeoutDialog = true }
-                    .padding(start = 8.dp),
+                    .clickable { showTimeoutDialog = true },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -411,7 +446,7 @@ fun AppSettingsTab(
         }
 
         // =====================================================================
-        // Subsection 4: WebView & Navigation
+        // Subsection 5: Navigation
         // =====================================================================
         SettingsCategoryHeader(stringResource(R.string.settings_category_webview))
 
@@ -448,66 +483,7 @@ fun AppSettingsTab(
         }
 
         // =====================================================================
-        // Subsection 5: Language & Interface
-        // =====================================================================
-        SettingsCategoryHeader(stringResource(R.string.settings_category_localization))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_auto_sync_lang), color = Color(0xFFD8DEE6))
-                Text(
-                    stringResource(R.string.settings_auto_sync_lang_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8A94A3),
-                )
-            }
-            Switch(
-                checked = autoSyncLanguage,
-                onCheckedChange = {
-                    autoSyncLanguage = it
-                    appConfig.autoSyncLanguage = it
-                },
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showAppLanguageDialog = true },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_app_language), color = Color(0xFFD8DEE6))
-                Text(
-                    currentAppLocaleName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF7EC8A9),
-                )
-            }
-            OutlinedButton(onClick = { showAppLanguageDialog = true }) {
-                Text(stringResource(R.string.btn_change))
-            }
-        }
-
-        if (canMatchStLanguage) {
-            OutlinedButton(
-                onClick = {
-                    val targetLocales = if (stMappedTag.isNullOrEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(stMappedTag)
-                    AppCompatDelegate.setApplicationLocales(targetLocales)
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.btn_match_st_language, stLocaleDisplay))
-            }
-        }
-
-        // =====================================================================
-        // Subsection 6: Diagnostics & Troubleshooting
+        // Subsection 6: Diagnostics
         // =====================================================================
         SettingsCategoryHeader(stringResource(R.string.settings_category_diagnostics))
 
@@ -667,15 +643,4 @@ fun AppSettingsTab(
             },
         )
     }
-}
-
-@Composable
-private fun SettingsCategoryHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color(0xFF7EC8A9),
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-    )
 }

@@ -122,7 +122,7 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val DEFAULT_AUTO_SYNC_LANGUAGE = true
         const val DEFAULT_NOTIFY_ON_COMPLETION = true
         const val DEFAULT_NOTIFY_ON_TEXT_COMPLETION = true
-        const val DEFAULT_NOTIFY_ON_VECTOR_COMPLETION = true
+        const val DEFAULT_NOTIFY_ON_VECTOR_COMPLETION = false
         const val DEFAULT_NOTIFICATION_TIMEOUT_SECONDS = 10
         const val DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION = 0.5f
 

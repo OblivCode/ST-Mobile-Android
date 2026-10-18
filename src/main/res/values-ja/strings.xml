@@ -47,37 +47,40 @@
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">アプリ起動時にサーバーを自動起動</string>
-    <string name="settings_auto_launch">SillyTavern を自動表示</string>
-    <string name="settings_auto_launch_desc">サーバーの準備ができ次第、自動的に SillyTavern 画面へ切り替えます</string>
+    <string name="settings_auto_launch">Web画面を自動で開く</string>
+    <string name="settings_auto_launch_desc">サーバー起動時にWeb画面を開きます</string>
     <string name="settings_auto_port_fallback">ポート使用中時に自動フォールバック</string>
-    <string name="settings_quick_toolbar">WebView クイックツールバー</string>
-    <string name="settings_quick_toolbar_desc">直接戻る代わりにダッシュボード・リロード・設定のドックを表示します</string>
+    <string name="settings_quick_toolbar">クイックメニューボタン</string>
+    <string name="settings_quick_toolbar_desc">Web画面上にフローティングメニューを表示</string>
     <string name="settings_bg_timeout">バックグラウンド待機タイムアウト（分、0で無効）</string>
     <string name="settings_battery_exemption">バッテリー最適化の免除をリクエスト</string>
     <string name="settings_battery_warning">バッテリー制限が有効です: %1$d分のタイムアウト前にST-Mobileが終了される可能性があります。タップして「制限なし」に設定してください。</string>
     <string name="settings_battery_unrestricted_title">バッテリーセーバー: 制限なし（有効）</string>
     <string name="settings_battery_unrestricted_desc">バックグラウンドの待機タイマーと推論タスクはシステムの終了から保護されています。</string>
-    <string name="settings_notify_completion">完了ポップアップ通知</string>
-    <string name="settings_notify_completion_desc">バックグラウンドでの生成やベクトル化の完了時に通知を表示します</string>
-    <string name="btn_configure_floating_notifications">システムのフローティング通知設定を開く</string>
-    <string name="settings_auto_sync_lang">SillyTavern 言語をアプリと自動同期</string>
-    <string name="settings_auto_sync_lang_desc">SillyTavern のインターフェース言語をアプリ言語と同期させます</string>
+    <string name="settings_notify_completion">完了通知</string>
+    <string name="settings_notify_completion_desc">バックグラウンド処理の完了時に通知を表示</string>
+    <string name="btn_configure_floating_notifications">通知チャンネル設定</string>
+    <string name="settings_auto_sync_lang">SillyTavernと自動同期</string>
+    <string name="settings_auto_sync_lang_desc">SillyTavernの言語設定を適用</string>
     <string name="settings_app_language">アプリ言語</string>
     <string name="btn_match_st_language">SillyTavern の言語に合わせる (%1$s)</string>
     <string name="btn_open_system_locale">システム言語設定を開く</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_category_language">言語</string>
     <string name="st_settings_user_title">ユーザー設定</string>
-    <string name="st_settings_user_desc">SillyTavern の settings.json と直接同期されます。ページ再読み込み（🔄 ボタン）またはサーバー再起動後に反映されます。</string>
+    <string name="st_settings_user_desc">SillyTavern の settings.json と同期中。</string>
+    <string name="st_settings_subheader_chat_input">チャットと入力</string>
+    <string name="st_settings_subheader_display">表示とアニメーション</string>
     <string name="st_settings_ui_language">UI 言語</string>
     <string name="st_settings_lang_synced">アプリと同期中 (%1$s)</string>
     <string name="btn_sync_app_language">アプリ言語と同期 (%1$s)</string>
     <string name="st_settings_auto_load_chat">最後のチャットを自動読み込み</string>
-    <string name="st_settings_auto_load_chat_desc">起動時に前回のキャラクターとチャット履歴をすぐに再開します</string>
+    <string name="st_settings_auto_load_chat_desc">起動時に前回のチャットを再開</string>
     <string name="st_settings_auto_connect">API に自動接続</string>
-    <string name="st_settings_auto_connect_desc">起動時にバックエンド接続を自動確立します</string>
+    <string name="st_settings_auto_connect_desc">起動時にバックエンドに接続</string>
     <string name="st_settings_compact_input">コンパクト入力エリア</string>
-    <string name="st_settings_compact_input_desc">キーボード表示時でもチャット履歴が見えるよう 1 行入力にします</string>
+    <string name="st_settings_compact_input_desc">キーボード表示時は 1 行入力</string>
     <string name="st_settings_send_on_enter">Enter で送信</string>
     <string name="st_settings_send_auto">自動（外付けキーボードは送信、ソフトキーボードは改行）</string>
     <string name="st_settings_send_disabled">無効（Enter は常に改行を挿入）</string>
@@ -93,12 +96,12 @@
     <string name="dialog_send_enabled_desc">Enter キーで常にメッセージを送信</string>
 
     <!-- SillyTavern Settings Tab - Performance & Display -->
-    <string name="st_settings_fast_ui">高速 UI モード (Fast UI)</string>
-    <string name="st_settings_fast_ui_desc">GPU 負荷の高いぼかしやフィルターを無効化し、滑らかなスクロールと省電力を実現します</string>
+    <string name="st_settings_fast_ui">Fast UI</string>
+    <string name="st_settings_fast_ui_desc">ぼかし効果を無効にして軽量化</string>
     <string name="st_settings_reduced_motion">視覚効果を減らす</string>
-    <string name="st_settings_reduced_motion_desc">画面遷移アニメーションを無効化し、すばやい画面切り替えを実現します</string>
+    <string name="st_settings_reduced_motion_desc">画面遷移アニメーションを無効化</string>
     <string name="st_settings_font_scale">フォント倍率: %1$d%%</string>
-    <string name="st_settings_font_scale_desc" formatted="false">画面密度に応じた文字の読みやすさを調整 (50% – 150%)。</string>
+    <string name="st_settings_font_scale_desc" formatted="false">文字サイズを調整 (50% – 150%)</string>
 
     <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">診断とログ</string>
@@ -106,8 +109,9 @@
     <string name="btn_export_logs">ログを書き出し</string>
 
     <!-- Node Engine Settings Tab -->
+    <string name="engine_category_memory">メモリ</string>
     <string name="engine_max_heap">V8 最大ヒープサイズ: %1$d MB</string>
-    <string name="engine_max_heap_desc">V8 の最大オールドスペースサイズ (--max-old-space-size) を割り当てます。次回起動時に反映されます。</string>
+    <string name="engine_max_heap_desc">V8 オールド領域の最大メモリ制限</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">バックアップの書き出し</string>
@@ -213,20 +217,20 @@
     <string name="toast_no_logs">利用可能なログがありません</string>
 
     <!-- Settings Subsections -->
-    <string name="settings_category_server">サーバーとライフサイクル</string>
-    <string name="settings_category_power">バックグラウンドと電源管理</string>
-    <string name="settings_category_notifications">完了ポップアップ通知</string>
-    <string name="settings_category_webview">WebViewとナビゲーション</string>
-    <string name="settings_category_localization">言語とインターフェース</string>
-    <string name="settings_category_diagnostics">診断とトラブルシューティング</string>
-    <string name="settings_notify_text">チャット応答の完了</string>
-    <string name="settings_notify_text_desc">バックグラウンドでLLMメッセージ生成が完了した際にポップアップを表示します</string>
-    <string name="settings_notify_vector">ベクトル・埋め込みインデックス完了</string>
-    <string name="settings_notify_vector_desc">バックグラウンドでコンテキストのベクトル化が完了した際にポップアップを表示します</string>
-    <string name="settings_notification_timeout">ポップアップの自動非表示時間</string>
-    <string name="settings_notification_timeout_never">タップ・破棄するまで表示</string>
+    <string name="settings_category_localization">言語</string>
+    <string name="settings_category_server">サーバー</string>
+    <string name="settings_category_power">電源</string>
+    <string name="settings_category_notifications">通知</string>
+    <string name="settings_category_webview">ナビゲーション</string>
+    <string name="settings_category_diagnostics">診断</string>
+    <string name="settings_notify_text">テキスト生成</string>
+    <string name="settings_notify_text_desc">テキスト生成の完了時に通知を表示</string>
+    <string name="settings_notify_vector">ベクトル処理</string>
+    <string name="settings_notify_vector_desc">ベクトル化の完了時に通知を表示</string>
+    <string name="settings_notification_timeout">自動非表示時間</string>
+    <string name="settings_notification_timeout_never">閉じるまで表示</string>
     <string name="settings_notification_timeout_seconds">%1$d秒</string>
-    <string name="btn_reset_pill_position">メニューボタンの位置を中央に戻す</string>
+    <string name="btn_reset_pill_position">ボタン位置をリセット</string>
     <string name="toast_pill_position_reset">メニューボタンの位置を中央にリセットしました</string>
-    <string name="settings_diagnostics_desc">トラブルシューティング用にアプリおよびサーバーのログアーカイブをエクスポートするか、診断情報をクリップボードにコピーします。</string>
+    <string name="settings_diagnostics_desc">ログを書き出し、または診断情報をコピー</string>
 </resources>

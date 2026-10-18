@@ -47,37 +47,40 @@
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">Автозапуск сервера при открытии приложения</string>
-    <string name="settings_auto_launch">Автопереход в SillyTavern</string>
-    <string name="settings_auto_launch_desc">Автоматически открывать интерфейс SillyTavern после готовности сервера</string>
+    <string name="settings_auto_launch">Автооткрытие веб-интерфейса</string>
+    <string name="settings_auto_launch_desc">Открывать веб-интерфейс при запуске сервера</string>
     <string name="settings_auto_port_fallback">Автоподбор резервного порта при занятости</string>
-    <string name="settings_quick_toolbar">Быстрая панель инструментов WebView</string>
-    <string name="settings_quick_toolbar_desc">Показывать всплывающую панель с быстрыми кнопками вместо прямого возврата на главную</string>
+    <string name="settings_quick_toolbar">Плавающая кнопка меню</string>
+    <string name="settings_quick_toolbar_desc">Показывать кнопку меню в веб-интерфейсе</string>
     <string name="settings_bg_timeout">Тайм-аут простоя в фоне (минут, 0 для отключения)</string>
     <string name="settings_battery_exemption">Запросить исключение из оптимизации батареи</string>
     <string name="settings_battery_warning">Ограничения батареи активны: Android может закрыть ST-Mobile до истечения %1$d мин. Нажмите, чтобы выбрать \'Без ограничений\'.</string>
     <string name="settings_battery_unrestricted_title">Контроль активности: Без ограничений</string>
     <string name="settings_battery_unrestricted_desc">Фоновый таймер ожидания и задачи генерации защищены от завершения системой.</string>
-    <string name="settings_notify_completion">Всплывающие уведомления о завершении</string>
-    <string name="settings_notify_completion_desc">Показывать всплывающее уведомление, когда генерация или векторизация завершается в фоновом режиме</string>
-    <string name="btn_configure_floating_notifications">Настроить всплывающие уведомления в системе</string>
-    <string name="settings_auto_sync_lang">Синхронизировать язык SillyTavern с приложением</string>
-    <string name="settings_auto_sync_lang_desc">Поддерживать язык интерфейса SillyTavern в соответствии с языком приложения</string>
+    <string name="settings_notify_completion">Уведомления о завершении</string>
+    <string name="settings_notify_completion_desc">Показывать уведомление при завершении фоновых задач</string>
+    <string name="btn_configure_floating_notifications">Настройки канала уведомлений</string>
+    <string name="settings_auto_sync_lang">Автосинхронизация с SillyTavern</string>
+    <string name="settings_auto_sync_lang_desc">Наследовать язык SillyTavern</string>
     <string name="settings_app_language">Язык приложения</string>
     <string name="btn_match_st_language">Выбрать язык как в SillyTavern (%1$s)</string>
     <string name="btn_open_system_locale">Языковые настройки системы</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_category_language">Язык</string>
     <string name="st_settings_user_title">Пользовательские настройки</string>
-    <string name="st_settings_user_desc">Синхронизируются напрямую с settings.json SillyTavern. Применяются после обновления страницы (кнопка 🔄) или перезапуска сервера.</string>
+    <string name="st_settings_user_desc">Синхронизировано с settings.json SillyTavern.</string>
+    <string name="st_settings_subheader_chat_input">Чат и ввод</string>
+    <string name="st_settings_subheader_display">Экран и анимация</string>
     <string name="st_settings_ui_language">Язык интерфейса</string>
     <string name="st_settings_lang_synced">Синхронизировано с приложением (%1$s)</string>
     <string name="btn_sync_app_language">Синхронизировать с языком приложения (%1$s)</string>
     <string name="st_settings_auto_load_chat">Автозагрузка последнего чата</string>
-    <string name="st_settings_auto_load_chat_desc">Возобновлять диалог с активным персонажем сразу при открытии</string>
+    <string name="st_settings_auto_load_chat_desc">Возобновлять последний чат при открытии</string>
     <string name="st_settings_auto_connect">Автоподключение к API</string>
-    <string name="st_settings_auto_connect_desc">Автоматически устанавливать соединение с бэкендом при старте</string>
+    <string name="st_settings_auto_connect_desc">Подключаться к бэкенду при старте</string>
     <string name="st_settings_compact_input">Компактное поле ввода</string>
-    <string name="st_settings_compact_input_desc">Однострочный ввод для сохранения видимости сообщений при открытой экранной клавиатуре</string>
+    <string name="st_settings_compact_input_desc">Однострочный ввод при открытой клавиатуре</string>
     <string name="st_settings_send_on_enter">Отправка по клавише Enter</string>
     <string name="st_settings_send_auto">Автоматически (физическая клавиатура — отправка, виртуальная — новая строка)</string>
     <string name="st_settings_send_disabled">Отключено (Enter всегда переносит строку)</string>
@@ -93,12 +96,12 @@
     <string name="dialog_send_enabled_desc">Enter всегда отправляет сообщение</string>
 
     <!-- SillyTavern Settings Tab - Performance & Display -->
-    <string name="st_settings_fast_ui">Быстрый интерфейс (Fast UI)</string>
-    <string name="st_settings_fast_ui_desc">Отключение тяжелых эффектов размытия GPU для плавного скролла и экономии батареи</string>
+    <string name="st_settings_fast_ui">Fast UI</string>
+    <string name="st_settings_fast_ui_desc">Отключение размытия для лучшей производительности</string>
     <string name="st_settings_reduced_motion">Уменьшение движения</string>
-    <string name="st_settings_reduced_motion_desc">Отключение анимаций интерфейса для мгновенных переходов</string>
+    <string name="st_settings_reduced_motion_desc">Отключение анимаций интерфейса</string>
     <string name="st_settings_font_scale">Масштаб шрифта: %1$d%%</string>
-    <string name="st_settings_font_scale_desc" formatted="false">Настройка размера текста для различных экранов (50% – 150%).</string>
+    <string name="st_settings_font_scale_desc" formatted="false">Настройка размера текста (50% – 150%)</string>
 
     <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">Диагностика и логи</string>
@@ -106,8 +109,9 @@
     <string name="btn_export_logs">Экспорт логов</string>
 
     <!-- Node Engine Settings Tab -->
+    <string name="engine_category_memory">Память</string>
     <string name="engine_max_heap">Макс. память кучи V8: %1$d МБ</string>
-    <string name="engine_max_heap_desc">Выделяет максимальный объем old space для V8 (--max-old-space-size). Вступает в силу при следующем запуске.</string>
+    <string name="engine_max_heap_desc">Максимальный объем памяти V8 для старого поколения</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">Экспорт резервной копии</string>
@@ -213,20 +217,20 @@
     <string name="toast_no_logs">Логи отсутствуют</string>
 
     <!-- Settings Subsections -->
-    <string name="settings_category_server">Сервер и жизненный цикл</string>
-    <string name="settings_category_power">Фоновый режим и питание</string>
-    <string name="settings_category_notifications">Всплывающие уведомления о завершении</string>
-    <string name="settings_category_webview">WebView и навигация</string>
-    <string name="settings_category_localization">Язык и интерфейс</string>
-    <string name="settings_category_diagnostics">Диагностика и устранение неполадок</string>
-    <string name="settings_notify_text">Завершение ответа в чате</string>
-    <string name="settings_notify_text_desc">Показывать всплывающее уведомление, когда генерация сообщения LLM завершается в фоне</string>
-    <string name="settings_notify_vector">Индексация векторов и эмбеддингов</string>
-    <string name="settings_notify_vector_desc">Показывать всплывающее уведомление, когда фоновая векторизация контекста завершена</string>
-    <string name="settings_notification_timeout">Время автоскрытия уведомления</string>
-    <string name="settings_notification_timeout_never">До нажатия / смахивания</string>
+    <string name="settings_category_localization">Язык</string>
+    <string name="settings_category_server">Сервер</string>
+    <string name="settings_category_power">Питание</string>
+    <string name="settings_category_notifications">Уведомления</string>
+    <string name="settings_category_webview">Навигация</string>
+    <string name="settings_category_diagnostics">Диагностика</string>
+    <string name="settings_notify_text">Генерация текста</string>
+    <string name="settings_notify_text_desc">Показывать уведомление при завершении генерации</string>
+    <string name="settings_notify_vector">Индексация векторов</string>
+    <string name="settings_notify_vector_desc">Показывать уведомление при завершении векторизации</string>
+    <string name="settings_notification_timeout">Время автоскрытия</string>
+    <string name="settings_notification_timeout_never">До закрытия</string>
     <string name="settings_notification_timeout_seconds">%1$d сек.</string>
-    <string name="btn_reset_pill_position">Сбросить кнопку меню в центр</string>
+    <string name="btn_reset_pill_position">Сбросить кнопку</string>
     <string name="toast_pill_position_reset">Положение кнопки меню сброшено в центр</string>
-    <string name="settings_diagnostics_desc">Экспорт полных архивов журналов приложения и сервера или копирование диагностики в буфер обмена для решения проблем.</string>
+    <string name="settings_diagnostics_desc">Экспорт журналов или копирование диагностики</string>
 </resources>

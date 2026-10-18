@@ -43,6 +43,8 @@ fun NodeEngineSettingsTab(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        SettingsCategoryHeader(stringResource(R.string.engine_category_memory))
+
         Text(
             text = stringResource(R.string.engine_max_heap, maxOldSpace),
             style = MaterialTheme.typography.titleMedium,

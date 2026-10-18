@@ -47,37 +47,40 @@
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">Server beim App-Start automatisch starten</string>
-    <string name="settings_auto_launch">SillyTavern automatisch öffnen</string>
-    <string name="settings_auto_launch_desc">Automatisch zur SillyTavern-Oberfläche wechseln, sobald der Server bereit ist</string>
+    <string name="settings_auto_launch">Webansicht automatisch öffnen</string>
+    <string name="settings_auto_launch_desc">Webansicht öffnen, wenn der Server startet</string>
     <string name="settings_auto_port_fallback">Automatischer Ausweichport bei Belegung</string>
-    <string name="settings_quick_toolbar">WebView-Schnellzugriffsleiste</string>
-    <string name="settings_quick_toolbar_desc">Dockleiste mit Dashboard, Neu laden und Einstellungen anstelle direkter Rückkehr anzeigen</string>
+    <string name="settings_quick_toolbar">Schnellaktions-Pille</string>
+    <string name="settings_quick_toolbar_desc">Schwebende Menü-Pille in der Webansicht anzeigen</string>
     <string name="settings_bg_timeout">Hintergrund-Inaktivitäts-Timeout (Minuten, 0 zum Deaktivieren)</string>
     <string name="settings_battery_exemption">Ausnahme von der Akkuoptimierung anfordern</string>
     <string name="settings_battery_warning">Akku-Einschränkungen aktiv: Android kann ST-Mobile vor Ablauf des %1$d-Minuten-Timeouts beenden. Tippen, um auf \'Keine Beschränkungen\' zu stellen.</string>
     <string name="settings_battery_unrestricted_title">Energiesparmodus: Keine Einschränkungen aktiv</string>
     <string name="settings_battery_unrestricted_desc">Hintergrund-Timer und Generierungsaufgaben sind vor vorzeitiger Beendigung geschützt.</string>
-    <string name="settings_notify_completion">Pop-up-Abschlussbenachrichtigungen</string>
-    <string name="settings_notify_completion_desc">Heads-up-Benachrichtigung anzeigen, wenn Generierung oder Vektorisierung im Hintergrund endet</string>
-    <string name="btn_configure_floating_notifications">System-Pop-up- / Floating-Berechtigungen anpassen</string>
-    <string name="settings_auto_sync_lang">SillyTavern-Sprache automatisch mit App synchronisieren</string>
-    <string name="settings_auto_sync_lang_desc">Hält die Sprache der SillyTavern-Benutzeroberfläche mit der App synchron</string>
+    <string name="settings_notify_completion">Abschlussbenachrichtigungen</string>
+    <string name="settings_notify_completion_desc">Benachrichtigung anzeigen, wenn Hintergrundaufgaben enden</string>
+    <string name="btn_configure_floating_notifications">Benachrichtigungskanal-Einstellungen</string>
+    <string name="settings_auto_sync_lang">Automatisch mit SillyTavern synchronisieren</string>
+    <string name="settings_auto_sync_lang_desc">SillyTavern-Sprache übernehmen</string>
     <string name="settings_app_language">App-Sprache</string>
     <string name="btn_match_st_language">SillyTavern-Sprache übernehmen (%1$s)</string>
     <string name="btn_open_system_locale">Systemspracheinstellungen</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_category_language">Sprache</string>
     <string name="st_settings_user_title">Benutzereinstellungen</string>
-    <string name="st_settings_user_desc">Direkt mit der settings.json von SillyTavern synchronisiert. Änderungen werden nach Neuladen (🔄) oder Serverneustart wirksam.</string>
+    <string name="st_settings_user_desc">Mit SillyTavern settings.json synchronisiert.</string>
+    <string name="st_settings_subheader_chat_input">Chat &amp; Eingabe</string>
+    <string name="st_settings_subheader_display">Anzeige &amp; Bewegung</string>
     <string name="st_settings_ui_language">Oberflächensprache</string>
     <string name="st_settings_lang_synced">Mit App synchronisiert (%1$s)</string>
     <string name="btn_sync_app_language">Mit App-Sprache abgleichen (%1$s)</string>
     <string name="st_settings_auto_load_chat">Letzten Chat automatisch laden</string>
-    <string name="st_settings_auto_load_chat_desc">Aktiven Charakter und Chatverlauf beim Öffnen direkt fortsetzen</string>
+    <string name="st_settings_auto_load_chat_desc">Letzten Chat beim Start fortsetzen</string>
     <string name="st_settings_auto_connect">API automatisch verbinden</string>
-    <string name="st_settings_auto_connect_desc">Backend-Verbindungen beim Start automatisch herstellen</string>
+    <string name="st_settings_auto_connect_desc">Backend beim Start verbinden</string>
     <string name="st_settings_compact_input">Kompakter Eingabebereich</string>
-    <string name="st_settings_compact_input_desc">Einzeilige Nachrichteneingabe, damit der Chatverlauf bei geöffneter Tastatur sichtbar bleibt</string>
+    <string name="st_settings_compact_input_desc">Einzeilige Eingabe bei geöffneter Tastatur</string>
     <string name="st_settings_send_on_enter">Mit Enter senden</string>
     <string name="st_settings_send_auto">Automatisch (physische Tastatur sendet, Bildschirmtastatur neue Zeile)</string>
     <string name="st_settings_send_disabled">Deaktiviert (Enter fügt immer eine neue Zeile ein)</string>
@@ -93,12 +96,12 @@
     <string name="dialog_send_enabled_desc">Enter sendet die Nachricht immer direkt</string>
 
     <!-- SillyTavern Settings Tab - Performance & Display -->
-    <string name="st_settings_fast_ui">Schneller UI-Modus (Fast UI)</string>
-    <string name="st_settings_fast_ui_desc">Deaktiviert GPU-intensive Unschärfeeffekte und Filter für flüssiges Scrollen und längere Akkulaufzeit</string>
+    <string name="st_settings_fast_ui">Fast UI</string>
+    <string name="st_settings_fast_ui_desc">Unschärfeeffekte für bessere Leistung deaktivieren</string>
     <string name="st_settings_reduced_motion">Reduzierte Bewegung</string>
-    <string name="st_settings_reduced_motion_desc">Deaktiviert Oberflächenanimationen für schnellere Übergänge</string>
+    <string name="st_settings_reduced_motion_desc">Animationen und Übergänge deaktivieren</string>
     <string name="st_settings_font_scale">Schriftskalierung: %1$d%%</string>
-    <string name="st_settings_font_scale_desc" formatted="false">Textlesbarkeit für verschiedene Bildschirmauflösungen anpassen (50% – 150%).</string>
+    <string name="st_settings_font_scale_desc" formatted="false">Schriftgröße anpassen (50% – 150%)</string>
 
     <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">Diagnose &amp; Protokolle</string>
@@ -106,8 +109,9 @@
     <string name="btn_export_logs">Protokolle exportieren</string>
 
     <!-- Node Engine Settings Tab -->
+    <string name="engine_category_memory">Speicher</string>
     <string name="engine_max_heap">Maximaler V8-Heap-Speicher: %1$d MB</string>
-    <string name="engine_max_heap_desc">Weist den maximalen Speicherplatz für V8 zu (--max-old-space-size). Wird beim nächsten Serverstart wirksam.</string>
+    <string name="engine_max_heap_desc">Maximales V8-Speicherlimit für die alte Generation</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">Backup exportieren</string>
@@ -213,20 +217,20 @@
     <string name="toast_no_logs">Keine Protokolle verfügbar</string>
 
     <!-- Settings Subsections -->
-    <string name="settings_category_server">Server &amp; Lebenszyklus</string>
-    <string name="settings_category_power">Hintergrund- &amp; Energieverwaltung</string>
-    <string name="settings_category_notifications">Pop-up-Benachrichtigungen bei Fertigstellung</string>
-    <string name="settings_category_webview">WebView &amp; Navigation</string>
-    <string name="settings_category_localization">Sprache &amp; Benutzeroberfläche</string>
-    <string name="settings_category_diagnostics">Diagnose &amp; Fehlerbehebung</string>
-    <string name="settings_notify_text">Chat-Antwort fertiggestellt</string>
-    <string name="settings_notify_text_desc">Schwebende Benachrichtigung anzeigen, wenn die LLM-Generierung im Hintergrund abgeschlossen ist</string>
-    <string name="settings_notify_vector">Vektor- &amp; Embedding-Indexierung</string>
-    <string name="settings_notify_vector_desc">Schwebende Benachrichtigung anzeigen, wenn die Hintergrund-Vektorisierung abgeschlossen ist</string>
-    <string name="settings_notification_timeout">Automatische Ausblendedauer</string>
-    <string name="settings_notification_timeout_never">Bis zum Tippen / Verwerfen</string>
+    <string name="settings_category_localization">Sprache</string>
+    <string name="settings_category_server">Server</string>
+    <string name="settings_category_power">Leistung</string>
+    <string name="settings_category_notifications">Benachrichtigungen</string>
+    <string name="settings_category_webview">Navigation</string>
+    <string name="settings_category_diagnostics">Diagnose</string>
+    <string name="settings_notify_text">Textgenerierung</string>
+    <string name="settings_notify_text_desc">Benachrichtigung anzeigen, wenn die Textgenerierung endet</string>
+    <string name="settings_notify_vector">Vektor-Indexierung</string>
+    <string name="settings_notify_vector_desc">Benachrichtigung anzeigen, wenn die Vektor-Indexierung endet</string>
+    <string name="settings_notification_timeout">Automatische Ausblendung</string>
+    <string name="settings_notification_timeout_never">Bis zum Schließen</string>
     <string name="settings_notification_timeout_seconds">%1$d Sekunden</string>
-    <string name="btn_reset_pill_position">Menü-Pille auf Mitte zurücksetzen</string>
+    <string name="btn_reset_pill_position">Pille zurücksetzen</string>
     <string name="toast_pill_position_reset">Position der Menü-Pille auf die Mitte zurückgesetzt</string>
-    <string name="settings_diagnostics_desc">Umfassende App- und Server-Protokollarchive exportieren oder Systemdiagnosen für Support kopieren.</string>
+    <string name="settings_diagnostics_desc">Protokolle exportieren oder Systemdiagnosen kopieren</string>
 </resources>

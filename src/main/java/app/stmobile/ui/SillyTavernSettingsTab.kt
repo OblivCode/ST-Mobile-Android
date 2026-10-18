@@ -91,19 +91,8 @@ fun SillyTavernSettingsTab(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // --- 1. User Settings ---
-        Text(
-            text = stringResource(R.string.st_settings_user_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFD8DEE6),
-        )
-
-        Text(
-            text = stringResource(R.string.st_settings_user_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF8A94A3),
-        )
+        // --- 1. Language ---
+        SettingsCategoryHeader(stringResource(R.string.st_settings_category_language))
 
         // UI Language
         Row(
@@ -147,7 +136,17 @@ fun SillyTavernSettingsTab(
             }
         }
 
-        // Workflow & Resume
+        // --- 2. User Settings ---
+        SettingsCategoryHeader(stringResource(R.string.st_settings_user_title))
+
+        Text(
+            text = stringResource(R.string.st_settings_subheader_chat_input),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFFD8DEE6),
+            modifier = Modifier.padding(top = 4.dp),
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -194,7 +193,6 @@ fun SillyTavernSettingsTab(
             )
         }
 
-        // Mobile Usability & Keyboard Ergonomics
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -242,7 +240,14 @@ fun SillyTavernSettingsTab(
             }
         }
 
-        // Performance & Display
+        Text(
+            text = stringResource(R.string.st_settings_subheader_display),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFFD8DEE6),
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

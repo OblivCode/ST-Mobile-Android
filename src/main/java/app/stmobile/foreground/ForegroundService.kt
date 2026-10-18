@@ -54,7 +54,7 @@ class ForegroundService : Service() {
                     timeoutManager.resume()
                 }
                 val appConfig = AppConfig(applicationContext)
-                if (appConfig.notifyOnCompletion && appConfig.notifyOnTextCompletion) {
+                if (appConfig.notifyOnTextCompletion) {
                     ServiceNotificationHelper.showCompletionNotification(
                         context = this,
                         title = getString(R.string.notification_completion_title),
@@ -215,7 +215,7 @@ class ForegroundService : Service() {
                 timeoutManager.resume()
             }
             val appConfig = AppConfig(applicationContext)
-            if (appConfig.notifyOnCompletion && appConfig.notifyOnVectorCompletion) {
+            if (appConfig.notifyOnVectorCompletion) {
                 ServiceNotificationHelper.showCompletionNotification(
                     context = this,
                     title = getString(R.string.notification_vector_completion_title),

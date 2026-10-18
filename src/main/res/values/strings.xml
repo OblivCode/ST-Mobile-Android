@@ -47,37 +47,40 @@
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">Auto-start server on app launch</string>
-    <string name="settings_auto_launch">Auto-launch SillyTavern</string>
-    <string name="settings_auto_launch_desc">Automatically switch to the SillyTavern interface whenever the server becomes running</string>
+    <string name="settings_auto_launch">Auto-open web view</string>
+    <string name="settings_auto_launch_desc">Open web view when server starts</string>
     <string name="settings_auto_port_fallback">Auto fallback port if occupied</string>
-    <string name="settings_quick_toolbar">WebView menu quick toolbar</string>
-    <string name="settings_quick_toolbar_desc">Show a dock with Dashboard, Reload, and Settings shortcuts instead of immediately returning to Dashboard</string>
+    <string name="settings_quick_toolbar">Quick action pill</string>
+    <string name="settings_quick_toolbar_desc">Show floating menu pill in web view</string>
     <string name="settings_bg_timeout">Background idle timeout (minutes, 0 to disable)</string>
     <string name="settings_battery_exemption">Request Battery Optimization Exemption</string>
     <string name="settings_battery_warning">Battery Restrictions Active: Android may terminate ST-Mobile before your %1$d-minute timeout. Tap to set Battery Saver to \'No restrictions\'.</string>
     <string name="settings_battery_unrestricted_title">Battery Saver: No restrictions active</string>
     <string name="settings_battery_unrestricted_desc">Background idle countdown and inference tasks are protected from Android power management.</string>
-    <string name="settings_notify_completion">Completion pop-up alerts</string>
-    <string name="settings_notify_completion_desc">Show a heads-up notification when generation or vector indexing finishes in background</string>
-    <string name="btn_configure_floating_notifications">Configure System Pop-up / Floating Alerts</string>
-    <string name="settings_auto_sync_lang">Auto-sync SillyTavern language with App</string>
-    <string name="settings_auto_sync_lang_desc">Keep SillyTavern interface language synchronized with the app shell</string>
-    <string name="settings_app_language">App Shell Language</string>
+    <string name="settings_notify_completion">Completion alerts</string>
+    <string name="settings_notify_completion_desc">Show alert when background tasks complete</string>
+    <string name="btn_configure_floating_notifications">Notification Channel Settings</string>
+    <string name="settings_auto_sync_lang">Auto-sync with SillyTavern</string>
+    <string name="settings_auto_sync_lang_desc">Inherit SillyTavern UI language</string>
+    <string name="settings_app_language">App Language</string>
     <string name="btn_match_st_language">Match SillyTavern Language (%1$s)</string>
     <string name="btn_open_system_locale">System Language Settings</string>
 
     <!-- SillyTavern Settings Tab - User Settings -->
+    <string name="st_settings_category_language">Language</string>
     <string name="st_settings_user_title">User Settings</string>
-    <string name="st_settings_user_desc">Preferences synchronized directly with SillyTavern\'s settings.json. Changes take effect on page reload (via the quick toolbar 🔄 button) or server restart.</string>
+    <string name="st_settings_user_desc">Preferences synced with SillyTavern settings.json.</string>
+    <string name="st_settings_subheader_chat_input">Chat &amp; Input</string>
+    <string name="st_settings_subheader_display">Display &amp; Motion</string>
     <string name="st_settings_ui_language">UI Language</string>
     <string name="st_settings_lang_synced">Auto-synced with App (%1$s)</string>
     <string name="btn_sync_app_language">Sync with App Language (%1$s)</string>
     <string name="st_settings_auto_load_chat">Auto load last chat</string>
-    <string name="st_settings_auto_load_chat_desc">Resume active character and chat history upon opening without searching the character drawer</string>
+    <string name="st_settings_auto_load_chat_desc">Resume last chat on launch</string>
     <string name="st_settings_auto_connect">Auto connect API</string>
-    <string name="st_settings_auto_connect_desc">Automatically establish backend connections on startup</string>
+    <string name="st_settings_auto_connect_desc">Connect backend on launch</string>
     <string name="st_settings_compact_input">Compact input area</string>
-    <string name="st_settings_compact_input_desc">Single-row message input to retain chat history visibility when the virtual keyboard is open</string>
+    <string name="st_settings_compact_input_desc">Single-row input when keyboard is open</string>
     <string name="st_settings_send_on_enter">Send on Enter</string>
     <string name="st_settings_send_auto">Automatic (PC sends, mobile newline)</string>
     <string name="st_settings_send_disabled">Disabled (Enter inserts newline)</string>
@@ -94,11 +97,11 @@
 
     <!-- SillyTavern Settings Tab - Performance & Display -->
     <string name="st_settings_fast_ui">Fast UI mode</string>
-    <string name="st_settings_fast_ui_desc">Disable GPU-heavy blur effects and filters for smoother scrolling and battery savings</string>
+    <string name="st_settings_fast_ui_desc">Disable blur effects for performance</string>
     <string name="st_settings_reduced_motion">Reduced motion</string>
-    <string name="st_settings_reduced_motion_desc">Disable interface animations and transitions for snappier navigation</string>
+    <string name="st_settings_reduced_motion_desc">Disable animations and transitions</string>
     <string name="st_settings_font_scale">Font scaling: %1$d%%</string>
-    <string name="st_settings_font_scale_desc" formatted="false">Adjust text readability across varying device display DPIs (50% – 150%).</string>
+    <string name="st_settings_font_scale_desc" formatted="false">Adjust UI font scale (50% – 150%)</string>
 
     <!-- SillyTavern Settings Tab - Diagnostics -->
     <string name="st_settings_logs_title">Diagnostics &amp; Logs</string>
@@ -106,8 +109,9 @@
     <string name="btn_export_logs">Export Logs</string>
 
     <!-- Node Engine Settings Tab -->
+    <string name="engine_category_memory">Memory</string>
     <string name="engine_max_heap">V8 Maximum Heap Size: %1$d MB</string>
-    <string name="engine_max_heap_desc">Allocates V8 maximum old space size (--max-old-space-size). Changes take effect on next server start.</string>
+    <string name="engine_max_heap_desc">V8 engine maximum old generation memory limit</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">Export Backup</string>
@@ -213,20 +217,20 @@
     <string name="toast_no_logs">No logs available</string>
 
     <!-- Settings Subsections -->
-    <string name="settings_category_server">Server &amp; Lifecycle</string>
-    <string name="settings_category_power">Background &amp; Power Management</string>
-    <string name="settings_category_notifications">Completion Pop-up Alerts</string>
-    <string name="settings_category_webview">WebView &amp; Navigation</string>
-    <string name="settings_category_localization">Language &amp; Interface</string>
-    <string name="settings_category_diagnostics">Diagnostics &amp; Troubleshooting</string>
-    <string name="settings_notify_text">Chat response completion</string>
-    <string name="settings_notify_text_desc">Display floating pop-up alert when an LLM message generation finishes in background</string>
-    <string name="settings_notify_vector">Vector &amp; embedding completion</string>
-    <string name="settings_notify_vector_desc">Display floating pop-up alert when background context vectorization completes</string>
-    <string name="settings_notification_timeout">Pop-up auto-dismiss duration</string>
-    <string name="settings_notification_timeout_never">Until tapped / dismissed</string>
+    <string name="settings_category_localization">Language</string>
+    <string name="settings_category_server">Server</string>
+    <string name="settings_category_power">Power</string>
+    <string name="settings_category_notifications">Notifications</string>
+    <string name="settings_category_webview">Navigation</string>
+    <string name="settings_category_diagnostics">Diagnostics</string>
+    <string name="settings_notify_text">Text generation</string>
+    <string name="settings_notify_text_desc">Show alert when text generation finishes</string>
+    <string name="settings_notify_vector">Vector indexing</string>
+    <string name="settings_notify_vector_desc">Show alert when vector indexing finishes</string>
+    <string name="settings_notification_timeout">Auto-dismiss timeout</string>
+    <string name="settings_notification_timeout_never">Until dismissed</string>
     <string name="settings_notification_timeout_seconds">%1$d seconds</string>
-    <string name="btn_reset_pill_position">Reset Menu Pill to Center</string>
+    <string name="btn_reset_pill_position">Reset Pill Position</string>
     <string name="toast_pill_position_reset">Menu pill position reset to center</string>
-    <string name="settings_diagnostics_desc">Export comprehensive application and server log archives or copy system diagnostics to clipboard for troubleshooting.</string>
+    <string name="settings_diagnostics_desc">Export logs or copy system diagnostics</string>
 </resources>

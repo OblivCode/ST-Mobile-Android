@@ -26,7 +26,7 @@ class AppConfigTest {
         assertTrue("autoSyncLanguage default should be true", config.autoSyncLanguage)
         assertTrue("notifyOnCompletion default should be true", config.notifyOnCompletion)
         assertTrue("notifyOnTextCompletion default should be true", config.notifyOnTextCompletion)
-        assertTrue("notifyOnVectorCompletion default should be true", config.notifyOnVectorCompletion)
+        assertFalse("notifyOnVectorCompletion default should be false", config.notifyOnVectorCompletion)
         assertEquals("notificationTimeoutSeconds default should be 10", 10, config.notificationTimeoutSeconds)
         assertEquals("webViewMenuVerticalFraction default should be 0.5f", 0.5f, config.webViewMenuVerticalFraction, 0.001f)
     }
@@ -49,7 +49,7 @@ class AppConfigTest {
         config.autoSyncLanguage = false
         config.notifyOnCompletion = false
         config.notifyOnTextCompletion = false
-        config.notifyOnVectorCompletion = false
+        config.notifyOnVectorCompletion = true
         config.notificationTimeoutSeconds = 30
         config.webViewMenuVerticalFraction = 0.75f
 
@@ -67,7 +67,7 @@ class AppConfigTest {
         assertFalse(config.autoSyncLanguage)
         assertFalse(config.notifyOnCompletion)
         assertFalse(config.notifyOnTextCompletion)
-        assertFalse(config.notifyOnVectorCompletion)
+        assertTrue(config.notifyOnVectorCompletion)
         assertEquals(30, config.notificationTimeoutSeconds)
         assertEquals(0.75f, config.webViewMenuVerticalFraction, 0.001f)
 
@@ -86,7 +86,7 @@ class AppConfigTest {
         assertFalse(reloaded.autoSyncLanguage)
         assertFalse(reloaded.notifyOnCompletion)
         assertFalse(reloaded.notifyOnTextCompletion)
-        assertFalse(reloaded.notifyOnVectorCompletion)
+        assertTrue(reloaded.notifyOnVectorCompletion)
         assertEquals(30, reloaded.notificationTimeoutSeconds)
         assertEquals(0.75f, reloaded.webViewMenuVerticalFraction, 0.001f)
     }
@@ -155,7 +155,7 @@ class AppConfigTest {
         assertTrue("Unwritten autoSyncLanguage adopts true", config.autoSyncLanguage)
         assertTrue("Unwritten notifyOnCompletion adopts true", config.notifyOnCompletion)
         assertTrue("Unwritten notifyOnTextCompletion adopts true", config.notifyOnTextCompletion)
-        assertTrue("Unwritten notifyOnVectorCompletion adopts true", config.notifyOnVectorCompletion)
+        assertFalse("Unwritten notifyOnVectorCompletion adopts false", config.notifyOnVectorCompletion)
         assertEquals("Unwritten notificationTimeoutSeconds adopts 10", 10, config.notificationTimeoutSeconds)
         assertEquals("Unwritten webViewMenuVerticalFraction adopts 0.5f", 0.5f, config.webViewMenuVerticalFraction, 0.001f)
         assertEquals("Unwritten backgroundTimeoutMinutes adopts 5", 5, config.backgroundTimeoutMinutes)
