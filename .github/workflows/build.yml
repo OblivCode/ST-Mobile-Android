@@ -62,6 +62,7 @@ jobs:
           chmod +x gradlew
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             TAG_NAME="${{ github.ref_name }}"
+            export VERSION_NAME="${TAG_NAME#v}"
             export PAYLOAD_URL="https://github.com/OblivCode/ST-Mobile-Android/releases/download/${TAG_NAME}/st_bundle.tar.gz"
           fi
           ./gradlew --no-daemon -Dorg.gradle.java.home="$JAVA_HOME" assembleDebug assembleRelease
@@ -92,6 +93,22 @@ jobs:
             build/outputs/payload/*
             checksums.txt
 
+      - name: Extract release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          awk -v tag="## [${TAG_NAME}]" '
+            index($0, tag) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          if [ -s release_notes.md ]; then
+            echo "NOTES_FOUND=true" >> "$GITHUB_ENV"
+          else
+            echo "No CHANGELOG.md section for ${TAG_NAME}; falling back to generated notes."
+            echo "NOTES_FOUND=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -101,4 +118,5 @@ jobs:
             build/outputs/payload/st_bundle.tar.gz
             build/outputs/payload/payload_manifest.json
             checksums.txt
-          generate_release_notes: true
+          body_path: ${{ env.NOTES_FOUND == 'true' && 'release_notes.md' || '' }}
+          generate_release_notes: ${{ env.NOTES_FOUND != 'true' }}

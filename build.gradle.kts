@@ -50,10 +50,9 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = envOrProp("VERSION_CODE")?.toIntOrNull()
-            ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1)
-        // Versioning Stance: Omit versionName for now and rely strictly
-        // on versionCode until an official public release milestone is reached.
-        envOrProp("VERSION_NAME")?.let { versionName = it }
+            ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 3)
+        // Release tags (vX.Y.Z-beta) override this via VERSION_NAME in CI.
+        versionName = envOrProp("VERSION_NAME") ?: "0.3.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

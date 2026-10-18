@@ -267,8 +267,9 @@ the previous tree intact.
 
 **Signing.** Release signing credentials come from `RELEASE_*` environment variables or Gradle
 properties, or from a git-ignored `keystore.properties` for local builds. If none are present,
-`assembleRelease` produces an unsigned APK. `versionName` is left unset until a first public
-release, so the app reports its `versionCode` instead.
+`assembleRelease` produces an unsigned APK. `versionName` defaults to the value in `build.gradle.kts`
+(currently `0.3.0-beta`); on `v*` tags CI overrides it with the tag name (without the `v`) via
+`VERSION_NAME`. Release notes are taken from the matching section of `CHANGELOG.md`.
 
 **CI** (`.github/workflows/build.yml`): on push to `main` and on `v*` tags, it installs the SDK, NDK,
 and CMake, caches the two `/tmp` payload directories keyed on the script hashes, runs the two fetch
