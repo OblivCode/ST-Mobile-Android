@@ -11,6 +11,9 @@ import java.util.TimeZone
  */
 data class NodeConfig(
     val maxOldSpaceSizeMb: Int = DEFAULT_MAX_OLD_SPACE_SIZE_MB,
+    val optimizeForSize: Boolean = DEFAULT_OPTIMIZE_FOR_SIZE,
+    val maxSemiSpaceSizeMb: Int = DEFAULT_MAX_SEMI_SPACE_SIZE_MB,
+    val uvThreadPoolSize: Int = DEFAULT_UV_THREADPOOL_SIZE,
     val timezone: String = defaultTimezone(),
     val nodeEnv: String = DEFAULT_NODE_ENV,
     val extraNodeOptions: List<String> = emptyList(),
@@ -18,6 +21,12 @@ data class NodeConfig(
 ) {
     val clampedMaxOldSpaceSizeMb: Int
         get() = maxOldSpaceSizeMb.coerceIn(MIN_OLD_SPACE_SIZE_MB, MAX_OLD_SPACE_SIZE_MB)
+
+    val clampedMaxSemiSpaceSizeMb: Int
+        get() = maxSemiSpaceSizeMb.coerceIn(MIN_SEMI_SPACE_SIZE_MB, MAX_SEMI_SPACE_SIZE_MB)
+
+    val clampedUvThreadPoolSize: Int
+        get() = uvThreadPoolSize.coerceIn(1, 16)
 
     /**
      * Formats additional node options for NODE_OPTIONS.
@@ -35,7 +44,16 @@ data class NodeConfig(
         const val MAX_OLD_SPACE_SIZE_MB = 4096
         const val DEFAULT_NODE_ENV = "production"
 
+        const val DEFAULT_OPTIMIZE_FOR_SIZE = false
+        const val DEFAULT_MAX_SEMI_SPACE_SIZE_MB = 16
+        const val MIN_SEMI_SPACE_SIZE_MB = 8
+        const val MAX_SEMI_SPACE_SIZE_MB = 64
+        const val DEFAULT_UV_THREADPOOL_SIZE = 2
+
         private const val KEY_MAX_OLD_SPACE = "max_old_space_size_mb"
+        private const val KEY_OPTIMIZE_FOR_SIZE = "optimize_for_size"
+        private const val KEY_MAX_SEMI_SPACE = "max_semi_space_size_mb"
+        private const val KEY_UV_THREADPOOL_SIZE = "uv_threadpool_size"
         private const val KEY_TIMEZONE = "timezone"
         private const val KEY_NODE_ENV = "node_env"
         private const val KEY_EXTRA_NODE_OPTIONS = "extra_node_options"
@@ -47,6 +65,9 @@ data class NodeConfig(
 
         fun load(prefs: SharedPreferences): NodeConfig {
             val maxOldSpace = prefs.getInt(KEY_MAX_OLD_SPACE, DEFAULT_MAX_OLD_SPACE_SIZE_MB)
+            val optimizeForSize = prefs.getBoolean(KEY_OPTIMIZE_FOR_SIZE, DEFAULT_OPTIMIZE_FOR_SIZE)
+            val maxSemiSpace = prefs.getInt(KEY_MAX_SEMI_SPACE, DEFAULT_MAX_SEMI_SPACE_SIZE_MB)
+            val uvThreadPool = prefs.getInt(KEY_UV_THREADPOOL_SIZE, DEFAULT_UV_THREADPOOL_SIZE)
             val tz = prefs.getString(KEY_TIMEZONE, null) ?: defaultTimezone()
             val env = prefs.getString(KEY_NODE_ENV, DEFAULT_NODE_ENV) ?: DEFAULT_NODE_ENV
 
@@ -72,6 +93,9 @@ data class NodeConfig(
 
             return NodeConfig(
                 maxOldSpaceSizeMb = maxOldSpace,
+                optimizeForSize = optimizeForSize,
+                maxSemiSpaceSizeMb = maxSemiSpace,
+                uvThreadPoolSize = uvThreadPool,
                 timezone = tz,
                 nodeEnv = env,
                 extraNodeOptions = extraOptions,
@@ -85,6 +109,9 @@ data class NodeConfig(
 
             prefs.edit()
                 .putInt(KEY_MAX_OLD_SPACE, config.clampedMaxOldSpaceSizeMb)
+                .putBoolean(KEY_OPTIMIZE_FOR_SIZE, config.optimizeForSize)
+                .putInt(KEY_MAX_SEMI_SPACE, config.clampedMaxSemiSpaceSizeMb)
+                .putInt(KEY_UV_THREADPOOL_SIZE, config.clampedUvThreadPoolSize)
                 .putString(KEY_TIMEZONE, config.timezone.ifBlank { "UTC" })
                 .putString(KEY_NODE_ENV, config.nodeEnv)
                 .putString(KEY_EXTRA_NODE_OPTIONS, optionsJson)

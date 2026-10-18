@@ -44,6 +44,7 @@
     <string name="tab_app">Приложение</string>
     <string name="tab_sillytavern">SillyTavern</string>
     <string name="tab_node_engine">Движок Node</string>
+    <string name="tab_webview">WebView</string>
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">Автозапуск сервера при открытии приложения</string>
@@ -109,9 +110,37 @@
     <string name="btn_export_logs">Экспорт логов</string>
 
     <!-- Node Engine Settings Tab -->
-    <string name="engine_category_memory">Память</string>
+    <string name="engine_category_memory">Память и V8</string>
     <string name="engine_max_heap">Макс. память кучи V8: %1$d МБ</string>
     <string name="engine_max_heap_desc">Максимальный объем памяти V8 для старого поколения</string>
+    <string name="engine_young_gen">Young-поколение кучи: %1$d МБ</string>
+    <string name="engine_young_gen_desc">Размер semi-space V8 для временных объектов (16–32 МБ оптимально для кэша CPU)</string>
+    <string name="engine_optimize_for_size">Режим экономии памяти</string>
+    <string name="engine_optimize_for_size_desc">Включает --optimize-for-size. Снижает RAM, но чаще вызывает сборку мусора</string>
+    <string name="engine_category_threading">Параллелизм и потоки</string>
+    <string name="engine_threadpool">Пул потоков libuv: %1$d</string>
+    <string name="engine_threadpool_desc">Потоки для асинхронного ввода-вывода и шифрования (2 рекомендуется для мобильных)</string>
+    <string name="engine_category_environment">Окружение и флаги</string>
+    <string name="engine_node_env">Среда выполнения (NODE_ENV)</string>
+    <string name="engine_node_env_desc">Production включает кэширование шаблонов и маршрутов</string>
+    <string name="engine_extra_options">Дополнительные опции Node.js</string>
+    <string name="engine_extra_options_desc">Дополнительные флаги V8 или Node CLI при запуске (через пробел)</string>
+    <string name="engine_extra_options_placeholder">напр. --no-warnings</string>
+    <string name="engine_restart_notice">Перезапустите сервер для применения настроек</string>
+    <string name="btn_restart_server">Перезапустить сервер</string>
+
+    <!-- WebView Settings Tab -->
+    <string name="webview_category_rendering">Отображение и рендеринг</string>
+    <string name="webview_offscreen_raster">Предварительная растеризация за экраном</string>
+    <string name="webview_offscreen_raster_desc">Предварительная отрисовка скрытых элементов. Отключение экономит GPU</string>
+    <string name="webview_category_network">Сеть и оборудование</string>
+    <string name="webview_safe_browsing">Безопасный просмотр для localhost</string>
+    <string name="webview_safe_browsing_desc">Проверка 127.0.0.1 через базу Google. Отключение убирает лишние запросы</string>
+    <string name="webview_geolocation">Аппаратный API геолокации</string>
+    <string name="webview_geolocation_desc">Разрешить расширениям доступ к модулю GPS/GNSS</string>
+    <string name="webview_category_media">Медиа и энергопотребление</string>
+    <string name="webview_media_gesture">Требовать жест для воспроизведения медиа</string>
+    <string name="webview_media_gesture_desc">Предотвращает расход энергии аудио в фоне. Примечание: может блокировать TTS или сигнал завершения</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">Экспорт резервной копии</string>

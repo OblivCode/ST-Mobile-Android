@@ -1,9 +1,13 @@
 package app.stmobile.foreground
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import app.stmobile.R
 import app.stmobile.StApplication
 import app.stmobile.models.AppConfig
@@ -43,6 +47,7 @@ class ForegroundService : Service() {
         onFirstStarted = {
             wakeLockHelper.acquireToken(WakeLockHelper.TOKEN_INFERENCE)
             timeoutManager.pause()
+            cancelIdleTimeoutAlarm()
             NodeController.updateGeneratingState(true)
             updateNotification()
         },
@@ -52,6 +57,11 @@ class ForegroundService : Service() {
             if (!isForeground) {
                 if (!isVectorizing) {
                     timeoutManager.resume()
+                    val appConfig = AppConfig(applicationContext)
+                    val timeoutMinutes = appConfig.backgroundTimeoutMinutes
+                    if (timeoutMinutes > 0) {
+                        scheduleIdleTimeoutAlarm(timeoutMinutes)
+                    }
                 }
                 val appConfig = AppConfig(applicationContext)
                 if (appConfig.notifyOnTextCompletion) {
@@ -143,6 +153,9 @@ class ForegroundService : Service() {
                 cleanupSession()
                 NodeController.executeStop(applicationContext)
             }
+            ACTION_IDLE_TIMEOUT -> {
+                handleBackgroundTimeout()
+            }
             ACTION_RESTART -> {
                 hasActiveSession = true
                 isRestarting = true
@@ -201,6 +214,7 @@ class ForegroundService : Service() {
         isVectorizing = true
         wakeLockHelper.acquireToken(WakeLockHelper.TOKEN_VECTOR)
         timeoutManager.pause()
+        cancelIdleTimeoutAlarm()
         updateNotification()
     }
 
@@ -213,6 +227,11 @@ class ForegroundService : Service() {
         if (!isForeground) {
             if (!generationTracker.isGenerating) {
                 timeoutManager.resume()
+                val appConfig = AppConfig(applicationContext)
+                val timeoutMinutes = appConfig.backgroundTimeoutMinutes
+                if (timeoutMinutes > 0) {
+                    scheduleIdleTimeoutAlarm(timeoutMinutes)
+                }
             }
             val appConfig = AppConfig(applicationContext)
             if (appConfig.notifyOnVectorCompletion) {
@@ -229,6 +248,7 @@ class ForegroundService : Service() {
 
     fun onAppForegrounded() = synchronized(lock) {
         AppLog.d("ForegroundService", "onAppForegrounded; cancelling idle timeout and releasing idle wakelock")
+        cancelIdleTimeoutAlarm()
         timeoutManager.cancel()
         wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
         ServiceNotificationHelper.cancelCompletionNotification(this)
@@ -245,16 +265,18 @@ class ForegroundService : Service() {
                 if (sources == setOf("webview") && !sources.contains("ipc")) {
                     generationTracker.clearSource("webview")
                 }
+                wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
                 if (timeoutMinutes > 0) {
-                    val timeoutMs = timeoutMinutes * 60 * 1000L + 60_000L
-                    wakeLockHelper.acquireToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT, timeoutMs)
                     timeoutManager.schedule(timeoutMinutes)
                     if (generationTracker.isGenerating || isVectorizing) {
                         timeoutManager.pause()
+                        cancelIdleTimeoutAlarm()
+                    } else {
+                        scheduleIdleTimeoutAlarm(timeoutMinutes)
                     }
                 } else {
                     timeoutManager.cancel()
-                    wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
+                    cancelIdleTimeoutAlarm()
                 }
             }
             updateNotification()
@@ -264,17 +286,19 @@ class ForegroundService : Service() {
     fun onTimeoutConfigChanged(newMinutes: Int) = synchronized(lock) {
         AppLog.i("ForegroundService", "onTimeoutConfigChanged(newMinutes=$newMinutes)")
         val isForeground = StApplication.instance?.isAppInForeground ?: false
+        wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
         if (!isForeground && (NodeController.isRunning() || NodeController.status.value.isActive)) {
             if (newMinutes > 0) {
-                val timeoutMs = newMinutes * 60 * 1000L + 60_000L
-                wakeLockHelper.acquireToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT, timeoutMs)
                 timeoutManager.schedule(newMinutes)
                 if (generationTracker.isGenerating || isVectorizing) {
                     timeoutManager.pause()
+                    cancelIdleTimeoutAlarm()
+                } else {
+                    scheduleIdleTimeoutAlarm(newMinutes)
                 }
             } else {
                 timeoutManager.cancel()
-                wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
+                cancelIdleTimeoutAlarm()
             }
             updateNotification()
         }
@@ -282,6 +306,7 @@ class ForegroundService : Service() {
 
     private fun handleBackgroundTimeout() {
         synchronized(lock) {
+            cancelIdleTimeoutAlarm()
             wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
             val isForeground = StApplication.instance?.isAppInForeground ?: false
             val isBusy = generationTracker.isGenerating || isVectorizing
@@ -325,9 +350,50 @@ class ForegroundService : Service() {
         val status: NodeStatus,
     )
 
+    private fun scheduleIdleTimeoutAlarm(timeoutMinutes: Int) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val intent = Intent(this, ForegroundService::class.java).setAction(ACTION_IDLE_TIMEOUT)
+        val pendingIntent = PendingIntent.getService(
+            this,
+            REQUEST_CODE_IDLE_TIMEOUT,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val triggerAtMillis = SystemClock.elapsedRealtime() + (timeoutMinutes * 60 * 1000L)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAtMillis,
+                pendingIntent,
+            )
+        } else {
+            alarmManager.set(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAtMillis,
+                pendingIntent,
+            )
+        }
+    }
+
+    private fun cancelIdleTimeoutAlarm() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val intent = Intent(this, ForegroundService::class.java).setAction(ACTION_IDLE_TIMEOUT)
+        val pendingIntent = PendingIntent.getService(
+            this,
+            REQUEST_CODE_IDLE_TIMEOUT,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
+    }
+
     private fun cleanupSession() {
         synchronized(lock) {
             isVectorizing = false
+            cancelIdleTimeoutAlarm()
             timeoutManager.cancel()
             generationTracker.reset(notify = false)
             wakeLockHelper.forceRelease()
@@ -338,6 +404,8 @@ class ForegroundService : Service() {
         const val ACTION_START = "app.stmobile.action.START"
         const val ACTION_STOP = "app.stmobile.action.STOP"
         const val ACTION_RESTART = "app.stmobile.action.RESTART"
+        const val ACTION_IDLE_TIMEOUT = "app.stmobile.action.IDLE_TIMEOUT"
+        private const val REQUEST_CODE_IDLE_TIMEOUT = 1001
         const val EXTRA_PORT = "app.stmobile.extra.PORT"
 
         @Volatile

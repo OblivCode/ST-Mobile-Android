@@ -29,6 +29,10 @@ class AppConfigTest {
         assertFalse("notifyOnVectorCompletion default should be false", config.notifyOnVectorCompletion)
         assertEquals("notificationTimeoutSeconds default should be 10", 10, config.notificationTimeoutSeconds)
         assertEquals("webViewMenuVerticalFraction default should be 0.5f", 0.5f, config.webViewMenuVerticalFraction, 0.001f)
+        assertFalse("webViewOffscreenPreRaster default should be false", config.webViewOffscreenPreRaster)
+        assertFalse("webViewSafeBrowsingEnabled default should be false", config.webViewSafeBrowsingEnabled)
+        assertFalse("webViewGeolocationEnabled default should be false", config.webViewGeolocationEnabled)
+        assertTrue("webViewMediaGestureRequired default should be true", config.webViewMediaGestureRequired)
     }
 
     @Test
@@ -52,6 +56,10 @@ class AppConfigTest {
         config.notifyOnVectorCompletion = true
         config.notificationTimeoutSeconds = 30
         config.webViewMenuVerticalFraction = 0.75f
+        config.webViewOffscreenPreRaster = true
+        config.webViewSafeBrowsingEnabled = true
+        config.webViewGeolocationEnabled = true
+        config.webViewMediaGestureRequired = false
 
         // Verify on instance
         assertTrue(config.autoStartOnAppOpen)
@@ -70,6 +78,10 @@ class AppConfigTest {
         assertTrue(config.notifyOnVectorCompletion)
         assertEquals(30, config.notificationTimeoutSeconds)
         assertEquals(0.75f, config.webViewMenuVerticalFraction, 0.001f)
+        assertTrue(config.webViewOffscreenPreRaster)
+        assertTrue(config.webViewSafeBrowsingEnabled)
+        assertTrue(config.webViewGeolocationEnabled)
+        assertFalse(config.webViewMediaGestureRequired)
 
         // Verify across independent AppConfig instance on the same SharedPreferences
         val reloaded = AppConfig(prefs)
@@ -89,6 +101,10 @@ class AppConfigTest {
         assertTrue(reloaded.notifyOnVectorCompletion)
         assertEquals(30, reloaded.notificationTimeoutSeconds)
         assertEquals(0.75f, reloaded.webViewMenuVerticalFraction, 0.001f)
+        assertTrue(reloaded.webViewOffscreenPreRaster)
+        assertTrue(reloaded.webViewSafeBrowsingEnabled)
+        assertTrue(reloaded.webViewGeolocationEnabled)
+        assertFalse(reloaded.webViewMediaGestureRequired)
     }
 
     @Test
@@ -161,6 +177,10 @@ class AppConfigTest {
         assertEquals("Unwritten backgroundTimeoutMinutes adopts 5", 5, config.backgroundTimeoutMinutes)
         assertEquals("Unwritten basicAuthUsername adopts 'user'", "user", config.basicAuthUsername)
         assertEquals("Unwritten basicAuthPassword adopts 'password'", "password", config.basicAuthPassword)
+        assertFalse("Unwritten webViewOffscreenPreRaster adopts false", config.webViewOffscreenPreRaster)
+        assertFalse("Unwritten webViewSafeBrowsingEnabled adopts false", config.webViewSafeBrowsingEnabled)
+        assertFalse("Unwritten webViewGeolocationEnabled adopts false", config.webViewGeolocationEnabled)
+        assertTrue("Unwritten webViewMediaGestureRequired adopts true", config.webViewMediaGestureRequired)
     }
 
     @Test
@@ -175,6 +195,10 @@ class AppConfigTest {
             .putInt("background_timeout_minutes", 0)
             .putString("basic_auth_user", "custom_admin")
             .putString("basic_auth_pass", "secret_pass_123")
+            .putBoolean("webview_offscreen_pre_raster", true)
+            .putBoolean("webview_safe_browsing_enabled", true)
+            .putBoolean("webview_geolocation_enabled", true)
+            .putBoolean("webview_media_gesture_required", false)
             .apply()
 
         val config = AppConfig(prefs)
@@ -186,6 +210,10 @@ class AppConfigTest {
         assertEquals("Explicit user override for backgroundTimeoutMinutes preserved", 0, config.backgroundTimeoutMinutes)
         assertEquals("Explicit user override for basicAuthUsername preserved", "custom_admin", config.basicAuthUsername)
         assertEquals("Explicit user override for basicAuthPassword preserved", "secret_pass_123", config.basicAuthPassword)
+        assertTrue("Explicit user override for webViewOffscreenPreRaster preserved", config.webViewOffscreenPreRaster)
+        assertTrue("Explicit user override for webViewSafeBrowsingEnabled preserved", config.webViewSafeBrowsingEnabled)
+        assertTrue("Explicit user override for webViewGeolocationEnabled preserved", config.webViewGeolocationEnabled)
+        assertFalse("Explicit user override for webViewMediaGestureRequired preserved", config.webViewMediaGestureRequired)
     }
 
     @Test

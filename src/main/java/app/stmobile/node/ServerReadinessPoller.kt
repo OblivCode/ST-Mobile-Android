@@ -28,47 +28,55 @@ object ServerReadinessPoller {
         val startNano = System.nanoTime()
         val maxWaitNanos = TimeUnit.MILLISECONDS.toNanos(maxWaitMs)
 
-        while (System.nanoTime() - startNano < maxWaitNanos) {
-            if (isStopRequested()) {
-                return ReadinessStatus.CANCELLED
-            }
-            if (!isProcessAlive()) {
-                return ReadinessStatus.PROCESS_EXITED
-            }
-
-            var conn: HttpURLConnection? = null
-            try {
-                conn = (probeUrl.openConnection() as HttpURLConnection).apply {
-                    requestMethod = "HEAD"
-                    connectTimeout = probeTimeoutMs
-                    readTimeout = probeTimeoutMs
-                    instanceFollowRedirects = false
+        runCatching {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+        }
+        try {
+            while (System.nanoTime() - startNano < maxWaitNanos) {
+                if (isStopRequested()) {
+                    return ReadinessStatus.CANCELLED
                 }
-                val code = conn.responseCode
-                if (code in 200..499) {
-                    return ReadinessStatus.READY
+                if (!isProcessAlive()) {
+                    return ReadinessStatus.PROCESS_EXITED
                 }
-            } catch (_: Exception) {
-                // Endpoint not accepting connections yet
-            } finally {
-                try {
-                    conn?.inputStream?.close()
-                } catch (_: Exception) {}
-                try {
-                    conn?.errorStream?.close()
-                } catch (_: Exception) {}
-                try {
-                    conn?.disconnect()
-                } catch (_: Exception) {}
-            }
 
-            try {
-                Thread.sleep(intervalMs)
-            } catch (_: InterruptedException) {
-                return ReadinessStatus.CANCELLED
+                var conn: HttpURLConnection? = null
+                try {
+                    conn = (probeUrl.openConnection() as HttpURLConnection).apply {
+                        requestMethod = "HEAD"
+                        connectTimeout = probeTimeoutMs
+                        readTimeout = probeTimeoutMs
+                        instanceFollowRedirects = false
+                    }
+                    val code = conn.responseCode
+                    if (code in 200..499) {
+                        return ReadinessStatus.READY
+                    }
+                } catch (_: Exception) {
+                    // Endpoint not accepting connections yet
+                } finally {
+                    try {
+                        conn?.inputStream?.close()
+                    } catch (_: Exception) {}
+                    try {
+                        conn?.errorStream?.close()
+                    } catch (_: Exception) {}
+                    try {
+                        conn?.disconnect()
+                    } catch (_: Exception) {}
+                }
+
+                try {
+                    Thread.sleep(intervalMs)
+                } catch (_: InterruptedException) {
+                    return ReadinessStatus.CANCELLED
+                }
+            }
+            return ReadinessStatus.TIMEOUT
+        } finally {
+            runCatching {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT)
             }
         }
-
-        return ReadinessStatus.TIMEOUT
     }
 }

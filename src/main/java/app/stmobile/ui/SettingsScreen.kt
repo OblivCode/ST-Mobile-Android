@@ -3,8 +3,8 @@ package app.stmobile.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import app.stmobile.R
 import app.stmobile.models.AppConfig
 
@@ -36,6 +37,7 @@ fun SettingsScreen(
         stringResource(R.string.tab_app),
         stringResource(R.string.tab_sillytavern),
         stringResource(R.string.tab_node_engine),
+        stringResource(R.string.tab_webview),
     )
 
     Column(
@@ -43,15 +45,18 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(Color(0xFF101418)),
     ) {
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
+            edgePadding = 16.dp,
             containerColor = Color(0xFF1A2228),
             contentColor = Color(0xFF7EC8A9),
             indicator = { tabPositions ->
-                SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = Color(0xFF7EC8A9),
-                )
+                if (selectedTab < tabPositions.size) {
+                    SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                        color = Color(0xFF7EC8A9),
+                    )
+                }
             },
         ) {
             tabTitles.forEachIndexed { index, title ->
@@ -78,6 +83,7 @@ fun SettingsScreen(
             )
             1 -> SillyTavernSettingsTab()
             2 -> NodeEngineSettingsTab()
+            3 -> WebViewSettingsTab(appConfig = appConfig)
         }
     }
 }

@@ -3,13 +3,16 @@ package app.stmobile.ui
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -176,10 +179,25 @@ fun StWebView(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
+                    setBackgroundColor(android.graphics.Color.parseColor("#101418"))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, false)
+                    }
+
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.useWideViewPort = true
                     settings.loadWithOverviewMode = true
+                    settings.cacheMode = WebSettings.LOAD_DEFAULT
+                    settings.setOffscreenPreRaster(appConfig.webViewOffscreenPreRaster)
+                    settings.safeBrowsingEnabled = appConfig.webViewSafeBrowsingEnabled
+                    settings.mediaPlaybackRequiresUserGesture = appConfig.webViewMediaGestureRequired
+                    settings.setGeolocationEnabled(appConfig.webViewGeolocationEnabled)
+                    settings.allowFileAccess = false
+                    settings.allowContentAccess = false
+                    settings.setSupportZoom(false)
+                    settings.builtInZoomControls = false
+                    settings.displayZoomControls = false
 
                     addJavascriptInterface(GenerationJavascriptBridge(), "StMobileBridge")
 
@@ -275,6 +293,18 @@ fun StWebView(
                             """.trimIndent()
                             view?.evaluateJavascript(bridgeJs, null)
                         }
+
+                        override fun onRenderProcessGone(view: WebView?, detail: RenderProcessGoneDetail?): Boolean {
+                            val crashed = detail?.didCrash() ?: false
+                            val priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                detail?.rendererPriorityAtExit()
+                            } else null
+                            Log.e("st-web", "Chromium render process terminated (crashed=$crashed, priorityAtExit=$priority)")
+                            (view?.parent as? ViewGroup)?.removeView(view)
+                            view?.destroy()
+                            webViewInstance = null
+                            return true
+                        }
                     }
 
                     webChromeClient = object : WebChromeClient() {
@@ -314,6 +344,12 @@ fun StWebView(
                 }
             },
             update = { wv ->
+                // Dynamically sync WebSettings
+                wv.settings.setOffscreenPreRaster(appConfig.webViewOffscreenPreRaster)
+                wv.settings.safeBrowsingEnabled = appConfig.webViewSafeBrowsingEnabled
+                wv.settings.mediaPlaybackRequiresUserGesture = appConfig.webViewMediaGestureRequired
+                wv.settings.setGeolocationEnabled(appConfig.webViewGeolocationEnabled)
+
                 // Use INVISIBLE instead of GONE to preserve full viewport dimensions without layout reflows
                 wv.visibility = if (visible) View.VISIBLE else View.INVISIBLE
                 if (url != null && url != urlHolder.lastLoadedBaseUrl) {

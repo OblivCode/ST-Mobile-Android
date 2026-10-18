@@ -79,6 +79,22 @@ class AppConfig(private val prefs: SharedPreferences) {
         get() = prefs.getFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION)
         set(value) = prefs.edit().putFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, value.coerceIn(0f, 1f)).apply()
 
+    var webViewOffscreenPreRaster: Boolean
+        get() = prefs.getBoolean(KEY_WEBVIEW_OFFSCREEN_PRE_RASTER, DEFAULT_WEBVIEW_OFFSCREEN_PRE_RASTER)
+        set(value) = prefs.edit().putBoolean(KEY_WEBVIEW_OFFSCREEN_PRE_RASTER, value).apply()
+
+    var webViewSafeBrowsingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_WEBVIEW_SAFE_BROWSING, DEFAULT_WEBVIEW_SAFE_BROWSING)
+        set(value) = prefs.edit().putBoolean(KEY_WEBVIEW_SAFE_BROWSING, value).apply()
+
+    var webViewMediaGestureRequired: Boolean
+        get() = prefs.getBoolean(KEY_WEBVIEW_MEDIA_GESTURE, DEFAULT_WEBVIEW_MEDIA_GESTURE)
+        set(value) = prefs.edit().putBoolean(KEY_WEBVIEW_MEDIA_GESTURE, value).apply()
+
+    var webViewGeolocationEnabled: Boolean
+        get() = prefs.getBoolean(KEY_WEBVIEW_GEOLOCATION, DEFAULT_WEBVIEW_GEOLOCATION)
+        set(value) = prefs.edit().putBoolean(KEY_WEBVIEW_GEOLOCATION, value).apply()
+
     private fun migrateLegacySettings(context: Context) {
         val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
         if (legacy.all.isEmpty()) return
@@ -126,6 +142,11 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val DEFAULT_NOTIFICATION_TIMEOUT_SECONDS = 10
         const val DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION = 0.5f
 
+        const val DEFAULT_WEBVIEW_OFFSCREEN_PRE_RASTER = false
+        const val DEFAULT_WEBVIEW_SAFE_BROWSING = false
+        const val DEFAULT_WEBVIEW_MEDIA_GESTURE = true
+        const val DEFAULT_WEBVIEW_GEOLOCATION = false
+
         private const val KEY_AUTO_START = "auto_start_on_app_open"
         private const val KEY_AUTO_LAUNCH_WEBVIEW = "auto_launch_webview_on_start"
         private const val KEY_BG_TIMEOUT = "background_timeout_minutes"
@@ -142,5 +163,10 @@ class AppConfig(private val prefs: SharedPreferences) {
         private const val KEY_NOTIFY_ON_VECTOR_COMPLETION = "notify_on_vector_completion"
         private const val KEY_NOTIFICATION_TIMEOUT_SECONDS = "notification_timeout_seconds"
         private const val KEY_WEBVIEW_MENU_VERTICAL_FRACTION = "webview_menu_vertical_fraction"
+
+        private const val KEY_WEBVIEW_OFFSCREEN_PRE_RASTER = "webview_offscreen_pre_raster"
+        private const val KEY_WEBVIEW_SAFE_BROWSING = "webview_safe_browsing_enabled"
+        private const val KEY_WEBVIEW_MEDIA_GESTURE = "webview_media_gesture_required"
+        private const val KEY_WEBVIEW_GEOLOCATION = "webview_geolocation_enabled"
     }
 }

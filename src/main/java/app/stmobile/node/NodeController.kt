@@ -98,6 +98,12 @@ object NodeController {
 
         // 2. Node/V8 runtime options strictly BEFORE script entry point
         cmd.add("--max-old-space-size=${nodeConfig.clampedMaxOldSpaceSizeMb}")
+        cmd.add("--max-semi-space-size=${nodeConfig.clampedMaxSemiSpaceSizeMb}")
+        cmd.add("--concurrent-turbofan-max-threads=2")
+        cmd.add("--concurrent-marking-max-worker-num=2")
+        if (nodeConfig.optimizeForSize) {
+            cmd.add("--optimize-for-size")
+        }
         for (extraOption in nodeConfig.extraNodeOptions) {
             if (extraOption.isNotBlank()) cmd.add(extraOption)
         }
@@ -130,6 +136,7 @@ object NodeController {
         env["TZ"] = nodeConfig.timezone.ifBlank { "UTC" }
         env["SILLYTAVERN_PORT"] = effectivePort.toString()
         env["ST_ANDROID"] = "1"
+        env["UV_THREADPOOL_SIZE"] = nodeConfig.clampedUvThreadPoolSize.toString()
 
         if (ipcPort != null && ipcPort > 0) {
             env["ST_GEN_PORT"] = ipcPort.toString()
@@ -359,6 +366,7 @@ object NodeController {
             val currentIpc = ipc
 
             val supervisor = Thread({
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
                 val exit = try {
                     startedProcess.waitFor()
                 } catch (_: Exception) {

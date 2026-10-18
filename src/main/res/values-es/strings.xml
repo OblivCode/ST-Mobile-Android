@@ -44,6 +44,7 @@
     <string name="tab_app">Aplicación</string>
     <string name="tab_sillytavern">SillyTavern</string>
     <string name="tab_node_engine">Motor Node</string>
+    <string name="tab_webview">WebView</string>
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">Iniciar servidor automáticamente al abrir</string>
@@ -109,9 +110,37 @@
     <string name="btn_export_logs">Exportar Registros</string>
 
     <!-- Node Engine Settings Tab -->
-    <string name="engine_category_memory">Memoria</string>
+    <string name="engine_category_memory">Memoria y V8</string>
     <string name="engine_max_heap">Memoria Heap Máxima V8: %1$d MB</string>
     <string name="engine_max_heap_desc">Límite de memoria para generación antigua de V8</string>
+    <string name="engine_young_gen">Espacio de generación joven: %1$d MB</string>
+    <string name="engine_young_gen_desc">Tamaño de semi-espacio V8 para asignaciones temporales (16–32 MB óptimo para caché de CPU)</string>
+    <string name="engine_optimize_for_size">Modo de bajo consumo de memoria</string>
+    <string name="engine_optimize_for_size_desc">Activa --optimize-for-size. Reduce RAM pero provoca recolección de basura más frecuente</string>
+    <string name="engine_category_threading">Concurrencia e hilos</string>
+    <string name="engine_threadpool">Grupo de hilos libuv: %1$d</string>
+    <string name="engine_threadpool_desc">Hilos asignados para E/S asíncrona de disco y criptografía (2 recomendado en móviles)</string>
+    <string name="engine_category_environment">Entorno y parámetros</string>
+    <string name="engine_node_env">Entorno de ejecución (NODE_ENV)</string>
+    <string name="engine_node_env_desc">Production activa la caché de plantillas y rutas</string>
+    <string name="engine_extra_options">Opciones adicionales de Node.js</string>
+    <string name="engine_extra_options_desc">Parámetros CLI adicionales de V8 o Node al inicio (separados por espacios)</string>
+    <string name="engine_extra_options_placeholder">ej. --no-warnings</string>
+    <string name="engine_restart_notice">Reinicia el servidor para aplicar cambios de tiempo de ejecución</string>
+    <string name="btn_restart_server">Reiniciar servidor</string>
+
+    <!-- WebView Settings Tab -->
+    <string name="webview_category_rendering">Pantalla y renderizado</string>
+    <string name="webview_offscreen_raster">Pre-rasterizado fuera de pantalla</string>
+    <string name="webview_offscreen_raster_desc">Pre-renderizar elementos fuera de la vista. Desactivarlo ahorra energía de GPU</string>
+    <string name="webview_category_network">Red y hardware</string>
+    <string name="webview_safe_browsing">Navegación segura en localhost</string>
+    <string name="webview_safe_browsing_desc">Comprueba 127.0.0.1 con Google. Desactivarlo elimina verificaciones redundantes</string>
+    <string name="webview_geolocation">API de hardware de geolocalización</string>
+    <string name="webview_geolocation_desc">Permitir a extensiones acceder al hardware GPS/GNSS</string>
+    <string name="webview_category_media">Multimedia y energía</string>
+    <string name="webview_media_gesture">Requerir gesto para reproducir multimedia</string>
+    <string name="webview_media_gesture_desc">Evita gasto de audio en segundo plano. Nota: Puede bloquear voz TTS automática o timbres de finalización</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">Exportar Copia de Seguridad</string>

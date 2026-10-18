@@ -74,6 +74,15 @@ class ProcessLaunchContractTest {
         val memoryFlagIndex = cmd.indexOf("--max-old-space-size=1024")
         assertTrue("Memory flag must be present", memoryFlagIndex in 1 until entryIndex)
 
+        val semiSpaceFlagIndex = cmd.indexOf("--max-semi-space-size=16")
+        assertTrue("--max-semi-space-size must be present", semiSpaceFlagIndex in 1 until entryIndex)
+
+        val turbofanFlagIndex = cmd.indexOf("--concurrent-turbofan-max-threads=2")
+        assertTrue("--concurrent-turbofan-max-threads must be present", turbofanFlagIndex in 1 until entryIndex)
+
+        val markingFlagIndex = cmd.indexOf("--concurrent-marking-max-worker-num=2")
+        assertTrue("--concurrent-marking-max-worker-num must be present", markingFlagIndex in 1 until entryIndex)
+
         val gcFlagIndex = cmd.indexOf("--expose-gc")
         assertTrue("--expose-gc must be present before entry", gcFlagIndex in 1 until entryIndex)
 
@@ -171,6 +180,7 @@ class ProcessLaunchContractTest {
         assertEquals("adminUser", env["SILLYTAVERN_BASICAUTHUSER_USERNAME"])
         assertEquals("adminPass123", env["SILLYTAVERN_BASICAUTHUSER_PASSWORD"])
         assertEquals("hello_world", env["CUSTOM_TEST_VAR"])
+        assertEquals("2", env["UV_THREADPOOL_SIZE"])
     }
 
     @Test
@@ -218,5 +228,25 @@ class ProcessLaunchContractTest {
         } finally {
             dummySocket.close()
         }
+    }
+
+    @Test
+    fun testOptimizeForSizeFlag() {
+        val (layout, homeDir) = createFakeLayout()
+        val stConfig = StConfig.fromYaml("port: 8000\n")
+        val prefs = FakeSharedPreferences()
+        val appConfig = AppConfig(prefs)
+
+        // When true: --optimize-for-size must be inserted before script entry point
+        val configWithSize = NodeConfig(optimizeForSize = true)
+        val specWithSize = NodeController.buildLaunchSpec(layout, stConfig, configWithSize, appConfig, homeDir)
+        val entryIndex1 = specWithSize.command.indexOf(layout.stEntry.absolutePath)
+        val sizeFlagIndex = specWithSize.command.indexOf("--optimize-for-size")
+        assertTrue("--optimize-for-size must be present before entry", sizeFlagIndex in 1 until entryIndex1)
+
+        // When false: --optimize-for-size must not be present
+        val configWithoutSize = NodeConfig(optimizeForSize = false)
+        val specWithoutSize = NodeController.buildLaunchSpec(layout, stConfig, configWithoutSize, appConfig, homeDir)
+        assertFalse("--optimize-for-size must not be present when disabled", specWithoutSize.command.contains("--optimize-for-size"))
     }
 }

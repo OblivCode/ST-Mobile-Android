@@ -44,6 +44,7 @@
     <string name="tab_app">应用</string>
     <string name="tab_sillytavern">SillyTavern</string>
     <string name="tab_node_engine">Node 引擎</string>
+    <string name="tab_webview">WebView</string>
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">打开应用时自动启动服务</string>
@@ -109,9 +110,37 @@
     <string name="btn_export_logs">导出日志</string>
 
     <!-- Node Engine Settings Tab -->
-    <string name="engine_category_memory">内存</string>
+    <string name="engine_category_memory">内存与 V8</string>
     <string name="engine_max_heap">V8 最大堆内存大小：%1$d MB</string>
     <string name="engine_max_heap_desc">V8 引擎老生代最大内存限制</string>
+    <string name="engine_young_gen">新生代堆大小: %1$d MB</string>
+    <string name="engine_young_gen_desc">用于临时内存分配的 V8 semi-space 大小（16–32 MB 最适合 CPU 缓存）</string>
+    <string name="engine_optimize_for_size">低内存占用模式</string>
+    <string name="engine_optimize_for_size_desc">启用 --optimize-for-size。减少内存占用，但会增加 GC 触发频率</string>
+    <string name="engine_category_threading">并发与线程</string>
+    <string name="engine_threadpool">libuv 工作线程池: %1$d</string>
+    <string name="engine_threadpool_desc">分配给异步磁盘 I/O 和加密的线程数（移动端推荐 2）</string>
+    <string name="engine_category_environment">环境与参数</string>
+    <string name="engine_node_env">运行时环境 (NODE_ENV)</string>
+    <string name="engine_node_env_desc">Production 会启用内部模板和路由缓存</string>
+    <string name="engine_extra_options">额外 Node.js 参数</string>
+    <string name="engine_extra_options_desc">启动时传递给 V8 或 Node 的附加命令行标志（空格分隔）</string>
+    <string name="engine_extra_options_placeholder">例如 --no-warnings</string>
+    <string name="engine_restart_notice">重启服务器以应用运行时更改</string>
+    <string name="btn_restart_server">重启服务器</string>
+
+    <!-- WebView Settings Tab -->
+    <string name="webview_category_rendering">显示与渲染</string>
+    <string name="webview_offscreen_raster">屏幕外预光栅化</string>
+    <string name="webview_offscreen_raster_desc">在可视区域外预渲染隐藏卡片。禁用可节省 GPU 电量</string>
+    <string name="webview_category_network">网络与硬件</string>
+    <string name="webview_safe_browsing">本地安全浏览</string>
+    <string name="webview_safe_browsing_desc">针对 Google 数据库检查 127.0.0.1。禁用可消除多余请求</string>
+    <string name="webview_geolocation">地理位置硬件 API</string>
+    <string name="webview_geolocation_desc">允许网页扩展访问 GPS/GNSS 硬件接收器</string>
+    <string name="webview_category_media">媒体与电源</string>
+    <string name="webview_media_gesture">媒体播放需要手势触发</string>
+    <string name="webview_media_gesture_desc">防止后台音频消耗电量。注意：可能会阻止无人看管的 TTS 播放或完成提示音</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">导出备份</string>

@@ -44,6 +44,7 @@
     <string name="tab_app">アプリ</string>
     <string name="tab_sillytavern">SillyTavern</string>
     <string name="tab_node_engine">Node エンジン</string>
+    <string name="tab_webview">WebView</string>
 
     <!-- App Settings Tab -->
     <string name="settings_auto_start">アプリ起動時にサーバーを自動起動</string>
@@ -109,9 +110,37 @@
     <string name="btn_export_logs">ログを書き出し</string>
 
     <!-- Node Engine Settings Tab -->
-    <string name="engine_category_memory">メモリ</string>
+    <string name="engine_category_memory">メモリとV8</string>
     <string name="engine_max_heap">V8 最大ヒープサイズ: %1$d MB</string>
     <string name="engine_max_heap_desc">V8 オールド領域の最大メモリ制限</string>
+    <string name="engine_young_gen">Young世代ヒープ: %1$d MB</string>
+    <string name="engine_young_gen_desc">一時割り当て用V8セミスペースサイズ（CPUキャッシュには16〜32 MBが最適）</string>
+    <string name="engine_optimize_for_size">低メモリ使用モード</string>
+    <string name="engine_optimize_for_size_desc">--optimize-for-sizeを有効化。RAMを削減しますがGC頻度が増加します</string>
+    <string name="engine_category_threading">並行処理とスレッド</string>
+    <string name="engine_threadpool">libuvワーカースレッドプール: %1$d</string>
+    <string name="engine_threadpool_desc">非同期ディスクI/Oおよび暗号化用スレッド（モバイルには2を推奨）</string>
+    <string name="engine_category_environment">環境とフラグ</string>
+    <string name="engine_node_env">実行環境 (NODE_ENV)</string>
+    <string name="engine_node_env_desc">production設定で内部テンプレートとルートをキャッシュします</string>
+    <string name="engine_extra_options">追加のNode.jsオプション</string>
+    <string name="engine_extra_options_desc">起動時に渡す追加のV8またはNode CLIフラグ（スペース区切り）</string>
+    <string name="engine_extra_options_placeholder">例: --no-warnings</string>
+    <string name="engine_restart_notice">ランタイム設定を適用するにはサーバーを再起動してください</string>
+    <string name="btn_restart_server">サーバーを再起動</string>
+
+    <!-- WebView Settings Tab -->
+    <string name="webview_category_rendering">表示とレンダリング</string>
+    <string name="webview_offscreen_raster">画面外事前ラスタライズ</string>
+    <string name="webview_offscreen_raster_desc">画面外の要素を事前描画。無効にするとGPU電力を節約できます</string>
+    <string name="webview_category_network">ネットワークとハードウェア</string>
+    <string name="webview_safe_browsing">ローカルホストのセーフブラウジング</string>
+    <string name="webview_safe_browsing_desc">127.0.0.1をGoogleと照合。無効にすると冗長な通信を削減します</string>
+    <string name="webview_geolocation">位置情報ハードウェアAPI</string>
+    <string name="webview_geolocation_desc">拡張機能によるGPS/GNSSハードウェアへのアクセスを許可</string>
+    <string name="webview_category_media">メディアと電力</string>
+    <string name="webview_media_gesture">メディア再生にユーザー操作を要求</string>
+    <string name="webview_media_gesture_desc">バックグラウンドでの音声消費を防止。注意: 自動TTS音声や完了通知チャイムがブロックされる場合があります</string>
 
     <!-- Backup Dialogs - Export -->
     <string name="dialog_export_title">バックアップの書き出し</string>
