@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">诊断信息已复制到剪贴板</string>
     <string name="toast_export_logs_failed">导出日志失败：%1$s</string>
     <string name="toast_no_logs">没有可用日志</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">服务器与生命周期</string>
+    <string name="settings_category_power">后台与电源管理</string>
+    <string name="settings_category_notifications">完成悬浮弹窗提示</string>
+    <string name="settings_category_webview">WebView 与导航</string>
+    <string name="settings_category_localization">语言与界面</string>
+    <string name="settings_category_diagnostics">诊断与故障排查</string>
+    <string name="settings_notify_text">对话回复生成完成</string>
+    <string name="settings_notify_text_desc">当后台完成 LLM 消息生成时显示悬浮弹窗提示</string>
+    <string name="settings_notify_vector">向量与嵌入索引完成</string>
+    <string name="settings_notify_vector_desc">当后台完成上下文向量化时显示悬浮弹窗提示</string>
+    <string name="settings_notification_timeout">弹窗自动关闭时长</string>
+    <string name="settings_notification_timeout_never">直到手动点击 / 清除</string>
+    <string name="settings_notification_timeout_seconds">%1$d 秒</string>
+    <string name="btn_reset_pill_position">重置菜单悬浮按钮至居中</string>
+    <string name="toast_pill_position_reset">菜单悬浮按钮位置已重置至居中</string>
+    <string name="settings_diagnostics_desc">导出完整的应用程序与服务器日志压缩包，或复制系统诊断数据以供排查问题。</string>
 </resources>

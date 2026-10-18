@@ -10,6 +10,9 @@ import app.stmobile.backup.BackupManager
 import app.stmobile.foreground.ForegroundService
 import app.stmobile.logging.AppLog
 import app.stmobile.logging.CrashHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Custom application class providing centralized activity lifecycle tracking
@@ -54,7 +57,9 @@ class StApplication : Application(), Application.ActivityLifecycleCallbacks {
         AppLog.i("StApplication", "ST-Mobile application onCreate (flavor: ${BuildConfig.FLAVOR}, code: ${BuildConfig.VERSION_CODE})")
 
         registerActivityLifecycleCallbacks(this)
-        BackupManager(this).recoverOrphanedRollbackIfPresent()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            BackupManager(this@StApplication).recoverOrphanedRollbackIfPresent()
+        }
     }
 
     override fun onActivityStarted(activity: Activity) {

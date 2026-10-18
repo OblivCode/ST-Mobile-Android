@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -68,6 +68,7 @@ fun AppSettingsTab(
     appConfig: AppConfig,
     onPromptBattery: () -> Unit,
     modifier: Modifier = Modifier,
+    onExportLogs: () -> Unit = {},
     onCopyDiagnostics: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -77,8 +78,12 @@ fun AppSettingsTab(
     var quickToolbar by remember { mutableStateOf(appConfig.webViewMenuQuickToolbar) }
     var autoSyncLanguage by remember { mutableStateOf(appConfig.autoSyncLanguage) }
     var notifyOnCompletion by remember { mutableStateOf(appConfig.notifyOnCompletion) }
+    var notifyOnText by remember { mutableStateOf(appConfig.notifyOnTextCompletion) }
+    var notifyOnVector by remember { mutableStateOf(appConfig.notifyOnVectorCompletion) }
+    var notificationTimeoutSeconds by remember { mutableIntStateOf(appConfig.notificationTimeoutSeconds) }
     var bgTimeout by remember { mutableStateOf(appConfig.backgroundTimeoutMinutes.toString()) }
     var showAppLanguageDialog by rememberSaveable { mutableStateOf(false) }
+    var showTimeoutDialog by rememberSaveable { mutableStateOf(false) }
 
     val powerManager = remember(context) { context.getSystemService(PowerManager::class.java) }
     var isBatteryOptimized by remember {
@@ -133,6 +138,11 @@ fun AppSettingsTab(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // =====================================================================
+        // Subsection 1: Server & Lifecycle
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_server))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -185,115 +195,10 @@ fun AppSettingsTab(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_quick_toolbar), color = Color(0xFFD8DEE6))
-                Text(
-                    stringResource(R.string.settings_quick_toolbar_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8A94A3),
-                )
-            }
-            Switch(
-                checked = quickToolbar,
-                onCheckedChange = {
-                    quickToolbar = it
-                    appConfig.webViewMenuQuickToolbar = it
-                },
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_notify_completion), color = Color(0xFFD8DEE6))
-                Text(
-                    stringResource(R.string.settings_notify_completion_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8A94A3),
-                )
-            }
-            Switch(
-                checked = notifyOnCompletion,
-                onCheckedChange = {
-                    notifyOnCompletion = it
-                    appConfig.notifyOnCompletion = it
-                },
-            )
-        }
-
-        if (notifyOnCompletion) {
-            OutlinedButton(
-                onClick = {
-                    Utils.openChannelNotificationSettings(context, ServiceNotificationHelper.ALERTS_CHANNEL_ID)
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.btn_configure_floating_notifications))
-            }
-        }
-
-        // Language & Localization Settings
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_auto_sync_lang), color = Color(0xFFD8DEE6))
-                Text(
-                    stringResource(R.string.settings_auto_sync_lang_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8A94A3),
-                )
-            }
-            Switch(
-                checked = autoSyncLanguage,
-                onCheckedChange = {
-                    autoSyncLanguage = it
-                    appConfig.autoSyncLanguage = it
-                },
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showAppLanguageDialog = true },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(stringResource(R.string.settings_app_language), color = Color(0xFFD8DEE6))
-                Text(
-                    currentAppLocaleName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF7EC8A9),
-                )
-            }
-            OutlinedButton(onClick = { showAppLanguageDialog = true }) {
-                Text(stringResource(R.string.btn_change))
-            }
-        }
-
-        if (canMatchStLanguage) {
-            OutlinedButton(
-                onClick = {
-                    val targetLocales = if (stMappedTag.isNullOrEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(stMappedTag)
-                    AppCompatDelegate.setApplicationLocales(targetLocales)
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.btn_match_st_language, stLocaleDisplay))
-            }
-        }
+        // =====================================================================
+        // Subsection 2: Background & Power Management
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_power))
 
         OutlinedTextField(
             value = bgTimeout,
@@ -397,6 +302,228 @@ fun AppSettingsTab(
             }
         }
 
+        // =====================================================================
+        // Subsection 3: Completion Pop-up Alerts
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_notifications))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_notify_completion), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_notify_completion_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = notifyOnCompletion,
+                onCheckedChange = {
+                    notifyOnCompletion = it
+                    appConfig.notifyOnCompletion = it
+                },
+            )
+        }
+
+        if (notifyOnCompletion) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                    Text(stringResource(R.string.settings_notify_text), color = Color(0xFFD8DEE6))
+                    Text(
+                        stringResource(R.string.settings_notify_text_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF8A94A3),
+                    )
+                }
+                Switch(
+                    checked = notifyOnText,
+                    onCheckedChange = {
+                        notifyOnText = it
+                        appConfig.notifyOnTextCompletion = it
+                    },
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                    Text(stringResource(R.string.settings_notify_vector), color = Color(0xFFD8DEE6))
+                    Text(
+                        stringResource(R.string.settings_notify_vector_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF8A94A3),
+                    )
+                }
+                Switch(
+                    checked = notifyOnVector,
+                    onCheckedChange = {
+                        notifyOnVector = it
+                        appConfig.notifyOnVectorCompletion = it
+                    },
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showTimeoutDialog = true }
+                    .padding(start = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                    Text(stringResource(R.string.settings_notification_timeout), color = Color(0xFFD8DEE6))
+                    val timeoutDisplay = if (notificationTimeoutSeconds == 0) {
+                        stringResource(R.string.settings_notification_timeout_never)
+                    } else {
+                        stringResource(R.string.settings_notification_timeout_seconds, notificationTimeoutSeconds)
+                    }
+                    Text(
+                        timeoutDisplay,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF7EC8A9),
+                    )
+                }
+                OutlinedButton(onClick = { showTimeoutDialog = true }) {
+                    Text(stringResource(R.string.btn_change))
+                }
+            }
+
+            OutlinedButton(
+                onClick = {
+                    Utils.openChannelNotificationSettings(context, ServiceNotificationHelper.ALERTS_CHANNEL_ID)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_configure_floating_notifications))
+            }
+        }
+
+        // =====================================================================
+        // Subsection 4: WebView & Navigation
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_webview))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_quick_toolbar), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_quick_toolbar_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = quickToolbar,
+                onCheckedChange = {
+                    quickToolbar = it
+                    appConfig.webViewMenuQuickToolbar = it
+                },
+            )
+        }
+
+        OutlinedButton(
+            onClick = {
+                appConfig.webViewMenuVerticalFraction = 0.5f
+                Utils.toast(context, context.getString(R.string.toast_pill_position_reset))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_reset_pill_position))
+        }
+
+        // =====================================================================
+        // Subsection 5: Language & Interface
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_localization))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_auto_sync_lang), color = Color(0xFFD8DEE6))
+                Text(
+                    stringResource(R.string.settings_auto_sync_lang_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A94A3),
+                )
+            }
+            Switch(
+                checked = autoSyncLanguage,
+                onCheckedChange = {
+                    autoSyncLanguage = it
+                    appConfig.autoSyncLanguage = it
+                },
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showAppLanguageDialog = true },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(stringResource(R.string.settings_app_language), color = Color(0xFFD8DEE6))
+                Text(
+                    currentAppLocaleName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7EC8A9),
+                )
+            }
+            OutlinedButton(onClick = { showAppLanguageDialog = true }) {
+                Text(stringResource(R.string.btn_change))
+            }
+        }
+
+        if (canMatchStLanguage) {
+            OutlinedButton(
+                onClick = {
+                    val targetLocales = if (stMappedTag.isNullOrEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(stMappedTag)
+                    AppCompatDelegate.setApplicationLocales(targetLocales)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.btn_match_st_language, stLocaleDisplay))
+            }
+        }
+
+        // =====================================================================
+        // Subsection 6: Diagnostics & Troubleshooting
+        // =====================================================================
+        SettingsCategoryHeader(stringResource(R.string.settings_category_diagnostics))
+
+        Text(
+            text = stringResource(R.string.settings_diagnostics_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF8A94A3),
+        )
+
+        OutlinedButton(
+            onClick = onExportLogs,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.btn_export_logs))
+        }
+
         OutlinedButton(
             onClick = onCopyDiagnostics,
             modifier = Modifier.fillMaxWidth(),
@@ -405,6 +532,62 @@ fun AppSettingsTab(
         }
     }
 
+    // Dialog: Notification auto-dismiss duration
+    if (showTimeoutDialog) {
+        val presets = listOf(5, 10, 15, 30, 0)
+        AlertDialog(
+            onDismissRequest = { showTimeoutDialog = false },
+            title = { Text(stringResource(R.string.settings_notification_timeout)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    presets.forEach { seconds ->
+                        val isSelected = notificationTimeoutSeconds == seconds
+                        val label = if (seconds == 0) {
+                            stringResource(R.string.settings_notification_timeout_never)
+                        } else {
+                            stringResource(R.string.settings_notification_timeout_seconds, seconds)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    notificationTimeoutSeconds = seconds
+                                    appConfig.notificationTimeoutSeconds = seconds
+                                    showTimeoutDialog = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    notificationTimeoutSeconds = seconds
+                                    appConfig.notificationTimeoutSeconds = seconds
+                                    showTimeoutDialog = false
+                                },
+                            )
+                            Text(
+                                text = label,
+                                color = Color(0xFFD8DEE6),
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTimeoutDialog = false }) {
+                    Text(stringResource(R.string.btn_close))
+                }
+            },
+        )
+    }
+
+    // Dialog: UI Language Selection
     if (showAppLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showAppLanguageDialog = false },
@@ -484,4 +667,15 @@ fun AppSettingsTab(
             },
         )
     }
+}
+
+@Composable
+private fun SettingsCategoryHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF7EC8A9),
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+    )
 }

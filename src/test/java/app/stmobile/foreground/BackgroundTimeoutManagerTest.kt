@@ -60,7 +60,7 @@ class BackgroundTimeoutManagerTest {
         }
 
         try {
-            manager.schedule(500, TimeUnit.MILLISECONDS)
+            manager.schedule(80, TimeUnit.MILLISECONDS)
             assertTrue(manager.isScheduled)
             assertFalse(manager.isPaused)
 
@@ -70,7 +70,7 @@ class BackgroundTimeoutManagerTest {
             assertTrue("Remaining millis must be preserved", manager.getRemainingMillis() > 0)
 
             // While paused, callback must not fire
-            val firedWhilePaused = latch.await(600, TimeUnit.MILLISECONDS)
+            val firedWhilePaused = latch.await(100, TimeUnit.MILLISECONDS)
             assertFalse("Timeout must not fire while paused", firedWhilePaused)
 
             // Resume should continue and fire with remaining time
@@ -78,7 +78,7 @@ class BackgroundTimeoutManagerTest {
             assertFalse(manager.isPaused)
             assertTrue(manager.isScheduled)
 
-            val firedAfterResume = latch.await(2000, TimeUnit.MILLISECONDS)
+            val firedAfterResume = latch.await(500, TimeUnit.MILLISECONDS)
             assertTrue("Timeout must fire after resume", firedAfterResume)
         } finally {
             manager.shutdown()

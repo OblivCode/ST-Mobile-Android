@@ -46,6 +46,7 @@ class AndroidWakeLockAcquirer(context: Context) : WakeLockAcquirer {
  */
 class WakeLockHelper(
     private val acquirer: WakeLockAcquirer,
+    private val timeSource: () -> Long = { System.nanoTime() / 1_000_000L },
 ) {
     constructor(context: Context) : this(AndroidWakeLockAcquirer(context.applicationContext))
 
@@ -77,9 +78,9 @@ class WakeLockHelper(
     @Synchronized
     fun acquireToken(token: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS) {
         AppLog.d("WakeLockHelper", "Acquiring token '$token' (timeoutMs=$timeoutMs)")
-        activeTokens[token] = timeoutMs
-        val maxTimeout = activeTokens.values.maxOrNull() ?: timeoutMs
-        acquirer.acquire(maxTimeout)
+        val now = timeSource()
+        activeTokens[token] = now + timeoutMs
+        renewWakeLock(now)
     }
 
     /**
@@ -92,14 +93,20 @@ class WakeLockHelper(
         if (removed != null) {
             AppLog.d("WakeLockHelper", "Released token '$token'; remaining active tokens: ${activeTokens.keys}")
         }
+        val now = timeSource()
+        renewWakeLock(now)
+    }
+
+    private fun renewWakeLock(now: Long) {
+        activeTokens.entries.removeAll { it.value <= now }
         if (activeTokens.isEmpty()) {
             if (acquirer.isHeld) {
                 AppLog.d("WakeLockHelper", "All tokens released; releasing underlying PARTIAL_WAKE_LOCK")
                 acquirer.release()
             }
         } else {
-            val remainingMax = activeTokens.values.maxOrNull() ?: DEFAULT_TIMEOUT_MS
-            acquirer.acquire(remainingMax)
+            val maxRemaining = activeTokens.values.maxOf { it - now }
+            acquirer.acquire(maxRemaining)
         }
     }
 
@@ -107,7 +114,15 @@ class WakeLockHelper(
      * Returns true if a specific token is currently active.
      */
     @Synchronized
-    fun hasToken(token: String): Boolean = activeTokens.containsKey(token)
+    fun hasToken(token: String): Boolean {
+        val now = timeSource()
+        val deadline = activeTokens[token] ?: return false
+        if (deadline <= now) {
+            activeTokens.remove(token)
+            return false
+        }
+        return true
+    }
 
     /**
      * Releases all tokens and forces the underlying wake lock to release.

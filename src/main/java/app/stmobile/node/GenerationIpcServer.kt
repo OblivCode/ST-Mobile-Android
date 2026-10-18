@@ -60,20 +60,17 @@ class GenerationIpcServer(
             while (running.get() && !ss.isClosed) {
                 try {
                     val client = ss.accept()
-                    val accepted = synchronized(clientSockets) {
+                    synchronized(clientSockets) {
                         if (clientSockets.isNotEmpty()) {
-                            false
-                        } else {
-                            clientSockets.add(client)
-                            true
+                            AppLog.i("GenerationIpcServer", "Evicting ${clientSockets.size} stale client connection(s) for new client ${client.remoteSocketAddress}")
+                            for (stale in clientSockets) {
+                                try {
+                                    stale.close()
+                                } catch (_: Exception) {}
+                            }
+                            clientSockets.clear()
                         }
-                    }
-                    if (!accepted) {
-                        AppLog.w("GenerationIpcServer", "Rejected concurrent client connection from ${client.remoteSocketAddress}")
-                        try {
-                            client.close()
-                        } catch (_: Exception) {}
-                        continue
+                        clientSockets.add(client)
                     }
                     handleClient(client)
                 } catch (_: SocketException) {

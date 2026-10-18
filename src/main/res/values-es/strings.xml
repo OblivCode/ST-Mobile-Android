@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">Diagnósticos copiados al portapapeles</string>
     <string name="toast_export_logs_failed">Error al exportar registros: %1$s</string>
     <string name="toast_no_logs">No hay registros disponibles</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">Servidor y ciclo de vida</string>
+    <string name="settings_category_power">Segundo plano y gestión de energía</string>
+    <string name="settings_category_notifications">Alertas emergentes de finalización</string>
+    <string name="settings_category_webview">WebView y navegación</string>
+    <string name="settings_category_localization">Idioma e interfaz</string>
+    <string name="settings_category_diagnostics">Diagnóstico y solución de problemas</string>
+    <string name="settings_notify_text">Respuesta de chat completada</string>
+    <string name="settings_notify_text_desc">Mostrar alerta flotante cuando termine una generación de mensaje LLM en segundo plano</string>
+    <string name="settings_notify_vector">Indexación de vectores e incrustaciones</string>
+    <string name="settings_notify_vector_desc">Mostrar alerta flotante cuando termine la vectorización de contexto en segundo plano</string>
+    <string name="settings_notification_timeout">Duración de cierre automático</string>
+    <string name="settings_notification_timeout_never">Hasta tocar / descartar</string>
+    <string name="settings_notification_timeout_seconds">%1$d segundos</string>
+    <string name="btn_reset_pill_position">Restablecer botón de menú al centro</string>
+    <string name="toast_pill_position_reset">Posición del botón de menú restablecida al centro</string>
+    <string name="settings_diagnostics_desc">Exportar paquetes completos de registros de la aplicación y del servidor o copiar diagnósticos para resolución de problemas.</string>
 </resources>

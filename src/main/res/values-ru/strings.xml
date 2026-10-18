@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">Диагностика скопирована в буфер обмена</string>
     <string name="toast_export_logs_failed">Не удалось экспортировать логи: %1$s</string>
     <string name="toast_no_logs">Логи отсутствуют</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">Сервер и жизненный цикл</string>
+    <string name="settings_category_power">Фоновый режим и питание</string>
+    <string name="settings_category_notifications">Всплывающие уведомления о завершении</string>
+    <string name="settings_category_webview">WebView и навигация</string>
+    <string name="settings_category_localization">Язык и интерфейс</string>
+    <string name="settings_category_diagnostics">Диагностика и устранение неполадок</string>
+    <string name="settings_notify_text">Завершение ответа в чате</string>
+    <string name="settings_notify_text_desc">Показывать всплывающее уведомление, когда генерация сообщения LLM завершается в фоне</string>
+    <string name="settings_notify_vector">Индексация векторов и эмбеддингов</string>
+    <string name="settings_notify_vector_desc">Показывать всплывающее уведомление, когда фоновая векторизация контекста завершена</string>
+    <string name="settings_notification_timeout">Время автоскрытия уведомления</string>
+    <string name="settings_notification_timeout_never">До нажатия / смахивания</string>
+    <string name="settings_notification_timeout_seconds">%1$d сек.</string>
+    <string name="btn_reset_pill_position">Сбросить кнопку меню в центр</string>
+    <string name="toast_pill_position_reset">Положение кнопки меню сброшено в центр</string>
+    <string name="settings_diagnostics_desc">Экспорт полных архивов журналов приложения и сервера или копирование диагностики в буфер обмена для решения проблем.</string>
 </resources>

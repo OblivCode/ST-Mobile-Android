@@ -63,6 +63,18 @@ class AppConfig(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_NOTIFY_ON_COMPLETION, DEFAULT_NOTIFY_ON_COMPLETION)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ON_COMPLETION, value).apply()
 
+    var notifyOnTextCompletion: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFY_ON_TEXT_COMPLETION, DEFAULT_NOTIFY_ON_TEXT_COMPLETION)
+        set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ON_TEXT_COMPLETION, value).apply()
+
+    var notifyOnVectorCompletion: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFY_ON_VECTOR_COMPLETION, DEFAULT_NOTIFY_ON_VECTOR_COMPLETION)
+        set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ON_VECTOR_COMPLETION, value).apply()
+
+    var notificationTimeoutSeconds: Int
+        get() = prefs.getInt(KEY_NOTIFICATION_TIMEOUT_SECONDS, DEFAULT_NOTIFICATION_TIMEOUT_SECONDS).coerceAtLeast(0)
+        set(value) = prefs.edit().putInt(KEY_NOTIFICATION_TIMEOUT_SECONDS, value.coerceAtLeast(0)).apply()
+
     var webViewMenuVerticalFraction: Float
         get() = prefs.getFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION)
         set(value) = prefs.edit().putFloat(KEY_WEBVIEW_MENU_VERTICAL_FRACTION, value.coerceIn(0f, 1f)).apply()
@@ -109,6 +121,9 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val DEFAULT_WEBVIEW_MENU_QUICK_TOOLBAR = true
         const val DEFAULT_AUTO_SYNC_LANGUAGE = true
         const val DEFAULT_NOTIFY_ON_COMPLETION = true
+        const val DEFAULT_NOTIFY_ON_TEXT_COMPLETION = true
+        const val DEFAULT_NOTIFY_ON_VECTOR_COMPLETION = true
+        const val DEFAULT_NOTIFICATION_TIMEOUT_SECONDS = 10
         const val DEFAULT_WEBVIEW_MENU_VERTICAL_FRACTION = 0.5f
 
         private const val KEY_AUTO_START = "auto_start_on_app_open"
@@ -123,6 +138,9 @@ class AppConfig(private val prefs: SharedPreferences) {
         private const val KEY_WEBVIEW_MENU_QUICK_TOOLBAR = "webview_menu_quick_toolbar"
         private const val KEY_AUTO_SYNC_LANGUAGE = "auto_sync_language"
         private const val KEY_NOTIFY_ON_COMPLETION = "notify_on_completion"
+        private const val KEY_NOTIFY_ON_TEXT_COMPLETION = "notify_on_text_completion"
+        private const val KEY_NOTIFY_ON_VECTOR_COMPLETION = "notify_on_vector_completion"
+        private const val KEY_NOTIFICATION_TIMEOUT_SECONDS = "notification_timeout_seconds"
         private const val KEY_WEBVIEW_MENU_VERTICAL_FRACTION = "webview_menu_vertical_fraction"
     }
 }

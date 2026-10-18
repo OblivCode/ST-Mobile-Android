@@ -63,7 +63,7 @@ object ServiceNotificationHelper {
         nm.createNotificationChannel(alertsChannel)
     }
 
-    fun showCompletionNotification(context: Context, title: String, message: String) {
+    fun showCompletionNotification(context: Context, title: String, message: String, timeoutSeconds: Int = 10) {
         val openIntent = PendingIntent.getActivity(
             context,
             0,
@@ -77,12 +77,15 @@ object ServiceNotificationHelper {
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setOngoing(false)
             .setAutoCancel(true)
-            .setTimeoutAfter(10_000L)
             .setContentIntent(openIntent)
             .setPriority(Notification.PRIORITY_MAX)
             .setCategory(Notification.CATEGORY_MESSAGE)
             .setDefaults(Notification.DEFAULT_ALL)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
+
+        if (timeoutSeconds > 0) {
+            builder.setTimeoutAfter(timeoutSeconds * 1000L)
+        }
 
         try {
             val nm = context.getSystemService(NotificationManager::class.java)
@@ -143,7 +146,7 @@ object ServiceNotificationHelper {
             status.state == NodeState.STARTING -> context.getString(R.string.status_starting)
             isVectorizing -> context.getString(R.string.status_vectorizing)
             isGenerating -> context.getString(R.string.status_generating)
-            isCountdownActive -> context.getString(R.string.status_idle)
+            isCountdownActive -> context.getString(R.string.status_running_countdown, formatRemainingDuration(remainingMs))
             status.state == NodeState.RUNNING -> context.getString(R.string.status_running)
             status.message.isNotBlank() -> status.message
             else -> status.state.name

@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">Diagnostics copied to clipboard</string>
     <string name="toast_export_logs_failed">Failed to export logs: %1$s</string>
     <string name="toast_no_logs">No logs available</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">Server &amp; Lifecycle</string>
+    <string name="settings_category_power">Background &amp; Power Management</string>
+    <string name="settings_category_notifications">Completion Pop-up Alerts</string>
+    <string name="settings_category_webview">WebView &amp; Navigation</string>
+    <string name="settings_category_localization">Language &amp; Interface</string>
+    <string name="settings_category_diagnostics">Diagnostics &amp; Troubleshooting</string>
+    <string name="settings_notify_text">Chat response completion</string>
+    <string name="settings_notify_text_desc">Display floating pop-up alert when an LLM message generation finishes in background</string>
+    <string name="settings_notify_vector">Vector &amp; embedding completion</string>
+    <string name="settings_notify_vector_desc">Display floating pop-up alert when background context vectorization completes</string>
+    <string name="settings_notification_timeout">Pop-up auto-dismiss duration</string>
+    <string name="settings_notification_timeout_never">Until tapped / dismissed</string>
+    <string name="settings_notification_timeout_seconds">%1$d seconds</string>
+    <string name="btn_reset_pill_position">Reset Menu Pill to Center</string>
+    <string name="toast_pill_position_reset">Menu pill position reset to center</string>
+    <string name="settings_diagnostics_desc">Export comprehensive application and server log archives or copy system diagnostics to clipboard for troubleshooting.</string>
 </resources>

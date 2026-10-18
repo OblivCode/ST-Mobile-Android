@@ -25,6 +25,10 @@ class AppConfigTest {
         assertTrue("webViewMenuQuickToolbar default should be true", config.webViewMenuQuickToolbar)
         assertTrue("autoSyncLanguage default should be true", config.autoSyncLanguage)
         assertTrue("notifyOnCompletion default should be true", config.notifyOnCompletion)
+        assertTrue("notifyOnTextCompletion default should be true", config.notifyOnTextCompletion)
+        assertTrue("notifyOnVectorCompletion default should be true", config.notifyOnVectorCompletion)
+        assertEquals("notificationTimeoutSeconds default should be 10", 10, config.notificationTimeoutSeconds)
+        assertEquals("webViewMenuVerticalFraction default should be 0.5f", 0.5f, config.webViewMenuVerticalFraction, 0.001f)
     }
 
     @Test
@@ -44,6 +48,10 @@ class AppConfigTest {
         config.webViewMenuQuickToolbar = false
         config.autoSyncLanguage = false
         config.notifyOnCompletion = false
+        config.notifyOnTextCompletion = false
+        config.notifyOnVectorCompletion = false
+        config.notificationTimeoutSeconds = 30
+        config.webViewMenuVerticalFraction = 0.75f
 
         // Verify on instance
         assertTrue(config.autoStartOnAppOpen)
@@ -58,6 +66,10 @@ class AppConfigTest {
         assertFalse(config.webViewMenuQuickToolbar)
         assertFalse(config.autoSyncLanguage)
         assertFalse(config.notifyOnCompletion)
+        assertFalse(config.notifyOnTextCompletion)
+        assertFalse(config.notifyOnVectorCompletion)
+        assertEquals(30, config.notificationTimeoutSeconds)
+        assertEquals(0.75f, config.webViewMenuVerticalFraction, 0.001f)
 
         // Verify across independent AppConfig instance on the same SharedPreferences
         val reloaded = AppConfig(prefs)
@@ -73,6 +85,10 @@ class AppConfigTest {
         assertFalse(reloaded.webViewMenuQuickToolbar)
         assertFalse(reloaded.autoSyncLanguage)
         assertFalse(reloaded.notifyOnCompletion)
+        assertFalse(reloaded.notifyOnTextCompletion)
+        assertFalse(reloaded.notifyOnVectorCompletion)
+        assertEquals(30, reloaded.notificationTimeoutSeconds)
+        assertEquals(0.75f, reloaded.webViewMenuVerticalFraction, 0.001f)
     }
 
     @Test
@@ -96,6 +112,20 @@ class AppConfigTest {
         // Pre-existing negative value in prefs is read back clamped to 0
         prefs.edit().putInt("background_timeout_minutes", -99).apply()
         assertEquals(0, config.backgroundTimeoutMinutes)
+
+        // Negative notification timeout clamps to 0
+        config.notificationTimeoutSeconds = -5
+        assertEquals(0, config.notificationTimeoutSeconds)
+        config.notificationTimeoutSeconds = 15
+        assertEquals(15, config.notificationTimeoutSeconds)
+
+        // Menu position fraction clamps within [0.0, 1.0]
+        config.webViewMenuVerticalFraction = -0.5f
+        assertEquals(0f, config.webViewMenuVerticalFraction, 0.001f)
+        config.webViewMenuVerticalFraction = 1.8f
+        assertEquals(1f, config.webViewMenuVerticalFraction, 0.001f)
+        config.webViewMenuVerticalFraction = 0.42f
+        assertEquals(0.42f, config.webViewMenuVerticalFraction, 0.001f)
     }
 
     @Test
@@ -123,6 +153,11 @@ class AppConfigTest {
         assertTrue("Unwritten autoPortFallback adopts true", config.autoPortFallback)
         assertTrue("Unwritten webViewMenuQuickToolbar adopts true", config.webViewMenuQuickToolbar)
         assertTrue("Unwritten autoSyncLanguage adopts true", config.autoSyncLanguage)
+        assertTrue("Unwritten notifyOnCompletion adopts true", config.notifyOnCompletion)
+        assertTrue("Unwritten notifyOnTextCompletion adopts true", config.notifyOnTextCompletion)
+        assertTrue("Unwritten notifyOnVectorCompletion adopts true", config.notifyOnVectorCompletion)
+        assertEquals("Unwritten notificationTimeoutSeconds adopts 10", 10, config.notificationTimeoutSeconds)
+        assertEquals("Unwritten webViewMenuVerticalFraction adopts 0.5f", 0.5f, config.webViewMenuVerticalFraction, 0.001f)
         assertEquals("Unwritten backgroundTimeoutMinutes adopts 5", 5, config.backgroundTimeoutMinutes)
         assertEquals("Unwritten basicAuthUsername adopts 'user'", "user", config.basicAuthUsername)
         assertEquals("Unwritten basicAuthPassword adopts 'password'", "password", config.basicAuthPassword)

@@ -73,12 +73,10 @@ fun SettingsScreen(
             0 -> AppSettingsTab(
                 appConfig = appConfig,
                 onPromptBattery = onPromptBattery,
-                onCopyDiagnostics = onCopyDiagnostics,
-            )
-            1 -> SillyTavernSettingsTab(
                 onExportLogs = onExportLogs,
                 onCopyDiagnostics = onCopyDiagnostics,
             )
+            1 -> SillyTavernSettingsTab()
             2 -> NodeEngineSettingsTab()
         }
     }

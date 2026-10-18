@@ -30,7 +30,11 @@ class ForegroundService : Service() {
     private lateinit var wakeLockHelper: WakeLockHelper
     private val timeoutManager = BackgroundTimeoutManager(
         onTimeout = { handleBackgroundTimeout() },
+        onTick = { updateNotification() },
     )
+
+    @Volatile
+    private var isRestarting = false
 
     @Volatile
     private var isVectorizing = false
@@ -49,11 +53,13 @@ class ForegroundService : Service() {
                 if (!isVectorizing) {
                     timeoutManager.resume()
                 }
-                if (AppConfig(applicationContext).notifyOnCompletion) {
+                val appConfig = AppConfig(applicationContext)
+                if (appConfig.notifyOnCompletion && appConfig.notifyOnTextCompletion) {
                     ServiceNotificationHelper.showCompletionNotification(
                         context = this,
                         title = getString(R.string.notification_completion_title),
                         message = getString(R.string.notification_completion_msg),
+                        timeoutSeconds = appConfig.notificationTimeoutSeconds,
                     )
                 }
             }
@@ -79,7 +85,7 @@ class ForegroundService : Service() {
                 if (status.isActive) {
                     hasActiveSession = true
                     updateNotification()
-                } else if (hasActiveSession && (status.state == NodeState.STOPPED || status.state == NodeState.ERROR)) {
+                } else if (hasActiveSession && !isRestarting && (status.state == NodeState.STOPPED || status.state == NodeState.ERROR)) {
                     hasActiveSession = false
                     cleanupSession()
                     stopForeground(STOP_FOREGROUND_REMOVE)
@@ -139,6 +145,7 @@ class ForegroundService : Service() {
             }
             ACTION_RESTART -> {
                 hasActiveSession = true
+                isRestarting = true
                 val notification = ServiceNotificationHelper.buildNotification(
                     this,
                     NodeController.status.value,
@@ -147,6 +154,7 @@ class ForegroundService : Service() {
                 ServiceNotificationHelper.startForeground(this, notification)
                 cleanupSession()
                 NodeController.executeStop(applicationContext) {
+                    isRestarting = false
                     val port = if (intent.hasExtra(EXTRA_PORT)) {
                         val p = intent.getIntExtra(EXTRA_PORT, -1)
                         if (p in 1..65535) p else null
@@ -206,11 +214,13 @@ class ForegroundService : Service() {
             if (!generationTracker.isGenerating) {
                 timeoutManager.resume()
             }
-            if (AppConfig(applicationContext).notifyOnCompletion) {
+            val appConfig = AppConfig(applicationContext)
+            if (appConfig.notifyOnCompletion && appConfig.notifyOnVectorCompletion) {
                 ServiceNotificationHelper.showCompletionNotification(
                     context = this,
                     title = getString(R.string.notification_vector_completion_title),
                     message = getString(R.string.notification_vector_completion_msg),
+                    timeoutSeconds = appConfig.notificationTimeoutSeconds,
                 )
             }
         }

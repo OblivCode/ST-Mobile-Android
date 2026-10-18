@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">Diagnosedaten in die Zwischenablage kopiert</string>
     <string name="toast_export_logs_failed">Fehler beim Exportieren der Protokolle: %1$s</string>
     <string name="toast_no_logs">Keine Protokolle verfügbar</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">Server &amp; Lebenszyklus</string>
+    <string name="settings_category_power">Hintergrund- &amp; Energieverwaltung</string>
+    <string name="settings_category_notifications">Pop-up-Benachrichtigungen bei Fertigstellung</string>
+    <string name="settings_category_webview">WebView &amp; Navigation</string>
+    <string name="settings_category_localization">Sprache &amp; Benutzeroberfläche</string>
+    <string name="settings_category_diagnostics">Diagnose &amp; Fehlerbehebung</string>
+    <string name="settings_notify_text">Chat-Antwort fertiggestellt</string>
+    <string name="settings_notify_text_desc">Schwebende Benachrichtigung anzeigen, wenn die LLM-Generierung im Hintergrund abgeschlossen ist</string>
+    <string name="settings_notify_vector">Vektor- &amp; Embedding-Indexierung</string>
+    <string name="settings_notify_vector_desc">Schwebende Benachrichtigung anzeigen, wenn die Hintergrund-Vektorisierung abgeschlossen ist</string>
+    <string name="settings_notification_timeout">Automatische Ausblendedauer</string>
+    <string name="settings_notification_timeout_never">Bis zum Tippen / Verwerfen</string>
+    <string name="settings_notification_timeout_seconds">%1$d Sekunden</string>
+    <string name="btn_reset_pill_position">Menü-Pille auf Mitte zurücksetzen</string>
+    <string name="toast_pill_position_reset">Position der Menü-Pille auf die Mitte zurückgesetzt</string>
+    <string name="settings_diagnostics_desc">Umfassende App- und Server-Protokollarchive exportieren oder Systemdiagnosen für Support kopieren.</string>
 </resources>

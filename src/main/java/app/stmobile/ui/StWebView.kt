@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imeAnimationTarget
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -66,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,8 +77,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.LocaleManagerCompat
@@ -89,6 +93,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun StWebView(
     url: String?,
@@ -139,13 +144,30 @@ fun StWebView(
         }
     }
 
+    val safeDrawingWithoutIme = WindowInsets.safeDrawing.exclude(WindowInsets.ime)
+    val imeTarget = WindowInsets.imeAnimationTarget
+
+    val webViewInsets = remember(safeDrawingWithoutIme, imeTarget) {
+        object : WindowInsets {
+            override fun getLeft(density: Density, layoutDirection: LayoutDirection) =
+                safeDrawingWithoutIme.getLeft(density, layoutDirection)
+            override fun getTop(density: Density) =
+                safeDrawingWithoutIme.getTop(density)
+            override fun getRight(density: Density, layoutDirection: LayoutDirection) =
+                safeDrawingWithoutIme.getRight(density, layoutDirection)
+            override fun getBottom(density: Density) =
+                maxOf(
+                    safeDrawingWithoutIme.getBottom(density),
+                    imeTarget.getBottom(density),
+                )
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF101418))
-            .windowInsetsPadding(
-                WindowInsets.safeDrawing.exclude(WindowInsets.ime)
-            ),
+            .windowInsetsPadding(webViewInsets),
     ) {
         AndroidView(
             factory = { ctx ->
@@ -375,6 +397,8 @@ fun EdgeDockedMenuHandle(
         val minBoundPx = with(density) { minBoundDp.toPx() }
         val maxBoundPx = with(density) { maxBoundDp.toPx() }
 
+        val currentOnOffsetYChange by rememberUpdatedState(onOffsetYChange)
+
         var currentFraction by rememberSaveable {
             mutableFloatStateOf(appConfig.webViewMenuVerticalFraction)
         }
@@ -386,11 +410,6 @@ fun EdgeDockedMenuHandle(
                 minBoundPx + currentFraction * (maxBoundPx - minBoundPx)
             }
             mutableFloatStateOf(defaultYPx.coerceIn(minBoundPx, maxBoundPx))
-        }
-
-        val clampedYPx = offsetYPx.coerceIn(minBoundPx, maxBoundPx)
-        if (clampedYPx != offsetYPx) {
-            offsetYPx = clampedYPx
         }
 
         if (isExpanded) {
@@ -445,7 +464,7 @@ fun EdgeDockedMenuHandle(
                             } else 0.5f
                             currentFraction = newFraction
                             appConfig.webViewMenuVerticalFraction = newFraction
-                            onOffsetYChange?.invoke(with(density) { offsetYPx.toDp() })
+                            currentOnOffsetYChange?.invoke(with(density) { offsetYPx.toDp() })
                         },
                     )
                     .clickable(

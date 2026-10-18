@@ -49,8 +49,6 @@ import kotlin.math.roundToInt
 @Composable
 fun SillyTavernSettingsTab(
     modifier: Modifier = Modifier,
-    onExportLogs: () -> Unit = {},
-    onCopyDiagnostics: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
@@ -316,35 +314,6 @@ fun SillyTavernSettingsTab(
             )
         }
 
-        Spacer(Modifier.height(8.dp))
-
-        // --- 2. Diagnostics & Logs ---
-        Text(
-            text = stringResource(R.string.st_settings_logs_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFD8DEE6),
-        )
-
-        Text(
-            text = stringResource(R.string.st_settings_logs_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF8A94A3),
-        )
-
-        OutlinedButton(
-            onClick = onExportLogs,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.btn_export_logs))
-        }
-
-        OutlinedButton(
-            onClick = onCopyDiagnostics,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.btn_copy_diagnostics))
-        }
     }
 
     // Dialog: UI Language Selection

@@ -211,4 +211,22 @@
     <string name="toast_diagnostics_copied">診断情報をクリップボードにコピーしました</string>
     <string name="toast_export_logs_failed">ログのエクスポートに失敗しました: %1$s</string>
     <string name="toast_no_logs">利用可能なログがありません</string>
+
+    <!-- Settings Subsections -->
+    <string name="settings_category_server">サーバーとライフサイクル</string>
+    <string name="settings_category_power">バックグラウンドと電源管理</string>
+    <string name="settings_category_notifications">完了ポップアップ通知</string>
+    <string name="settings_category_webview">WebViewとナビゲーション</string>
+    <string name="settings_category_localization">言語とインターフェース</string>
+    <string name="settings_category_diagnostics">診断とトラブルシューティング</string>
+    <string name="settings_notify_text">チャット応答の完了</string>
+    <string name="settings_notify_text_desc">バックグラウンドでLLMメッセージ生成が完了した際にポップアップを表示します</string>
+    <string name="settings_notify_vector">ベクトル・埋め込みインデックス完了</string>
+    <string name="settings_notify_vector_desc">バックグラウンドでコンテキストのベクトル化が完了した際にポップアップを表示します</string>
+    <string name="settings_notification_timeout">ポップアップの自動非表示時間</string>
+    <string name="settings_notification_timeout_never">タップ・破棄するまで表示</string>
+    <string name="settings_notification_timeout_seconds">%1$d秒</string>
+    <string name="btn_reset_pill_position">メニューボタンの位置を中央に戻す</string>
+    <string name="toast_pill_position_reset">メニューボタンの位置を中央にリセットしました</string>
+    <string name="settings_diagnostics_desc">トラブルシューティング用にアプリおよびサーバーのログアーカイブをエクスポートするか、診断情報をクリップボードにコピーします。</string>
 </resources>
