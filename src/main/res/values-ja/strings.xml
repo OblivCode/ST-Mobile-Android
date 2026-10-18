@@ -262,4 +262,48 @@
     <string name="btn_reset_pill_position">ボタン位置をリセット</string>
     <string name="toast_pill_position_reset">メニューボタンの位置を中央にリセットしました</string>
     <string name="settings_diagnostics_desc">ログを書き出し、または診断情報をコピー</string>
+
+    <!-- Settings Search & Theming -->
+    <string name="settings_search_placeholder">設定を検索…</string>
+    <string name="settings_search_clear">検索をクリア</string>
+    <string name="settings_search_all">すべて</string>
+    <string name="settings_search_empty">一致する設定が見つかりません</string>
+    <string name="settings_category_theme">テーマ</string>
+    <string name="settings_theme_title">アプリのテーマ</string>
+    <string name="settings_theme_desc">システム設定、ライト、ダークから選択</string>
+    <string name="settings_theme_system">システムデフォルト</string>
+    <string name="settings_theme_light">ライト</string>
+    <string name="settings_theme_dark">ダーク</string>
+
+    <!-- SillyTavern Mobile Settings Subheaders -->
+    <string name="st_settings_subheader_streaming">ストリーミングとアニメーション</string>
+    <string name="st_settings_subheader_styling">表示とスタイル</string>
+
+    <!-- SillyTavern Mobile Settings Items -->
+    <string name="st_settings_confirm_delete">メッセージ削除の確認</string>
+    <string name="st_settings_confirm_delete_desc">チャットメッセージ削除時に確認ダイアログを表示</string>
+    <string name="st_settings_click_to_edit">クリックして編集</string>
+    <string name="st_settings_click_to_edit_desc">メッセージをタップして直接編集画面を開く</string>
+    <string name="st_settings_restore_input">未送信テキストを復元</string>
+    <string name="st_settings_restore_input_desc">チャット切り替え時に入力欄の下書きを保持</string>
+    <string name="st_settings_swipe_numbers">スワイプ数を常に表示</string>
+    <string name="st_settings_swipe_numbers_desc">すべてのメッセージにスワイプ回数バッジを表示</string>
+    <string name="st_settings_smooth_streaming">スムーズなトークンストリーミング</string>
+    <string name="st_settings_smooth_streaming_desc">受信トークンをバッファリングして滑らかに描画</string>
+    <string name="st_settings_streaming_fps">ストリーミング更新レート: %1$d FPS</string>
+    <string name="st_settings_streaming_fps_desc">トークン描画アニメーションの更新頻度（5〜100 FPS）</string>
+    <string name="st_settings_auto_scroll">最下部へ自動スクロール</string>
+    <string name="st_settings_auto_scroll_desc">新しいトークンが届くたびにチャット欄を下へスクロール</string>
+    <string name="st_settings_chat_width">チャットバブルの幅: %1$d%%</string>
+    <string name="st_settings_chat_width_desc" formatted="false">チャットバブルが占める画面横幅の割合（25%〜100%）</string>
+    <string name="st_settings_timestamps">メッセージのタイムスタンプ</string>
+    <string name="st_settings_timestamps_desc">チャットメッセージの上に日時ヘッダーを表示</string>
+    <string name="st_settings_avatar_style">アバターの形状</string>
+    <string name="st_settings_avatar_style_desc">キャラクターおよびユーザーアバターの枠線形状</string>
+    <string name="st_settings_avatar_style_round">円形</string>
+    <string name="st_settings_avatar_style_rectangular">長方形</string>
+    <string name="st_settings_avatar_style_square">正方形</string>
+    <string name="st_settings_avatar_style_rounded">角丸正方形</string>
+    <string name="st_settings_fullres_avatars">高解像度アバター</string>
+    <string name="st_settings_fullres_avatars_desc">端末側でのキャラクターアバター縮小処理を無効化</string>
 </resources>

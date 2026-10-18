@@ -109,7 +109,12 @@ fun StWebView(
 ) {
     val context = LocalContext.current
     val appConfig = remember(context) { AppConfig(context) }
-    val userSettings = remember(context) { StUserSettings.load(context) }
+    var userSettings by remember(context) { mutableStateOf(StUserSettings.load(context)) }
+    LaunchedEffect(visible) {
+        if (visible) {
+            userSettings = StUserSettings.load(context)
+        }
+    }
     val currentLocales = LocaleManagerCompat.getApplicationLocales(context)
     val currentAppLocale = if (!currentLocales.isEmpty) currentLocales[0] ?: Locale.getDefault() else Locale.getDefault()
     val effectiveStLanguage = StLocales.getEffectiveLocale(userSettings.uiLanguage, appConfig.autoSyncLanguage, currentAppLocale)
@@ -435,11 +440,11 @@ fun EdgeDockedMenuHandle(
 
         val currentOnOffsetYChange by rememberUpdatedState(onOffsetYChange)
 
-        var currentFraction by rememberSaveable {
+        var currentFraction by remember(appConfig.webViewMenuVerticalFraction) {
             mutableFloatStateOf(appConfig.webViewMenuVerticalFraction)
         }
 
-        var offsetYPx by remember(minBoundPx, maxBoundPx) {
+        var offsetYPx by remember(minBoundPx, maxBoundPx, currentFraction) {
             val defaultYPx = if (initialOffsetY != null) {
                 with(density) { initialOffsetY.toPx() }
             } else {

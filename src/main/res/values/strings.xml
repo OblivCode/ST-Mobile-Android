@@ -262,4 +262,48 @@
     <string name="btn_reset_pill_position">Reset Pill Position</string>
     <string name="toast_pill_position_reset">Menu pill position reset to center</string>
     <string name="settings_diagnostics_desc">Export logs or copy system diagnostics</string>
+
+    <!-- Settings Search & Theming -->
+    <string name="settings_search_placeholder">Search settings…</string>
+    <string name="settings_search_clear">Clear search</string>
+    <string name="settings_search_all">All</string>
+    <string name="settings_search_empty">No matching settings found</string>
+    <string name="settings_category_theme">Theme</string>
+    <string name="settings_theme_title">App Theme</string>
+    <string name="settings_theme_desc">Select system default, light, or dark theme</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
+    <!-- SillyTavern Mobile Settings Subheaders -->
+    <string name="st_settings_subheader_streaming">Streaming &amp; Motion</string>
+    <string name="st_settings_subheader_styling">Display &amp; Styling</string>
+
+    <!-- SillyTavern Mobile Settings Items -->
+    <string name="st_settings_confirm_delete">Confirm message deletion</string>
+    <string name="st_settings_confirm_delete_desc">Ask for confirmation before deleting chat messages</string>
+    <string name="st_settings_click_to_edit">Click message to edit</string>
+    <string name="st_settings_click_to_edit_desc">Tap message bubble directly to open edit view</string>
+    <string name="st_settings_restore_input">Restore unsent input</string>
+    <string name="st_settings_restore_input_desc">Keep drafted message in input box across chat switches</string>
+    <string name="st_settings_swipe_numbers">Always show swipe count</string>
+    <string name="st_settings_swipe_numbers_desc">Display swipe number badges on all messages</string>
+    <string name="st_settings_smooth_streaming">Smooth token streaming</string>
+    <string name="st_settings_smooth_streaming_desc">Buffer incoming tokens for smoother text flow</string>
+    <string name="st_settings_streaming_fps">Streaming refresh rate: %1$d FPS</string>
+    <string name="st_settings_streaming_fps_desc">Token render animation frequency (5 to 100 FPS)</string>
+    <string name="st_settings_auto_scroll">Auto-scroll to bottom</string>
+    <string name="st_settings_auto_scroll_desc">Scroll chat container downward as new tokens arrive</string>
+    <string name="st_settings_chat_width">Chat bubble width: %1$d%%</string>
+    <string name="st_settings_chat_width_desc" formatted="false">Horizontal screen width consumed by chat bubbles (25% to 100%)</string>
+    <string name="st_settings_timestamps">Message timestamps</string>
+    <string name="st_settings_timestamps_desc">Display date and time header above chat messages</string>
+    <string name="st_settings_avatar_style">Avatar shape</string>
+    <string name="st_settings_avatar_style_desc">Border geometry for character and user avatars</string>
+    <string name="st_settings_avatar_style_round">Round</string>
+    <string name="st_settings_avatar_style_rectangular">Rectangular</string>
+    <string name="st_settings_avatar_style_square">Square</string>
+    <string name="st_settings_avatar_style_rounded">Rounded Square</string>
+    <string name="st_settings_fullres_avatars">Full-resolution avatars</string>
+    <string name="st_settings_fullres_avatars_desc">Disable client-side downscaling of character avatars</string>
 </resources>

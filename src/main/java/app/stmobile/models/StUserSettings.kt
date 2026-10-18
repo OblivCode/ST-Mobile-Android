@@ -49,10 +49,13 @@ class StUserSettings(
         }
 
     var sendOnEnter: Int
-        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optInt("send_on_enter", DEFAULT_SEND_ON_ENTER)
-            ?: DEFAULT_SEND_ON_ENTER
+        get() {
+            val raw = rawJson.optJSONObject(KEY_POWER_USER)?.optInt("send_on_enter", DEFAULT_SEND_ON_ENTER)
+                ?: DEFAULT_SEND_ON_ENTER
+            return raw.coerceIn(SEND_ON_ENTER_DISABLED, SEND_ON_ENTER_ENABLED)
+        }
         set(value) {
-            getOrCreatePowerUser().put("send_on_enter", value)
+            getOrCreatePowerUser().put("send_on_enter", value.coerceIn(SEND_ON_ENTER_DISABLED, SEND_ON_ENTER_ENABLED))
         }
 
     var fastUiMode: Boolean
@@ -78,6 +81,92 @@ class StUserSettings(
         set(value) {
             val clamped = if (value.isNaN()) DEFAULT_FONT_SCALE else value.coerceIn(MIN_FONT_SCALE, MAX_FONT_SCALE)
             getOrCreatePowerUser().put("font_scale", clamped.toDouble())
+        }
+
+    var smoothStreaming: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("smooth_streaming", DEFAULT_SMOOTH_STREAMING)
+            ?: DEFAULT_SMOOTH_STREAMING
+        set(value) {
+            getOrCreatePowerUser().put("smooth_streaming", value)
+        }
+
+    var streamingFps: Int
+        get() {
+            val raw = rawJson.optJSONObject(KEY_POWER_USER)?.optInt("streaming_fps", DEFAULT_STREAMING_FPS)
+                ?: DEFAULT_STREAMING_FPS
+            return raw.coerceIn(MIN_STREAMING_FPS, MAX_STREAMING_FPS)
+        }
+        set(value) {
+            getOrCreatePowerUser().put("streaming_fps", value.coerceIn(MIN_STREAMING_FPS, MAX_STREAMING_FPS))
+        }
+
+    var autoScrollChatToBottom: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("auto_scroll_chat_to_bottom", DEFAULT_AUTO_SCROLL_CHAT_TO_BOTTOM)
+            ?: DEFAULT_AUTO_SCROLL_CHAT_TO_BOTTOM
+        set(value) {
+            getOrCreatePowerUser().put("auto_scroll_chat_to_bottom", value)
+        }
+
+    var chatWidth: Int
+        get() {
+            val raw = rawJson.optJSONObject(KEY_POWER_USER)?.optInt("chat_width", DEFAULT_CHAT_WIDTH)
+                ?: DEFAULT_CHAT_WIDTH
+            return raw.coerceIn(MIN_CHAT_WIDTH, MAX_CHAT_WIDTH)
+        }
+        set(value) {
+            getOrCreatePowerUser().put("chat_width", value.coerceIn(MIN_CHAT_WIDTH, MAX_CHAT_WIDTH))
+        }
+
+    var confirmMessageDelete: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("confirm_message_delete", DEFAULT_CONFIRM_MESSAGE_DELETE)
+            ?: DEFAULT_CONFIRM_MESSAGE_DELETE
+        set(value) {
+            getOrCreatePowerUser().put("confirm_message_delete", value)
+        }
+
+    var clickToEdit: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("click_to_edit", DEFAULT_CLICK_TO_EDIT)
+            ?: DEFAULT_CLICK_TO_EDIT
+        set(value) {
+            getOrCreatePowerUser().put("click_to_edit", value)
+        }
+
+    var showSwipeNumAllMessages: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("show_swipe_num_all_messages", DEFAULT_SHOW_SWIPE_NUM_ALL_MESSAGES)
+            ?: DEFAULT_SHOW_SWIPE_NUM_ALL_MESSAGES
+        set(value) {
+            getOrCreatePowerUser().put("show_swipe_num_all_messages", value)
+        }
+
+    var restoreUserInput: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("restore_user_input", DEFAULT_RESTORE_USER_INPUT)
+            ?: DEFAULT_RESTORE_USER_INPUT
+        set(value) {
+            getOrCreatePowerUser().put("restore_user_input", value)
+        }
+
+    var neverResizeAvatars: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("never_resize_avatars", DEFAULT_NEVER_RESIZE_AVATARS)
+            ?: DEFAULT_NEVER_RESIZE_AVATARS
+        set(value) {
+            getOrCreatePowerUser().put("never_resize_avatars", value)
+        }
+
+    var avatarStyle: Int
+        get() {
+            val raw = rawJson.optJSONObject(KEY_POWER_USER)?.optInt("avatar_style", DEFAULT_AVATAR_STYLE)
+                ?: DEFAULT_AVATAR_STYLE
+            return raw.coerceIn(AVATAR_STYLE_ROUND, AVATAR_STYLE_ROUNDED)
+        }
+        set(value) {
+            getOrCreatePowerUser().put("avatar_style", value.coerceIn(AVATAR_STYLE_ROUND, AVATAR_STYLE_ROUNDED))
+        }
+
+    var timestampsEnabled: Boolean
+        get() = rawJson.optJSONObject(KEY_POWER_USER)?.optBoolean("timestamps_enabled", DEFAULT_TIMESTAMPS_ENABLED)
+            ?: DEFAULT_TIMESTAMPS_ENABLED
+        set(value) {
+            getOrCreatePowerUser().put("timestamps_enabled", value)
         }
 
     var uiLanguage: String
@@ -128,6 +217,20 @@ class StUserSettings(
         const val SEND_ON_ENTER_AUTO = 0
         const val SEND_ON_ENTER_ENABLED = 1
 
+        const val AVATAR_STYLE_ROUND = 0
+        const val AVATAR_STYLE_RECTANGULAR = 1
+        const val AVATAR_STYLE_SQUARE = 2
+        const val AVATAR_STYLE_ROUNDED = 3
+        const val DEFAULT_AVATAR_STYLE = AVATAR_STYLE_ROUND
+
+        const val MIN_STREAMING_FPS = 5
+        const val MAX_STREAMING_FPS = 100
+        const val DEFAULT_STREAMING_FPS = 30
+
+        const val MIN_CHAT_WIDTH = 25
+        const val MAX_CHAT_WIDTH = 100
+        const val DEFAULT_CHAT_WIDTH = 50
+
         const val DEFAULT_AUTO_LOAD_CHAT = false
         const val DEFAULT_AUTO_CONNECT = false
         const val DEFAULT_COMPACT_INPUT_AREA = true
@@ -138,6 +241,15 @@ class StUserSettings(
         const val MIN_FONT_SCALE = 0.5f
         const val MAX_FONT_SCALE = 1.5f
         const val DEFAULT_UI_LANGUAGE = ""
+
+        const val DEFAULT_SMOOTH_STREAMING = false
+        const val DEFAULT_AUTO_SCROLL_CHAT_TO_BOTTOM = true
+        const val DEFAULT_CONFIRM_MESSAGE_DELETE = true
+        const val DEFAULT_CLICK_TO_EDIT = false
+        const val DEFAULT_SHOW_SWIPE_NUM_ALL_MESSAGES = false
+        const val DEFAULT_RESTORE_USER_INPUT = true
+        const val DEFAULT_NEVER_RESIZE_AVATARS = false
+        const val DEFAULT_TIMESTAMPS_ENABLED = true
 
         fun fromJson(jsonText: String, sourceFile: File? = null): StUserSettings {
             val obj = runCatching { JSONObject(jsonText) }.getOrElse { JSONObject() }

@@ -262,4 +262,48 @@
     <string name="btn_reset_pill_position">重置胶囊位置</string>
     <string name="toast_pill_position_reset">菜单悬浮按钮位置已重置至居中</string>
     <string name="settings_diagnostics_desc">导出日志或复制系统诊断数据</string>
+
+    <!-- Settings Search & Theming -->
+    <string name="settings_search_placeholder">搜索设置…</string>
+    <string name="settings_search_clear">清除搜索</string>
+    <string name="settings_search_all">全部</string>
+    <string name="settings_search_empty">未找到匹配的设置项</string>
+    <string name="settings_category_theme">主题</string>
+    <string name="settings_theme_title">应用主题</string>
+    <string name="settings_theme_desc">选择跟随系统、浅色或深色主题</string>
+    <string name="settings_theme_system">系统默认</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+
+    <!-- SillyTavern Mobile Settings Subheaders -->
+    <string name="st_settings_subheader_streaming">流式传输与动画</string>
+    <string name="st_settings_subheader_styling">显示与样式</string>
+
+    <!-- SillyTavern Mobile Settings Items -->
+    <string name="st_settings_confirm_delete">确认删除消息</string>
+    <string name="st_settings_confirm_delete_desc">删除聊天消息前弹出确认提示</string>
+    <string name="st_settings_click_to_edit">点击直接编辑</string>
+    <string name="st_settings_click_to_edit_desc">直接轻触气泡即可打开编辑模式</string>
+    <string name="st_settings_restore_input">恢复未发送输入</string>
+    <string name="st_settings_restore_input_desc">切换对话时保留输入框中的草稿内容</string>
+    <string name="st_settings_swipe_numbers">始终显示滑动切换数</string>
+    <string name="st_settings_swipe_numbers_desc">在所有消息上显示滑动版本计数徽标</string>
+    <string name="st_settings_smooth_streaming">平滑 Token 流式输出</string>
+    <string name="st_settings_smooth_streaming_desc">缓冲接收的 Token 以呈现更自然的文字生成效果</string>
+    <string name="st_settings_streaming_fps">流式输出帧率：%1$d FPS</string>
+    <string name="st_settings_streaming_fps_desc">文字动画渲染刷新频率（5 至 100 FPS）</string>
+    <string name="st_settings_auto_scroll">自动滚动至底部</string>
+    <string name="st_settings_auto_scroll_desc">接收新 Token 时对话框自动向下滚动</string>
+    <string name="st_settings_chat_width">消息气泡宽度：%1$d%%</string>
+    <string name="st_settings_chat_width_desc" formatted="false">消息气泡占用的水平屏幕宽度（25% 至 100%）</string>
+    <string name="st_settings_timestamps">消息时间戳</string>
+    <string name="st_settings_timestamps_desc">在每条消息上方显示日期与时间信息</string>
+    <string name="st_settings_avatar_style">头像外形</string>
+    <string name="st_settings_avatar_style_desc">角色与用户头像的边缘边框样式</string>
+    <string name="st_settings_avatar_style_round">圆形</string>
+    <string name="st_settings_avatar_style_rectangular">矩形</string>
+    <string name="st_settings_avatar_style_square">正方形</string>
+    <string name="st_settings_avatar_style_rounded">圆角正方形</string>
+    <string name="st_settings_fullres_avatars">全分辨率头像</string>
+    <string name="st_settings_fullres_avatars_desc">禁止客户端下采样压缩角色头像</string>
 </resources>

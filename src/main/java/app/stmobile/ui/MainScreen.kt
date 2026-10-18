@@ -39,6 +39,7 @@ fun MainScreen(
     onReinstallPayload: () -> Unit,
     onImportArchive: () -> Unit = {},
     onCopyDiagnostics: () -> Unit = {},
+    onThemeChanged: (app.stmobile.ui.theme.ThemeMode) -> Unit = {},
 ) {
     // Intercept hardware Back to cancel installation if active
     BackHandler(enabled = isInstalling) {
@@ -117,6 +118,7 @@ fun MainScreen(
                                 onPromptBattery = onPromptBattery,
                                 onExportLogs = onExportLogs,
                                 onCopyDiagnostics = onCopyDiagnostics,
+                                onThemeChanged = onThemeChanged,
                             )
                             ActiveScreen.WEBVIEW -> {
                                 // Handled in Layer 0

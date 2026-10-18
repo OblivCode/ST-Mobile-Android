@@ -13,6 +13,7 @@ class AppConfigTest {
         val prefs = FakeSharedPreferences()
         val config = AppConfig(prefs)
 
+        assertEquals("themeMode default should be 0 (SYSTEM)", 0, config.themeMode)
         assertFalse("autoStartOnAppOpen default should be false", config.autoStartOnAppOpen)
         assertTrue("autoLaunchWebViewOnStart default should be true", config.autoLaunchWebViewOnStart)
         assertEquals("backgroundTimeoutMinutes default should be 5", 5, config.backgroundTimeoutMinutes)
@@ -40,6 +41,7 @@ class AppConfigTest {
         val prefs = FakeSharedPreferences()
         val config = AppConfig(prefs)
 
+        config.themeMode = 1
         config.autoStartOnAppOpen = true
         config.autoLaunchWebViewOnStart = false
         config.backgroundTimeoutMinutes = 15
@@ -62,6 +64,7 @@ class AppConfigTest {
         config.webViewMediaGestureRequired = false
 
         // Verify on instance
+        assertEquals(1, config.themeMode)
         assertTrue(config.autoStartOnAppOpen)
         assertFalse(config.autoLaunchWebViewOnStart)
         assertEquals(15, config.backgroundTimeoutMinutes)
@@ -85,6 +88,7 @@ class AppConfigTest {
 
         // Verify across independent AppConfig instance on the same SharedPreferences
         val reloaded = AppConfig(prefs)
+        assertEquals(1, reloaded.themeMode)
         assertTrue(reloaded.autoStartOnAppOpen)
         assertFalse(reloaded.autoLaunchWebViewOnStart)
         assertEquals(15, reloaded.backgroundTimeoutMinutes)
@@ -237,5 +241,20 @@ class AppConfigTest {
         val reloaded = AppConfig(prefs)
         assertFalse(reloaded.webViewMenuQuickToolbar)
         assertFalse(reloaded.autoLaunchWebViewOnStart)
+    }
+
+    @Test
+    fun testThemeModeClamping() {
+        val prefs = FakeSharedPreferences()
+        val config = AppConfig(prefs)
+
+        config.themeMode = -10
+        assertEquals(0, config.themeMode)
+
+        config.themeMode = 100
+        assertEquals(2, config.themeMode)
+
+        config.themeMode = 1
+        assertEquals(1, config.themeMode)
     }
 }

@@ -262,4 +262,48 @@
     <string name="btn_reset_pill_position">Сбросить кнопку</string>
     <string name="toast_pill_position_reset">Положение кнопки меню сброшено в центр</string>
     <string name="settings_diagnostics_desc">Экспорт журналов или копирование диагностики</string>
+
+    <!-- Settings Search & Theming -->
+    <string name="settings_search_placeholder">Поиск настроек…</string>
+    <string name="settings_search_clear">Очистить поиск</string>
+    <string name="settings_search_all">Все</string>
+    <string name="settings_search_empty">Настройки не найдены</string>
+    <string name="settings_category_theme">Тема</string>
+    <string name="settings_theme_title">Тема оформления</string>
+    <string name="settings_theme_desc">Системная, светлая или темная тема</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Темная</string>
+
+    <!-- SillyTavern Mobile Settings Subheaders -->
+    <string name="st_settings_subheader_streaming">Поток и анимация</string>
+    <string name="st_settings_subheader_styling">Отображение и стиль</string>
+
+    <!-- SillyTavern Mobile Settings Items -->
+    <string name="st_settings_confirm_delete">Подтверждать удаление сообщений</string>
+    <string name="st_settings_confirm_delete_desc">Запрашивать подтверждение перед удалением сообщения</string>
+    <string name="st_settings_click_to_edit">Нажмите для редактирования</string>
+    <string name="st_settings_click_to_edit_desc">Касание сообщения сразу открывает окно редактирования</string>
+    <string name="st_settings_restore_input">Восстанавливать неотправленный текст</string>
+    <string name="st_settings_restore_input_desc">Сохранять черновик в поле ввода при переключении чатов</string>
+    <string name="st_settings_swipe_numbers">Всегда показывать номер свайпа</string>
+    <string name="st_settings_swipe_numbers_desc">Отображать индикаторы вариантов ответов на всех сообщениях</string>
+    <string name="st_settings_smooth_streaming">Плавная генерация токенов</string>
+    <string name="st_settings_smooth_streaming_desc">Буферизация входящих токенов для более плавного чтения</string>
+    <string name="st_settings_streaming_fps">Частота обновления потока: %1$d FPS</string>
+    <string name="st_settings_streaming_fps_desc">Частота отрисовки анимации токенов (от 5 до 100 FPS)</string>
+    <string name="st_settings_auto_scroll">Автопрокрутка вниз</string>
+    <string name="st_settings_auto_scroll_desc">Прокручивать чат вниз по мере поступления новых токенов</string>
+    <string name="st_settings_chat_width">Ширина сообщений: %1$d%%</string>
+    <string name="st_settings_chat_width_desc" formatted="false">Ширина экрана, занимаемая сообщениями (от 25% до 100%)</string>
+    <string name="st_settings_timestamps">Время сообщений</string>
+    <string name="st_settings_timestamps_desc">Отображать дату и время над сообщениями чата</string>
+    <string name="st_settings_avatar_style">Форма аватара</string>
+    <string name="st_settings_avatar_style_desc">Геометрия границ для аватаров персонажей и пользователя</string>
+    <string name="st_settings_avatar_style_round">Круглый</string>
+    <string name="st_settings_avatar_style_rectangular">Прямоугольный</string>
+    <string name="st_settings_avatar_style_square">Квадратный</string>
+    <string name="st_settings_avatar_style_rounded">Скругленный квадрат</string>
+    <string name="st_settings_fullres_avatars">Аватары в полном разрешении</string>
+    <string name="st_settings_fullres_avatars_desc">Отключить сжатие аватаров персонажей на клиенте</string>
 </resources>

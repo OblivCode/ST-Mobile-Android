@@ -15,6 +15,10 @@ class AppConfig(private val prefs: SharedPreferences) {
         migrateLegacySettings(context)
     }
 
+    var themeMode: Int
+        get() = prefs.getInt(KEY_THEME_MODE, DEFAULT_THEME_MODE).coerceIn(THEME_MODE_SYSTEM, THEME_MODE_DARK)
+        set(value) = prefs.edit().putInt(KEY_THEME_MODE, value.coerceIn(THEME_MODE_SYSTEM, THEME_MODE_DARK)).apply()
+
     var autoStartOnAppOpen: Boolean
         get() = prefs.getBoolean(KEY_AUTO_START, DEFAULT_AUTO_START)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_START, value).apply()
@@ -128,6 +132,11 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val PREFS_NAME = "app_config"
         private const val LEGACY_PREFS_NAME = "app_settings"
 
+        const val THEME_MODE_SYSTEM = 0
+        const val THEME_MODE_LIGHT = 1
+        const val THEME_MODE_DARK = 2
+        const val DEFAULT_THEME_MODE = THEME_MODE_SYSTEM
+
         const val DEFAULT_AUTO_START = false
         const val DEFAULT_AUTO_LAUNCH_WEBVIEW = true
         const val DEFAULT_BG_TIMEOUT = 5
@@ -147,6 +156,7 @@ class AppConfig(private val prefs: SharedPreferences) {
         const val DEFAULT_WEBVIEW_MEDIA_GESTURE = true
         const val DEFAULT_WEBVIEW_GEOLOCATION = false
 
+        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_AUTO_START = "auto_start_on_app_open"
         private const val KEY_AUTO_LAUNCH_WEBVIEW = "auto_launch_webview_on_start"
         private const val KEY_BG_TIMEOUT = "background_timeout_minutes"

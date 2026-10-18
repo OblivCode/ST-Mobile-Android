@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,7 +41,7 @@ fun BackupsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp),
     ) {
         Column(
@@ -55,14 +54,14 @@ fun BackupsScreen(
                 text = stringResource(R.string.backups_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFD8DEE6),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             // Card 1: Export Backup
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             ) {
                 Column(
                     modifier = Modifier
@@ -74,21 +73,21 @@ fun BackupsScreen(
                         Icon(
                             imageVector = Icons.Default.Backup,
                             contentDescription = null,
-                            tint = Color(0xFF7EC8A9),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.backups_export_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
                     Text(
                         text = stringResource(R.string.backups_export_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Button(
@@ -105,7 +104,7 @@ fun BackupsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2228)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             ) {
                 Column(
                     modifier = Modifier
@@ -117,21 +116,21 @@ fun BackupsScreen(
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = null,
-                            tint = Color(0xFFE5C07B),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.backups_restore_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
                     Text(
                         text = stringResource(R.string.backups_restore_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Button(
@@ -148,7 +147,7 @@ fun BackupsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161D22)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
             ) {
                 Column(
                     modifier = Modifier
@@ -160,21 +159,21 @@ fun BackupsScreen(
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = null,
-                            tint = Color(0xFF7EC8A9),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.backups_safety_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFD8DEE6),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
 
                     Text(
                         text = stringResource(R.string.backups_safety_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8A94A3),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

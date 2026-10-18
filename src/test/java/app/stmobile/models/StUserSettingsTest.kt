@@ -25,6 +25,18 @@ class StUserSettingsTest {
         assertFalse("reducedMotion default should be false", settings.reducedMotion)
         assertEquals("fontScale default should be 1.0f", 1.0f, settings.fontScale, 0.001f)
         assertEquals("uiLanguage default should be empty string", "", settings.uiLanguage)
+
+        assertFalse("smoothStreaming default should be false", settings.smoothStreaming)
+        assertEquals("streamingFps default should be 30", 30, settings.streamingFps)
+        assertTrue("autoScrollChatToBottom default should be true", settings.autoScrollChatToBottom)
+        assertEquals("chatWidth default should be 50", 50, settings.chatWidth)
+        assertTrue("confirmMessageDelete default should be true", settings.confirmMessageDelete)
+        assertFalse("clickToEdit default should be false", settings.clickToEdit)
+        assertFalse("showSwipeNumAllMessages default should be false", settings.showSwipeNumAllMessages)
+        assertTrue("restoreUserInput default should be true", settings.restoreUserInput)
+        assertFalse("neverResizeAvatars default should be false", settings.neverResizeAvatars)
+        assertEquals("avatarStyle default should be ROUND (0)", StUserSettings.AVATAR_STYLE_ROUND, settings.avatarStyle)
+        assertTrue("timestampsEnabled default should be true", settings.timestampsEnabled)
     }
 
     @Test
@@ -246,5 +258,64 @@ class StUserSettingsTest {
         assertTrue(settings.raw().has("power_user"))
         assertTrue(settings.reducedMotion)
         assertEquals("NoPowerUser", settings.raw().getString("username"))
+    }
+
+    @Test
+    fun testMobileSettingsClampingAndPersistence() {
+        val targetFile = tempFolder.newFile("settings.json")
+        val settings = StUserSettings.fromJson("""{ "power_user": {} }""", targetFile)
+
+        // Test clamping on write
+        settings.streamingFps = 1000
+        assertEquals(100, settings.streamingFps)
+        settings.streamingFps = 1
+        assertEquals(5, settings.streamingFps)
+        settings.streamingFps = 60
+        assertEquals(60, settings.streamingFps)
+
+        settings.chatWidth = 10
+        assertEquals(25, settings.chatWidth)
+        settings.chatWidth = 200
+        assertEquals(100, settings.chatWidth)
+        settings.chatWidth = 75
+        assertEquals(75, settings.chatWidth)
+
+        settings.avatarStyle = -5
+        assertEquals(0, settings.avatarStyle)
+        settings.avatarStyle = 99
+        assertEquals(3, settings.avatarStyle)
+        settings.avatarStyle = 2
+        assertEquals(2, settings.avatarStyle)
+
+        settings.sendOnEnter = -99
+        assertEquals(-1, settings.sendOnEnter)
+        settings.sendOnEnter = 99
+        assertEquals(1, settings.sendOnEnter)
+
+        settings.smoothStreaming = true
+        settings.autoScrollChatToBottom = false
+        settings.confirmMessageDelete = false
+        settings.clickToEdit = true
+        settings.showSwipeNumAllMessages = true
+        settings.restoreUserInput = false
+        settings.neverResizeAvatars = true
+        settings.timestampsEnabled = false
+
+        settings.save()
+
+        // Reload and verify
+        val reloaded = StUserSettings.fromFile(targetFile)
+        assertEquals(60, reloaded.streamingFps)
+        assertEquals(75, reloaded.chatWidth)
+        assertEquals(2, reloaded.avatarStyle)
+        assertEquals(1, reloaded.sendOnEnter)
+        assertTrue(reloaded.smoothStreaming)
+        assertFalse(reloaded.autoScrollChatToBottom)
+        assertFalse(reloaded.confirmMessageDelete)
+        assertTrue(reloaded.clickToEdit)
+        assertTrue(reloaded.showSwipeNumAllMessages)
+        assertFalse(reloaded.restoreUserInput)
+        assertTrue(reloaded.neverResizeAvatars)
+        assertFalse(reloaded.timestampsEnabled)
     }
 }

@@ -205,15 +205,15 @@ fun BottomNavDock(
     enabled: Boolean = true,
 ) {
     NavigationBar(
-        containerColor = Color(0xFF1A2228),
-        contentColor = Color(0xFF7EC8A9),
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
     ) {
         val navItemColors = NavigationBarItemDefaults.colors(
-            selectedIconColor = Color(0xFF7EC8A9),
-            selectedTextColor = Color(0xFF7EC8A9),
-            unselectedIconColor = Color(0xFF8A94A3),
-            unselectedTextColor = Color(0xFF8A94A3),
-            indicatorColor = Color(0xFF23303A),
+            selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh,
         )
 
         NavigationBarItem(

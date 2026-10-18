@@ -262,4 +262,48 @@
     <string name="btn_reset_pill_position">Pille zurücksetzen</string>
     <string name="toast_pill_position_reset">Position der Menü-Pille auf die Mitte zurückgesetzt</string>
     <string name="settings_diagnostics_desc">Protokolle exportieren oder Systemdiagnosen kopieren</string>
+
+    <!-- Settings Search & Theming -->
+    <string name="settings_search_placeholder">Einstellungen suchen…</string>
+    <string name="settings_search_clear">Suche löschen</string>
+    <string name="settings_search_all">Alle</string>
+    <string name="settings_search_empty">Keine passenden Einstellungen gefunden</string>
+    <string name="settings_category_theme">Design</string>
+    <string name="settings_theme_title">App-Design</string>
+    <string name="settings_theme_desc">Systemstandard, helles oder dunkles Design wählen</string>
+    <string name="settings_theme_system">Systemstandard</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+
+    <!-- SillyTavern Mobile Settings Subheaders -->
+    <string name="st_settings_subheader_streaming">Streaming &amp; Bewegung</string>
+    <string name="st_settings_subheader_styling">Anzeige &amp; Stil</string>
+
+    <!-- SillyTavern Mobile Settings Items -->
+    <string name="st_settings_confirm_delete">Löschen von Nachrichten bestätigen</string>
+    <string name="st_settings_confirm_delete_desc">Vor dem Löschen von Chat-Nachrichten um Bestätigung bitten</string>
+    <string name="st_settings_click_to_edit">Klicken zum Bearbeiten</string>
+    <string name="st_settings_click_to_edit_desc">Direkt auf Nachricht tippen, um sie zu bearbeiten</string>
+    <string name="st_settings_restore_input">Ungesendete Eingabe wiederherstellen</string>
+    <string name="st_settings_restore_input_desc">Nachrichtenentwurf beim Chat-Wechsel im Eingabefeld behalten</string>
+    <string name="st_settings_swipe_numbers">Swipe-Anzahl immer anzeigen</string>
+    <string name="st_settings_swipe_numbers_desc">Swipe-Zähler-Badges auf allen Nachrichten anzeigen</string>
+    <string name="st_settings_smooth_streaming">Sanftes Token-Streaming</string>
+    <string name="st_settings_smooth_streaming_desc">Eingehende Tokens für flüssigeren Textfluss puffern</string>
+    <string name="st_settings_streaming_fps">Streaming-Bildwiederholrate: %1$d FPS</string>
+    <string name="st_settings_streaming_fps_desc">Animationsfrequenz beim Rendern von Tokens (5 bis 100 FPS)</string>
+    <string name="st_settings_auto_scroll">Automatisch nach unten scrollen</string>
+    <string name="st_settings_auto_scroll_desc">Chat-Bereich nach unten scrollen, wenn neue Tokens eintreffen</string>
+    <string name="st_settings_chat_width">Breite der Chatblasen: %1$d%%</string>
+    <string name="st_settings_chat_width_desc" formatted="false">Horizontale Bildschirmbreite für Chatblasen (25% bis 100%)</string>
+    <string name="st_settings_timestamps">Nachrichten-Zeitstempel</string>
+    <string name="st_settings_timestamps_desc">Datum und Uhrzeit über Chat-Nachrichten anzeigen</string>
+    <string name="st_settings_avatar_style">Avatar-Form</string>
+    <string name="st_settings_avatar_style_desc">Rahmengeometrie für Charakter- und Benutzer-Avatare</string>
+    <string name="st_settings_avatar_style_round">Rund</string>
+    <string name="st_settings_avatar_style_rectangular">Rechteckig</string>
+    <string name="st_settings_avatar_style_square">Quadratisch</string>
+    <string name="st_settings_avatar_style_rounded">Abgerundetes Quadrat</string>
+    <string name="st_settings_fullres_avatars">Avatare in voller Auflösung</string>
+    <string name="st_settings_fullres_avatars_desc">Clientseitiges Herunterskalieren von Charakter-Avataren deaktivieren</string>
 </resources>

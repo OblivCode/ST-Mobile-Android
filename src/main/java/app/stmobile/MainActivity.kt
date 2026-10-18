@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import app.stmobile.models.AppConfig
@@ -43,18 +44,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-import androidx.compose.ui.graphics.Color
-
-val StDarkColorScheme = darkColorScheme(
-    primary = Color(0xFF7EC8A9),
-    surface = Color(0xFF101418),
-    surfaceContainerHigh = Color(0xFF23303A),
-    surfaceContainer = Color(0xFF1A232A),
-    onSurface = Color(0xFFD8DEE6),
-    onSurfaceVariant = Color(0xFF8A94A3),
-    error = Color(0xFFEF5350),
-    onError = Color(0xFF101418),
-)
+import app.stmobile.ui.theme.StTheme
+import app.stmobile.ui.theme.ThemeMode
 
 /**
  * Lean UI coordinator connecting lifecycle, reactive status collection, top-level screen routing,
@@ -160,7 +151,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            MaterialTheme(colorScheme = StDarkColorScheme) {
+            var currentThemeMode by remember { mutableStateOf(ThemeMode.fromCode(appConfig.themeMode)) }
+            StTheme(themeMode = currentThemeMode) {
                 val nodeStatus by NodeController.status.collectAsState()
 
                 LaunchedEffect(nodeStatus.state) {
@@ -196,6 +188,7 @@ class MainActivity : AppCompatActivity() {
                     onUpdatePayload = { update -> performUpdate(update) },
                     onReinstallPayload = { reinstallPayload() },
                     onImportArchive = { payloadArchiveLauncher.launch(arrayOf("application/zip", "application/x-tar", "application/gzip", "*/*")) },
+                    onThemeChanged = { newMode -> currentThemeMode = newMode },
                 )
 
                 // Dialog: Export with optional AES-256 password
