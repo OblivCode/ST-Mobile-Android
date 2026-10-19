@@ -18,7 +18,7 @@ All notable changes to ST Mobile are recorded here. Each release heading uses th
 
 ### Power and background behaviour
 - **Token-based wake lock retention**: Text generation, vector processing and the idle timeout hold separate tokens, so one finishing no longer releases the lock for another.
-- **Live background countdown**: The status notification shows the time remaining before the server stops, updated quietly every 15 seconds.
+- **Live background countdown**: The status notification displays the native Android countdown chronometer in the header to show time remaining before the server stops, with status 'Idle' in the body text.
 - **Completion alerts**: Optional pop-up notifications for text and vector completion, with a configurable auto-dismiss timeout. Only the status notification stays permanent.
 - **Battery optimisation guidance**: A settings card detects restricted background usage and guides you to unrestricted mode.
 - **Stop button**: The WebView quick toolbar can now stop the server directly.
@@ -31,7 +31,7 @@ All notable changes to ST Mobile are recorded here. Each release heading uses th
 ### Diagnostics and reliability
 - **Persistent app log**: Rotating log file (5 MB) mirrored to Logcat, with a shareable diagnostics snapshot.
 - **Crash reporting**: Uncaught exceptions are recorded with device, memory and server state before handing over to the system handler.
-- **Hardening**: Safer process shutdown, backup restore recovery after interruption, and stale IPC connection clean-up.
+- **Hardening**: Safer process shutdown, backup restore recovery after interruption, stale IPC connection clean-up, and generation state recovery preventing stalled background idle timeouts.
 
 ### Localisation
 - Full parity across English, German, Spanish, Japanese, Russian and Chinese.

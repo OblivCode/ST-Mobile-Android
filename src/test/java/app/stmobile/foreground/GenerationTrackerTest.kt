@@ -160,4 +160,46 @@ class GenerationTrackerTest {
         assertFalse(tracker.isGenerating)
         assertEquals("Edge-triggered starts and ends must balance", starts.get(), ends.get())
     }
+
+    @Test
+    fun testWebviewIdempotentStartsAndClearSource() {
+        var starts = 0
+        var ends = 0
+        val tracker = GenerationTracker(
+            onFirstStarted = { starts++ },
+            onAllEnded = { ends++ },
+        )
+
+        // Multiple started calls for webview must not stack counts
+        assertTrue(tracker.onStarted("webview"))
+        assertFalse(tracker.onStarted("webview"))
+        assertFalse(tracker.onStarted("webview"))
+        assertEquals(1, starts)
+        assertEquals(1, tracker.activeCount)
+        assertTrue(tracker.isGenerating)
+
+        // A single onEnded should clear webview
+        assertTrue(tracker.onEnded("webview"))
+        assertEquals(1, ends)
+        assertEquals(0, tracker.activeCount)
+        assertFalse(tracker.isGenerating)
+
+        // Repeat with clearSource
+        tracker.onStarted("webview")
+        tracker.onStarted("ipc")
+        assertEquals(2, tracker.activeCount)
+        assertTrue(tracker.isGenerating)
+
+        // Clear webview leaves ipc active
+        assertFalse("Clearing webview when ipc is active should not trigger onAllEnded", tracker.clearSource("webview"))
+        assertEquals(1, ends)
+        assertEquals(1, tracker.activeCount)
+        assertTrue(tracker.isGenerating)
+
+        // Clearing remaining ipc triggers onAllEnded
+        assertTrue("Clearing last source should trigger onAllEnded", tracker.clearSource("ipc"))
+        assertEquals(2, ends)
+        assertEquals(0, tracker.activeCount)
+        assertFalse(tracker.isGenerating)
+    }
 }

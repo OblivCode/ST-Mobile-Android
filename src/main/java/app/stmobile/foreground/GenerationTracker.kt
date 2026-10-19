@@ -32,7 +32,7 @@ class GenerationTracker(
         val edgeTransition = synchronized(lock) {
             val wasGenerating = sourceCounts.isNotEmpty()
             val current = sourceCounts[source] ?: 0
-            sourceCounts[source] = current + 1
+            sourceCounts[source] = if (source == "webview") 1 else current + 1
             if (!wasGenerating && sourceCounts.isNotEmpty()) {
                 shouldNotifyFirstStarted = true
                 true

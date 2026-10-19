@@ -104,6 +104,9 @@ function handleIncomingRequest(req, res) {
             res.once('finish', onEnd);
             res.once('close', onEnd);
             res.once('error', onEnd);
+            req.once('close', onEnd);
+            req.once('error', onEnd);
+            req.once('aborted', onEnd);
         } else if (VECTOR_ROUTE_REGEX.test(url)) {
             activeVectorRequests++;
             if (activeVectorRequests === 1) {
@@ -123,6 +126,9 @@ function handleIncomingRequest(req, res) {
             res.once('finish', onEnd);
             res.once('close', onEnd);
             res.once('error', onEnd);
+            req.once('close', onEnd);
+            req.once('error', onEnd);
+            req.once('aborted', onEnd);
         }
     }
 }

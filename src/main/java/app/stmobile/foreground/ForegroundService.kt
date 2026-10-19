@@ -34,7 +34,6 @@ class ForegroundService : Service() {
     private lateinit var wakeLockHelper: WakeLockHelper
     private val timeoutManager = BackgroundTimeoutManager(
         onTimeout = { handleBackgroundTimeout() },
-        onTick = { updateNotification() },
     )
 
     @Volatile
@@ -43,15 +42,37 @@ class ForegroundService : Service() {
     @Volatile
     private var isVectorizing = false
 
+    private var generationWatchdogJob: Job? = null
+
+    private fun scheduleGenerationWatchdog() {
+        generationWatchdogJob?.cancel()
+        generationWatchdogJob = serviceScope.launch {
+            kotlinx.coroutines.delay(MAX_GENERATION_DURATION_MS)
+            synchronized(lock) {
+                if (generationTracker.isGenerating) {
+                    AppLog.w("ForegroundService", "Generation watchdog fired after ${MAX_GENERATION_DURATION_MS}ms; forcing generation end")
+                    generationTracker.reset(notify = true)
+                }
+            }
+        }
+    }
+
+    private fun cancelGenerationWatchdog() {
+        generationWatchdogJob?.cancel()
+        generationWatchdogJob = null
+    }
+
     private val generationTracker = GenerationTracker(
         onFirstStarted = {
             wakeLockHelper.acquireToken(WakeLockHelper.TOKEN_INFERENCE)
             timeoutManager.pause()
             cancelIdleTimeoutAlarm()
+            scheduleGenerationWatchdog()
             NodeController.updateGeneratingState(true)
             updateNotification()
         },
         onAllEnded = {
+            cancelGenerationWatchdog()
             wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_INFERENCE)
             val isForeground = StApplication.instance?.isAppInForeground ?: false
             if (!isForeground) {
@@ -194,7 +215,15 @@ class ForegroundService : Service() {
     }
 
     fun onGenerationEnded(source: String) {
+        if (source == "ipc") {
+            // When the Node server finishes the generation HTTP request, clear any lingering client-side token
+            generationTracker.clearSource("webview")
+        }
         generationTracker.onEnded(source)
+    }
+
+    fun clearGenerationSource(source: String) {
+        generationTracker.clearSource(source)
     }
 
     fun onSourceDisconnected(source: String) {
@@ -203,6 +232,7 @@ class ForegroundService : Service() {
 
     fun onProcessTerminated() = synchronized(lock) {
         AppLog.i("ForegroundService", "onProcessTerminated received; cleaning up background timers and wakelock")
+        cancelGenerationWatchdog()
         timeoutManager.cancel()
         generationTracker.reset(notify = false)
         wakeLockHelper.forceRelease()
@@ -261,10 +291,8 @@ class ForegroundService : Service() {
             val timeoutMinutes = appConfig.backgroundTimeoutMinutes
             AppLog.i("ForegroundService", "onAppBackgrounded (generating=${generationTracker.isGenerating}, vectorizing=$isVectorizing, timeoutMinutes=$timeoutMinutes)")
             synchronized(lock) {
-                val sources = generationTracker.activeSources
-                if (sources == setOf("webview") && !sources.contains("ipc")) {
-                    generationTracker.clearSource("webview")
-                }
+                // A backgrounded WebView cannot legitimately generate without Node; purge client-side token unconditionally
+                generationTracker.clearSource("webview")
                 wakeLockHelper.releaseToken(WakeLockHelper.TOKEN_IDLE_TIMEOUT)
                 if (timeoutMinutes > 0) {
                     timeoutManager.schedule(timeoutMinutes)
@@ -392,6 +420,7 @@ class ForegroundService : Service() {
 
     private fun cleanupSession() {
         synchronized(lock) {
+            cancelGenerationWatchdog()
             isVectorizing = false
             cancelIdleTimeoutAlarm()
             timeoutManager.cancel()
@@ -407,6 +436,7 @@ class ForegroundService : Service() {
         const val ACTION_IDLE_TIMEOUT = "app.stmobile.action.IDLE_TIMEOUT"
         private const val REQUEST_CODE_IDLE_TIMEOUT = 1001
         const val EXTRA_PORT = "app.stmobile.extra.PORT"
+        const val MAX_GENERATION_DURATION_MS = 10 * 60 * 1000L
 
         @Volatile
         var instance: ForegroundService? = null
@@ -441,6 +471,10 @@ class ForegroundService : Service() {
 
         fun onGenerationEnded(source: String) {
             instance?.onGenerationEnded(source)
+        }
+
+        fun clearGenerationSource(source: String) {
+            instance?.clearGenerationSource(source)
         }
 
         fun onVectorStarted() {

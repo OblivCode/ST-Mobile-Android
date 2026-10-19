@@ -146,7 +146,7 @@ fun StWebView(
 
     DisposableEffect(Unit) {
         onDispose {
-            ForegroundService.onGenerationEnded("webview")
+            ForegroundService.clearGenerationSource("webview")
             pendingFileCallback?.onReceiveValue(null)
             pendingFileCallback = null
         }
@@ -246,7 +246,7 @@ fun StWebView(
 
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
-                            ForegroundService.onGenerationEnded("webview")
+                            ForegroundService.clearGenerationSource("webview")
                         }
 
                         override fun onPageFinished(view: WebView?, finishedUrl: String?) {
@@ -305,6 +305,7 @@ fun StWebView(
                                 detail?.rendererPriorityAtExit()
                             } else null
                             Log.e("st-web", "Chromium render process terminated (crashed=$crashed, priorityAtExit=$priority)")
+                            ForegroundService.clearGenerationSource("webview")
                             (view?.parent as? ViewGroup)?.removeView(view)
                             view?.destroy()
                             webViewInstance = null
