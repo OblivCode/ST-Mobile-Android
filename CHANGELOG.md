@@ -3,6 +3,16 @@
 All notable changes to ST Mobile are recorded here. Each release heading uses the form
 `## [vX.Y.Z-beta] - YYYY-MM-DD`, which the release workflow reads to build the GitHub Release notes.
 
+## [v0.3.1-beta] - 2026-10-20
+
+### Diagnostics and reliability
+- **Generation state recovery**: WebView generation tokens are purged unconditionally when transitioning to the background or when the Node HTTP response finishes over IPC, preventing background idle timeouts from getting stalled on 'Generating response...'.
+- **Generation watchdog**: Added a 10-minute safety watchdog that force-recovers idle countdowns if an upstream inference backend hangs indefinitely.
+- **Release build lint fix**: Disabled the `ManifestResource` lint check in the release build configuration so localized manifest strings pass `lintVitalRelease`.
+
+### Power and background behaviour
+- **Notification timer deduplication**: Removed redundant 15-second text timer updates from the notification body, relying exclusively on the native Android countdown chronometer in the header whilst displaying 'Idle' in the status line.
+
 ## [v0.3.0-beta] - 2026-10-18
 
 ### UI and theming

@@ -50,9 +50,9 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = envOrProp("VERSION_CODE")?.toIntOrNull()
-            ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 3)
+            ?: (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 4)
         // Release tags (vX.Y.Z-beta) override this via VERSION_NAME in CI.
-        versionName = envOrProp("VERSION_NAME") ?: "0.3.0-beta"
+        versionName = envOrProp("VERSION_NAME") ?: "0.3.1-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -150,6 +150,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        disable += "ManifestResource"
     }
 }
 
